@@ -1,1 +1,37 @@
 
+--[[
+ _   _ _______ __   __    _    
+| \ | |  ____|  \ /  |  / \   
+|  \| | |__     \ V /  / _ \  
+| . ` |  __|     > <  / ___ \ 
+| |\  | |____   / . \/ /   \ \
+|_| \_|______| /_/ \_/_/     \_\
+]]
+
+repeat task.wait() until game.Players.LocalPlayer and game.Players.LocalPlayer.Character
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+print("Supported loader system running...")
+
+local placeId = game.PlaceId
+
+local games = {
+    [79546208627805] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/99%20Nights%20in%20the%20Forest', -- 99 Nights in the Forest
+    [126244816328678] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/Dig%20Jangkul%20Lua%20%7C%20Premium', -- Dig
+    [121864768012064] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/Fishing%20it!%20%7C%20Free', -- Fishing It
+}
+
+local scriptUrl = games[placeId]
+
+if scriptUrl then
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(scriptUrl))()
+    end)
+    if not success then
+        warn("Failed to load script:", err)
+    end
+else
+    warn("Unsupported game. PlaceId:", placeId)
+end
