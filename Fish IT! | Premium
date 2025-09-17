@@ -955,20 +955,47 @@ Tabs.Farm:Toggle({
     end
 })
 
-Tabs.Farm:Toggle({ 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote events
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
+local UnequipRemote = Net:WaitForChild("RE/UnequipToolFromHotbar")
+
+local equipLoop = nil
+
+Tabs.Farm:Toggle({
     Title = "Auto Equip Rod",
     Desc = "Automatically equips your fishing rod in slot 1 and unequips it when turned off",
     Value = false,
     Callback = function(state)
+        local char = workspace:WaitForChild("Characters"):WaitForChild(LocalPlayer.Name)
+
         if state then
-            -- Equip Rod di slot 1
-            Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
+            -- Mulai loop auto-equip
+            equipLoop = task.spawn(function()
+                while task.wait(1) do
+                    -- Kalau masih ada !!!FISHING_VIEW_MODEL!!! berarti rod BELUM dipegang → equip
+                    if char:FindFirstChild("!!!FISHING_VIEW_MODEL!!!") then
+                        EquipRemote:FireServer(1)
+                    end
+                end
+            end)
         else
-            -- Unequip saat toggle mati
-            Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
+            -- Hentikan loop
+            if equipLoop then
+                task.cancel(equipLoop)
+                equipLoop = nil
+            end
+
+            -- Langsung unequip
+            UnequipRemote:FireServer()
         end
     end
 })
+
 
 
 Tabs.Farm:Section({ Title = "Best Farm" })
