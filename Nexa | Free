@@ -18,9 +18,7 @@ print("Supported loader system running...")
 local placeId = game.PlaceId
 
 local games = {
-    [79546208627805] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/99%20Nights%20in%20the%20Forest', -- 99 Nights in the Forest
-    [126244816328678] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/Dig%20Jangkul%20Lua%20%7C%20Premium', -- Dig
-    [121864768012064] = 'https://raw.githubusercontent.com/hdgsydgdgdy1233/dg962bdyd/refs/heads/main/Fishing%20it!%20%7C%20Free', -- Fishing It
+    [121864768012064] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free', -- Fishing It
 }
 
 local scriptUrl = games[placeId]
