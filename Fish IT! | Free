@@ -94,7 +94,10 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[/] Improve Auto Fish v2
+[+] Added Dropdwon Sell Mode
+ - Delay
+ - Backpack Full
+[/] Improve Auto Equip Rod
     ]]
 })
 
