@@ -1,3 +1,4 @@
+
 -- Load WindUI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -43,6 +44,7 @@ Window:Tag({
     Color = Color3.fromHex("#30ff6a")
 })
 
+
 Window:EditOpenButton({
     Enabled = false
 })
@@ -85,7 +87,6 @@ local Tabs = {
     Server = Window:Tab({ Title = "Server", Icon = "server"  }),
     Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
 }
-
 
 Tabs.Home:Section({ Title = "Update" })
 
@@ -183,84 +184,86 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
-Tabs.Active:Section({ Title = "Event" })
-
-Tabs.Active:Divider()
-
-local player = game.Players.LocalPlayer
-local runService = game:GetService("RunService")
-
--- =========================
--- 🔹 Paragraf Status Boss
--- =========================
+-- Buat paragraf status boss
 local BossStatusParagraph = Tabs.Active:Paragraph({
     Title = "Boss Status",
     Desc = "Checking...",
 })
 
-local function getBossParts()
-    local results = {}
-    for _, props in ipairs(workspace:GetChildren()) do
-        if props.Name == "Props" then
-            for _, obj in ipairs(props:GetChildren()) do
-                if obj.Name == "Ghost" and obj:FindFirstChild("Part") then
-                    results["Ghost Shark Hunt"] = obj.Part
-                elseif obj.Name == "Shark" and obj:FindFirstChild("Part") then
-                    results["Shark Hunt"] = obj.Part
-                elseif obj.Name == "Model" and obj:FindFirstChild("Part") then
-                    results["Worm Hunt"] = obj.Part
-                elseif obj.Name == "Fishing" and obj:FindFirstChild("Part") then
-                    results["Fishing Hunt"] = obj.Part
-                elseif obj.Name == "Megalodon" and obj:FindFirstChild("Color") then
-                    results["Megalodon Hunt"] = obj.Color
-                end
-            end
-        end
-    end
-    return results
-end
-
+-- Fungsi update status boss
 local function updateBossStatus()
-    local parts = getBossParts()
-    local list = {}
+    local props = workspace:FindFirstChild("Props")
+    local statusText = {}
 
-    local bossList = {
-        "Ghost Shark Hunt",
-        "Shark Hunt",
-        "Worm Hunt",
-        "Fishing Hunt",
-        "Megalodon Hunt"
-    }
-
-    for _, name in ipairs(bossList) do
-        if parts[name] then
-            table.insert(list, name .. ": Spawned")
+    if props then
+        -- Ghost Shark Hunt
+        local ghostShark = props:FindFirstChild("Ghost Shark Hunt")
+        if ghostShark and ghostShark:FindFirstChild("Part") then
+            table.insert(statusText, "Ghost Shark Hunt: Spawned")
         else
-            table.insert(list, name .. ": ❌")
+            table.insert(statusText, "Ghost Shark Hunt: ❌")
         end
+
+        -- Shark Hunt
+        local shark = props:FindFirstChild("Shark Hunt")
+        if shark and shark:FindFirstChild("Part") then
+            table.insert(statusText, "Shark Hunt: Spawned")
+        else
+            table.insert(statusText, "Shark Hunt: ❌")
+        end
+
+        -- Worm Hunt
+        local wormModel = props:FindFirstChild("Model")
+        if wormModel and wormModel:FindFirstChild("Part") then
+            table.insert(statusText, "Worm Hunt: Spawned")
+        else
+            table.insert(statusText, "Worm Hunt: ❌")
+        end
+
+        -- Fishing Hunt
+        local fishing = props:FindFirstChild("Fishing Hunt")
+        if fishing and fishing:FindFirstChild("Part") then
+            table.insert(statusText, "Fishing Hunt: Spawned")
+        else
+            table.insert(statusText, "Fishing Hunt: ❌")
+        end
+
+        -- Megalodon Hunt
+        local megalodonModel = props:FindFirstChild("Megalodon Hunt")
+        if megalodonModel and megalodonModel:FindFirstChild("Color") then
+            table.insert(statusText, "Megalodon Hunt: Spawned")
+        else
+            table.insert(statusText, "Megalodon Hunt: ❌")
+        end
+    else
+        table.insert(statusText, "Event not found ❌")
     end
 
-    BossStatusParagraph:SetDesc(table.concat(list, "\n"))
+    -- Update teks paragraf
+    BossStatusParagraph:SetDesc(table.concat(statusText, "\n"))
 end
 
+-- Loop update setiap 1 detik
 task.spawn(function()
     while task.wait(1) do
         updateBossStatus()
     end
 end)
 
--- =========================
--- 🔹 Auto Teleport Feature
--- =========================
+Tabs.Active:Section({ Title = "Event" })
+
+local player = game.Players.LocalPlayer
 local savedCFrame
 local targetCFrame
 local connection
 local respawnConnection
-local selectedTargets = {}
+local selectedTargets = {} -- simpan banyak target
 local autoTeleportEnabled = false
 local bodyVelocity
+local runService = game:GetService("RunService")
 local monitorConnection
 
+-- daftar offset per target
 local targetOffsets = {
     ["Ghost Shark Hunt"] = Vector3.new(0, 5, 0),
     ["Shark Hunt"] = Vector3.new(0, 5, 0),
@@ -269,6 +272,7 @@ local targetOffsets = {
     ["Megalodon Hunt"] = Vector3.new(0, 6, 0),
 }
 
+-- freeze HRP
 local function applyFreeze(hrp)
     if not bodyVelocity then
         bodyVelocity = Instance.new("BodyVelocity")
@@ -279,6 +283,7 @@ local function applyFreeze(hrp)
     end
 end
 
+-- hapus freeze
 local function removeFreeze()
     if bodyVelocity then
         bodyVelocity:Destroy()
@@ -286,6 +291,7 @@ local function removeFreeze()
     end
 end
 
+-- monitor posisi
 local function startMonitor(hrp)
     if monitorConnection then monitorConnection:Disconnect() end
     monitorConnection = runService.Heartbeat:Connect(function()
@@ -305,16 +311,41 @@ local function stopMonitor()
     end
 end
 
+-- ambil event pertama yang spawn (versi lama)
 local function getFirstAvailableTarget()
-    local parts = getBossParts()
-    for _, name in ipairs(selectedTargets) do
-        if parts[name] then
-            return name, parts[name]
+    local props = workspace:WaitForChild("Props")
+    for _, targetName in ipairs(selectedTargets) do
+        local part
+
+        if targetName == "Ghost Shark Hunt" then
+            local model = props:FindFirstChild("Ghost Shark Hunt")
+            if model then part = model:FindFirstChild("Part") end
+
+        elseif targetName == "Shark Hunt" then
+            local model = props:FindFirstChild("Shark Hunt")
+            if model then part = model:FindFirstChild("Part") end
+
+        elseif targetName == "Worm Hunt" then
+            local model = props:FindFirstChild("Model")
+            if model then part = model:FindFirstChild("Part") end
+
+        elseif targetName == "Fishing Hunt" then
+            local model = props:FindFirstChild("Fishing Hunt")
+            if model then part = model:FindFirstChild("Part") end
+
+        elseif targetName == "Megalodon Hunt" then
+            local model = props:FindFirstChild("Megalodon Hunt")
+            if model then part = model:FindFirstChild("Color") end
+        end
+
+        if part then
+            return targetName, part -- ketemu event pertama
         end
     end
     return nil, nil
 end
 
+-- teleport sesuai target
 local function teleportToTarget(char)
     local hrp = char:WaitForChild("HumanoidRootPart")
     local chosenName, targetPart = getFirstAvailableTarget()
@@ -354,7 +385,7 @@ local function teleportToTarget(char)
     end
 end
 
--- UI Controls
+-- Multi Dropdown (pilih event mana yang aktif)
 Tabs.Active:Dropdown({
     Title = "Choose Event",
     Values = { "Ghost Shark Hunt", "Shark Hunt", "Worm Hunt", "Fishing Hunt", "Megalodon Hunt" },
@@ -370,6 +401,7 @@ Tabs.Active:Dropdown({
     end
 })
 
+-- Toggle (aktif/nonaktif teleport auto)
 Tabs.Active:Toggle({
     Title = "Teleport To Event",
     Value = false,
@@ -406,37 +438,47 @@ Tabs.Active:Toggle({
     end
 })
 
+Tabs.Player:Section({ Title = "Settings" })
 
-Tabs.Player:Section({ Title = "LocalPlayer" })
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
 
-Tabs.Player:Divider()
+local jumpConnection -- buat simpan koneksi
 
 Tabs.Player:Toggle({
     Title = "Infinite Jump",
     Value = false,
     Callback = function(state)
-        local Players = game:GetService("Players")
-        local UserInputService = game:GetService("UserInputService")
-        local player = Players.LocalPlayer
-
         if state then
             -- Aktifkan Infinite Jump
             _G.InfiniteJumpEnabled = true
-            UserInputService.JumpRequest:Connect(function()
-                if _G.InfiniteJumpEnabled then
-                    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        humanoid.Jump = true
+
+            -- Bikin koneksi sekali saja
+            if not jumpConnection then
+                jumpConnection = UserInputService.JumpRequest:Connect(function()
+                    if _G.InfiniteJumpEnabled then
+                        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+                        if humanoid then
+                            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                            humanoid.Jump = true
+                        end
                     end
-                end
-            end)
+                end)
+            end
         else
             -- Nonaktifkan Infinite Jump
             _G.InfiniteJumpEnabled = false
+
+            -- Putus koneksi biar gak dobel
+            if jumpConnection then
+                jumpConnection:Disconnect()
+                jumpConnection = nil
+            end
         end
     end
 })
+
 
 Tabs.Player:Toggle({
     Title = "Bypass Oxygen Tank",
@@ -479,6 +521,12 @@ Tabs.Player:Toggle({
     end
 })
 
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local respawnConnection -- simpan koneksi respawn
+
+-- 🔹 Slider WalkSpeed Value
 Tabs.Player:Slider({
     Title = "WalkSpeed Value",
     Step = 1,
@@ -490,7 +538,6 @@ Tabs.Player:Slider({
     Callback = function(value)
         _G.CustomWalkSpeedValue = value
         if _G.CustomWalkSpeedEnabled then
-            local player = game:GetService("Players").LocalPlayer
             local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid.WalkSpeed = value
@@ -499,13 +546,11 @@ Tabs.Player:Slider({
     end
 })
 
--- Toggle WalkSpeed
+-- 🔹 Toggle WalkSpeed
 Tabs.Player:Toggle({
     Title = "WalkSpeed",
     Value = false,
     Callback = function(state)
-        local Players = game:GetService("Players")
-        local player = Players.LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
         local humanoid = character:WaitForChild("Humanoid")
 
@@ -517,8 +562,14 @@ Tabs.Player:Toggle({
             humanoid.WalkSpeed = 16 -- default Roblox
         end
 
-        -- Agar tetap update saat respawn
-        player.CharacterAdded:Connect(function(char)
+        -- Hindari duplikat koneksi
+        if respawnConnection then
+            respawnConnection:Disconnect()
+            respawnConnection = nil
+        end
+
+        -- Supaya tetap update saat respawn
+        respawnConnection = player.CharacterAdded:Connect(function(char)
             humanoid = char:WaitForChild("Humanoid")
             if _G.CustomWalkSpeedEnabled then
                 humanoid.WalkSpeed = _G.CustomWalkSpeedValue or 50
@@ -529,35 +580,59 @@ Tabs.Player:Toggle({
     end
 })
 
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local noclipConnection
+local respawnConnection
+
 Tabs.Player:Toggle({
     Title = "Noclip",
     Value = false,
     Callback = function(state)
-        local Players = game:GetService("Players")
-        local RunService = game:GetService("RunService")
-        local player = Players.LocalPlayer
-
         _G.NoclipEnabled = state
 
-        -- Fungsi untuk Noclip
-        local function NoclipLoop(char)
-            while _G.NoclipEnabled and char.Parent do
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        part.CanCollide = false
-                    end
-                end
-                RunService.Stepped:Wait()
-            end
+        -- Hentikan loop lama kalau ada
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
         end
 
         if state then
+            local function NoclipLoop(char)
+                -- loop sekali per frame
+                noclipConnection = RunService.Stepped:Connect(function()
+                    if _G.NoclipEnabled and char and char.Parent then
+                        for _, part in pairs(char:GetDescendants()) do
+                            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end
+
+            -- mulai untuk character sekarang
             local character = player.Character
             if character then
-                spawn(function() NoclipLoop(character) end)
+                NoclipLoop(character)
             end
+
+            -- Pastikan tetap aktif saat respawn
+            if respawnConnection then
+                respawnConnection:Disconnect()
+                respawnConnection = nil
+            end
+            respawnConnection = player.CharacterAdded:Connect(function(char)
+                if _G.NoclipEnabled then
+                    NoclipLoop(char)
+                end
+            end)
+
         else
-            -- Kembalikan CanCollide ke true saat toggle mati
+            -- Reset CanCollide saat dimatikan
             local character = player.Character
             if character then
                 for _, part in pairs(character:GetDescendants()) do
@@ -567,19 +642,10 @@ Tabs.Player:Toggle({
                 end
             end
         end
-
-        -- Pastikan Noclip tetap aktif saat respawn
-        player.CharacterAdded:Connect(function(char)
-            if _G.NoclipEnabled then
-                spawn(function() NoclipLoop(char) end)
-            end
-        end)
     end
 })
 
 Tabs.Player:Section({ Title = "Codes" })
-
-Tabs.Player:Divider()
 
 local allCodes = {
     "SHARKSSS",
@@ -605,12 +671,7 @@ Tabs.Player:Button({
     end
 })
 
-
-
-
 Tabs.Farm:Section({ Title = "Info Fish!!" })
-
-Tabs.Farm:Divider()
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -675,8 +736,6 @@ frame.ChildAdded:Connect(function(child)
 end)
 
 Tabs.Farm:Section({ Title = "Fishing" })
-
-Tabs.Farm:Divider()
 
 -- Services
 local Players = game:GetService("Players")
@@ -758,10 +817,6 @@ task.spawn(function()
         end
     end
 end)
-
-
-
-
 
 -- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -885,9 +940,6 @@ Tabs.Farm:Toggle({
     end
 })
 
-
-
-
 Tabs.Farm:Toggle({ 
     Title = "Auto Complete Fishing",
     Value = false,
@@ -904,53 +956,23 @@ Tabs.Farm:Toggle({
     end
 })
 
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Remote events
-local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local EquipRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
-local UnequipRemote = Net:WaitForChild("RE/UnequipToolFromHotbar")
-
-local equipLoop = nil
-
-Tabs.Farm:Toggle({
+Tabs.Farm:Toggle({ 
     Title = "Auto Equip Rod",
     Desc = "Automatically equips your fishing rod in slot 1 and unequips it when turned off",
     Value = false,
     Callback = function(state)
-        local char = workspace:WaitForChild("Characters"):WaitForChild(LocalPlayer.Name)
-
         if state then
-            -- Mulai loop auto-equip
-            equipLoop = task.spawn(function()
-                while task.wait(1) do
-                    -- Kalau masih ada !!!FISHING_VIEW_MODEL!!! berarti rod BELUM dipegang → equip
-                    if char:FindFirstChild("!!!FISHING_VIEW_MODEL!!!") then
-                        EquipRemote:FireServer(1)
-                    end
-                end
-            end)
+            -- Equip Rod di slot 1
+            Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
         else
-            -- Hentikan loop
-            if equipLoop then
-                task.cancel(equipLoop)
-                equipLoop = nil
-            end
-
-            -- Langsung unequip
-            UnequipRemote:FireServer()
+            -- Unequip saat toggle mati
+            Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
         end
     end
 })
 
 
-
 Tabs.Farm:Section({ Title = "Best Farm" })
-
-Tabs.Farm:Divider()
 
 -- Daftar lokasi teleport Farm
 local locations = {
@@ -1160,7 +1182,6 @@ player.CharacterAdded:Connect(function(char)
     end
 end)
 
-
 Tabs.Farm:Section({ Title = "Sell" })
 
 -- Default values
@@ -1237,10 +1258,7 @@ Tabs.Farm:Toggle({
     end
 })
 
-
 Tabs.Auto:Section({ Title = "Info Quest" })
-
-Tabs.Auto:Divider()
 
 local board = workspace["!!! MENU RINGS"]["Deep Sea Tracker"].Board
 local surfaceGui = board:WaitForChild("Gui")
@@ -1280,8 +1298,6 @@ for _, name in ipairs(labelNames) do
 end
 
 Tabs.Auto:Section({ Title = "Quest" })
-
-Tabs.Auto:Divider()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -1394,10 +1410,7 @@ Tabs.Auto:Toggle({
     end
 })
 
-
 Tabs.Shop:Section({ Title = "Rod" })
-
-Tabs.Shop:Divider()
 
 -- Table mapping nama rod ke ID
 local rodMap = {
@@ -1477,7 +1490,6 @@ Tabs.Shop:Button({
 
 Tabs.Shop:Section({ Title = "Baits" })
 
-Tabs.Shop:Divider()
 -- Table mapping nama bait ke ID
 local BaitID = {
     ["Topwater Bait"] = 10,
@@ -1545,8 +1557,6 @@ Tabs.Shop:Button({
 
 Tabs.Shop:Section({ Title = "Items" })
 
-Tabs.Shop:Divider()
-
 -- Tombol Buy Diving Gear (menggunakan ProximityPrompt)
 local divingPrompt = workspace["!!! MENU RINGS"]["Diving Gear Display"].Top.ShopPurchasePrompt.ProximityPrompt
 Tabs.Shop:Button({
@@ -1574,8 +1584,6 @@ Tabs.Shop:Button({
 })
 
 Tabs.Shop:Section({ Title = "Weather" })
-
-Tabs.Shop:Divider()
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
@@ -1640,11 +1648,7 @@ Tabs.Shop:Button({
     end
 })
 
-
-
 Tabs.Boat:Section({ Title = "Purchase" })
-
-Tabs.Boat:Divider()
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PurchaseBoat = ReplicatedStorage
@@ -1715,10 +1719,7 @@ Tabs.Boat:Button({
     end
 })
 
-
 Tabs.Boat:Section({ Title = "Boat" })
-
-Tabs.Boat:Divider()
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SpawnBoat = ReplicatedStorage
@@ -1796,11 +1797,7 @@ Tabs.Boat:Button({
     end
 })
 
-
-
 Tabs.Teleport:Section({ Title = "Island" })
-
-Tabs.Teleport:Divider()
 
 -- Daftar lokasi teleport (isi CFrame sesuai island)
 local islands = {
@@ -1856,8 +1853,6 @@ Tabs.Teleport:Button({
 
 Tabs.Teleport:Section({ Title = "NPC" })
 
-Tabs.Teleport:Divider()
-
 -- Daftar lokasi teleport (isi CFrame sesuai NPC)
 local locations = {
     ["Jones"] = CFrame.new(-678.315857, 16.4103374, 595.322937, 0, 0, -1, 0, 1, 0, 1, 0, 0),
@@ -1902,11 +1897,7 @@ Tabs.Teleport:Button({
     end
 })
 
-
-
 Tabs.Server:Section({ Title = "Fish" })
-
-Tabs.Server:Divider()
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -2014,7 +2005,7 @@ Tabs.Server:Toggle({
 Tabs.Server:Dropdown({
     Title = "Select Tier to Send",
     Values = {"All", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "SECRET"},
-    Value = {"All"},
+    Value = {},
     Multi = true,
     AllowNone = true,
     Callback = function(option) 
@@ -2110,8 +2101,6 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 Tabs.Server:Section({ Title = "Error Log" })
-
-Tabs.Server:Divider()
 
 local HttpService = game:GetService("HttpService")
 local ScriptContext = game:GetService("ScriptContext")
@@ -2218,12 +2207,7 @@ error = function(...)
     sendToWebhook("[ErrorFunc] " .. toMessage(...))
 end
 
-
-
-
 Tabs.Server:Section({ Title = "Staff" })
-
-Tabs.Server:Divider()
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -2425,12 +2409,7 @@ Tabs.Server:Button({
     end
 })
 
-
-
-
 Tabs.Visual:Section({ Title = "Visual" })
-
-Tabs.Visual:Divider()
 
 -- Tombol Shop UI: Rod
 local shopUIPrompt = workspace["!!! MENU RINGS"].Ring.ProximityPrompt
@@ -2441,8 +2420,6 @@ Tabs.Visual:Button({
     end
 })
 
-
-
 local shopUIPrompt = workspace["!!! MENU RINGS"]["Enchanted Crate"].Prompt.MenuPromptAttachment.ProximityPrompt
 Tabs.Visual:Button({
     Title = "Shop UI: Skin Crates",
@@ -2450,8 +2427,6 @@ Tabs.Visual:Button({
         fireproximityprompt(shopUIPrompt)
     end
 })
-
-
 
 -- Simpan setting lighting & particle untuk dikembalikan saat toggle mati
 local originalLightingSettings = {
@@ -2533,7 +2508,6 @@ Tabs.Visual:Toggle({
     end
 })
 
-
 Tabs.Visual:Button({ 
     Title = "Boost FPS",  -- Nama tombol
     Callback = function() 
@@ -2614,7 +2588,6 @@ Tabs.Visual:Button({
     end
 })
 
-
 -- WindUI Toggle: Disable Backpack
 Tabs.Visual:Toggle({
     Title = "Disable Backpack",
@@ -2631,18 +2604,6 @@ Tabs.Visual:Toggle({
         end
     end
 })
-
-
-
-
-
-
-
-
-
-
-
-
 
 -----------------------------------------------------
 -- BAGIAN IMAGEBUTTON DI LAYAR
