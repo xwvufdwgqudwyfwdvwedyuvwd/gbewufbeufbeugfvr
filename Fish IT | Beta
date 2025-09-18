@@ -1,0 +1,184 @@
+-- Load WindUI
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - [Beta Acsess]",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Fish IT! Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
+
+Window:Tag({
+    Title = "v1.1.8",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+WindUI:Notify({
+    Title = "Game Supported",
+    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
+    Icon = "gamepad",
+    Duration = 6
+})
+
+task.delay(6.5, function()
+    WindUI:Notify({
+        Title = "Bug Report",
+        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+        Icon = "cloud-alert",
+        Duration = 6
+    })
+end)
+
+task.delay(13, function()
+    WindUI:Notify({
+        Title = "Purchase",
+        Content = "If you want to buy this premium script key, join Discord to buy premium.",
+        Icon = "shopping-cart",
+        Duration = 6
+    })
+end)
+
+-- ✅ Tab dan UI
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Active = Window:Tab({ Title = "Active", Icon = "info"  }),
+    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
+    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
+    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
+    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
+    Server = Window:Tab({ Title = "Server", Icon = "server"  }),
+    Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
+}
+
+Tabs.Home:Section({ Title = "Update" })
+
+Tabs.Home:Divider()
+
+Tabs.Home:Paragraph({
+    Title = "Here's what's new:",
+    Desc = [[
+[+] Added Dropdwon Sell Mode
+ - Delay
+ - Backpack Full
+[/] Improve Auto Equip Rod
+    ]]
+})
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Active:Section({ Title = "Status" })
+
+Tabs.Active:Divider()
+-- FPS, Ping, dan Lama di Server ke WindUI Paragraph
+
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+
+local displayFPS = 0
+local accTime, accFrames = 0, 0
+local smoothing = 0.15
+
+-- Catat waktu join server
+local joinTime = tick()
+
+-- Buat Paragraph di tab Active
+local statusParagraph = Tabs.Active:Paragraph({
+    Title = "Status Player",
+    Desc = "FPS: ...\nPing: ...\nTime: ..."
+})
+
+-- Fungsi format waktu (hh:mm:ss)
+local function formatTime(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+-- Update tiap frame
+RunService.RenderStepped:Connect(function(dt)
+    accTime = accTime + dt
+    accFrames = accFrames + 1
+
+    if accTime >= 0.5 then
+        local instantFPS = accFrames / accTime
+        displayFPS = displayFPS + (instantFPS - displayFPS) * smoothing
+
+        -- Ambil ping (ms)
+        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+
+        -- Lama waktu di server
+        local elapsed = tick() - joinTime
+        local timePlayed = formatTime(elapsed)
+
+        -- Update Paragraph WindUI
+        statusParagraph:SetDesc(
+            "FPS: " .. math.floor(displayFPS + 0.5) ..
+            "\nPing: " .. math.floor(ping) .. " ms" ..
+            "\nTime: " .. timePlayed
+        )
+
+        accTime = 0
+        accFrames = 0
+    end
+end)
