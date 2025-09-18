@@ -614,7 +614,7 @@ spawn(function()
 end)
 
 Tabs.Farm:Toggle({
-    Title = "Auto Fishing",
+    Title = "Auto Fishing Completed",
     Value = false,
     Callback = function(state)
         if state then
