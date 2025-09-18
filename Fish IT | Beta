@@ -457,6 +457,70 @@ Tabs.Player:Button({
     end
 })
 
+Tabs.Farm:Section({ Title = "Info Fish!!" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- UI Notif
+local smallNotif = playerGui:WaitForChild("Small Notification")
+local display = smallNotif:WaitForChild("Display")
+local container = display:WaitForChild("Container")
+
+local notifications = playerGui:WaitForChild("Text Notifications")
+local frame = notifications:WaitForChild("Frame")
+
+-- posisi default (before) dan sukses
+local beforePos = UDim2.new(0.5, 0, -1.89999998, 0)
+local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
+
+-- counter sukses & gagal
+local successCount = 0
+local failCount = 0
+
+-- satu paragraph gabungan
+local ProgressParagraph = Tabs.Farm:Paragraph({
+    Title = "Fishing Attempts",
+    Desc = "Success: 0\nFailed: 0"
+})
+
+-- update text paragraph
+local function updateParagraph()
+    ProgressParagraph:SetDesc("Success: " .. successCount .. "\nFailed: " .. failCount)
+end
+
+-- === SUCCESS DETECTION (berdasarkan posisi container) ===
+container:GetPropertyChangedSignal("Position"):Connect(function()
+    local pos = container.Position
+
+    if pos == successPos then
+        successCount += 1
+        updateParagraph()
+    end
+end)
+
+-- === FAIL DETECTION (berdasarkan notifikasi text) ===
+frame.ChildAdded:Connect(function(child)
+    if child.Name == "TextTile" then
+        local header = child:WaitForChild("Header", 5)
+        if header and header:IsA("TextLabel") then
+            if header.Text == "The fish got away!" then
+                failCount += 1
+                updateParagraph()
+            end
+
+            -- listen kalau text berubah setelah spawn
+            header:GetPropertyChangedSignal("Text"):Connect(function()
+                if header.Text == "The fish got away!" then
+                    failCount += 1
+                    updateParagraph()
+                end
+            end)
+        end
+    end
+end)
+
 Tabs.Farm:Section({ Title = "Fishing" })
 
 -- Services
