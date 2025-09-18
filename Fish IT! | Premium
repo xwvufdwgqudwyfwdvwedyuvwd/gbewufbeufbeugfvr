@@ -183,301 +183,188 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- Buat paragraf status boss
-local BossStatusParagraph = Tabs.Active:Paragraph({
-    Title = "Boss Status",
-    Desc = "Checking...",
+Tabs.Active:Section({ Title = "Event" })
+
+local statusLabel = Tabs.Active:Paragraph({
+    Title = "Event Status",
+    Desc = "Waiting for data..."
 })
 
--- Fungsi update status boss
-local function updateBossStatus()
-    local props = workspace:FindFirstChild("Props")
-    local statusText = {}
-
-    if props then
-        -- Ghost Shark Hunt
-        local ghostShark = props:FindFirstChild("Ghost Shark Hunt")
-        if ghostShark and ghostShark:FindFirstChild("Part") then
-            table.insert(statusText, "Ghost Shark Hunt: Spawned")
-        else
-            table.insert(statusText, "Ghost Shark Hunt: ❌")
-        end
-
-        -- Shark Hunt
-        local shark = props:FindFirstChild("Shark Hunt")
-        if shark and shark:FindFirstChild("Part") then
-            table.insert(statusText, "Shark Hunt: Spawned")
-        else
-            table.insert(statusText, "Shark Hunt: ❌")
-        end
-
-        -- Worm Hunt
-        local wormModel = props:FindFirstChild("Model")
-        if wormModel and wormModel:FindFirstChild("Part") then
-            table.insert(statusText, "Worm Hunt: Spawned")
-        else
-            table.insert(statusText, "Worm Hunt: ❌")
-        end
-
-        -- Fishing Hunt
-        local fishing = props:FindFirstChild("Fishing Hunt")
-        if fishing and fishing:FindFirstChild("Part") then
-            table.insert(statusText, "Fishing Hunt: Spawned")
-        else
-            table.insert(statusText, "Fishing Hunt: ❌")
-        end
-
-        -- Megalodon Hunt
-        local megalodonModel = props:FindFirstChild("Megalodon Hunt")
-        if megalodonModel and megalodonModel:FindFirstChild("Color") then
-            table.insert(statusText, "Megalodon Hunt: Spawned")
-        else
-            table.insert(statusText, "Megalodon Hunt: ❌")
-        end
-    else
-        table.insert(statusText, "Event not found ❌")
-    end
-
-    -- Update teks paragraf
-    BossStatusParagraph:SetDesc(table.concat(statusText, "\n"))
-end
-
--- Loop update setiap 1 detik
 task.spawn(function()
     while task.wait(1) do
-        updateBossStatus()
+        local statusText = {}
+
+        -- cek Megalodon Hunt
+        if workspace.Props:FindFirstChild("Megalodon Hunt") then
+            table.insert(statusText, "✅ Megalodon Hunt")
+        else
+            table.insert(statusText, "❌ Megalodon Hunt")
+        end
+
+        -- cek Shark Hunt
+        if workspace.Props:FindFirstChild("Shark Hunt") then
+            table.insert(statusText, "✅ Shark Hunt")
+        else
+            table.insert(statusText, "❌ Shark Hunt")
+        end
+
+        -- cek Ghost Shark Hunt
+        if workspace.Props:FindFirstChild("Ghost Shark Hunt") then
+            table.insert(statusText, "✅ Ghost Shark Hunt")
+        else
+            table.insert(statusText, "❌ Ghost Shark Hunt")
+        end
+
+        -- cek Worm Hunt (Model.Part)
+        local model = workspace.Props:FindFirstChild("Model")
+        if model and model:FindFirstChild("Part") then
+            table.insert(statusText, "✅ Worm Hunt")
+        else
+            table.insert(statusText, "❌ Worm Hunt")
+        end
+
+        statusLabel:SetDesc(table.concat(statusText, "\n"))
     end
 end)
 
-Tabs.Active:Section({ Title = "Event" })
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
 
-local player = game.Players.LocalPlayer
-local savedCFrame
-local targetCFrame
-local connection
-local respawnConnection
-local selectedTargets = {} -- simpan banyak target
-local autoTeleportEnabled = false
-local bodyVelocity
-local runService = game:GetService("RunService")
-local monitorConnection
+local savedCFrame -- posisi awal
+local bv, bg -- body movers
+local runningChecks = {} -- status pengecekan tiap toggle
 
--- daftar offset per target
-local targetOffsets = {
-    ["Ghost Shark Hunt"] = Vector3.new(0, 5, 0),
-    ["Shark Hunt"] = Vector3.new(0, 5, 0),
-    ["Worm Hunt"] = Vector3.new(0, 30, 0),
-    ["Fishing Hunt"] = Vector3.new(0, 5, 0),
-    ["Megalodon Hunt"] = Vector3.new(0, 6, 0),
-}
+-- fungsi freeze
+local function freezeHumanoidRootPart(part)
+    bv = Instance.new("BodyVelocity")
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bv.Parent = part
 
--- freeze HRP
-local function applyFreeze(hrp)
-    if not bodyVelocity then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0,0,0)
-        bodyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)
-        bodyVelocity.P = 9e9
-        bodyVelocity.Parent = hrp
+    bg = Instance.new("BodyGyro")
+    bg.CFrame = part.CFrame
+    bg.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    bg.P = 1e5
+    bg.Parent = part
+end
+
+-- fungsi unfreeze
+local function unfreeze()
+    if bv then bv:Destroy() bv = nil end
+    if bg then bg:Destroy() bg = nil end
+end
+
+-- fungsi umum: teleport + freeze
+local function tpAndFreeze(target)
+    savedCFrame = hrp.CFrame
+    hrp.CFrame = target.CFrame + Vector3.new(0, 5, 0)
+    freezeHumanoidRootPart(hrp)
+end
+
+local function backToSaved()
+    unfreeze()
+    if savedCFrame then
+        hrp.CFrame = savedCFrame
+        savedCFrame = nil
     end
 end
 
--- hapus freeze
-local function removeFreeze()
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
+-- fungsi cek otomatis
+local function autoCheck(name, path)
+    -- stop dulu kalau ada loop lama
+    if runningChecks[name] then
+        runningChecks[name] = false
     end
-end
 
--- monitor posisi
-local function startMonitor(hrp)
-    if monitorConnection then monitorConnection:Disconnect() end
-    monitorConnection = runService.Heartbeat:Connect(function()
-        if autoTeleportEnabled and targetCFrame and hrp then
-            local distance = (hrp.Position - targetCFrame.Position).Magnitude
-            if distance > 5 then
-                hrp.CFrame = targetCFrame
+    runningChecks[name] = true
+    task.spawn(function()
+        while runningChecks[name] do
+            task.wait(1)
+            if not path or not path.Parent then
+                backToSaved()
+                runningChecks[name] = false
+                break
             end
         end
     end)
 end
 
-local function stopMonitor()
-    if monitorConnection then
-        monitorConnection:Disconnect()
-        monitorConnection = nil
-    end
-end
-
--- ambil event pertama yang spawn (versi lama)
-local function getFirstAvailableTarget()
-    local props = workspace:WaitForChild("Props")
-    for _, targetName in ipairs(selectedTargets) do
-        local part
-
-        if targetName == "Ghost Shark Hunt" then
-            local model = props:FindFirstChild("Ghost Shark Hunt")
-            if model then part = model:FindFirstChild("Part") end
-
-        elseif targetName == "Shark Hunt" then
-            local model = props:FindFirstChild("Shark Hunt")
-            if model then part = model:FindFirstChild("Part") end
-
-        elseif targetName == "Worm Hunt" then
-            local model = props:FindFirstChild("Model")
-            if model then part = model:FindFirstChild("Part") end
-
-        elseif targetName == "Fishing Hunt" then
-            local model = props:FindFirstChild("Fishing Hunt")
-            if model then part = model:FindFirstChild("Part") end
-
-        elseif targetName == "Megalodon Hunt" then
-            local model = props:FindFirstChild("Megalodon Hunt")
-            if model then part = model:FindFirstChild("Color") end
-        end
-
-        if part then
-            return targetName, part -- ketemu event pertama
-        end
-    end
-    return nil, nil
-end
-
--- teleport sesuai target
-local function teleportToTarget(char)
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    local chosenName, targetPart = getFirstAvailableTarget()
-
-    if targetPart and chosenName then
-        if not savedCFrame then
-            savedCFrame = hrp.CFrame
-        end
-
-        local offset = targetOffsets[chosenName] or Vector3.new(0,5,0)
-        targetCFrame = targetPart.CFrame + offset
-
-        hrp.CFrame = targetCFrame
-        task.wait(0.1)
-        applyFreeze(hrp)
-        startMonitor(hrp)
-
-        if connection then connection:Disconnect() end
-        connection = targetPart.AncestryChanged:Connect(function(_, parent)
-            if not parent then
-                removeFreeze()
-                stopMonitor()
-                if savedCFrame then
-                    hrp.CFrame = savedCFrame
-                end
-                if connection then
-                    connection:Disconnect()
-                    connection = nil
-                end
-                if autoTeleportEnabled then
-                    task.delay(0.5, function()
-                        teleportToTarget(player.Character or player.CharacterAdded:Wait())
-                    end)
-                end
-            end
-        end)
-    end
-end
-
--- Multi Dropdown (pilih event mana yang aktif)
-Tabs.Active:Dropdown({
-    Title = "Choose Event",
-    Values = { "Ghost Shark Hunt", "Shark Hunt", "Worm Hunt", "Fishing Hunt", "Megalodon Hunt" },
-    Value = { "Ghost Shark Hunt" },
-    Multi = true,
-    AllowNone = true,
-    Callback = function(options)
-        selectedTargets = options
-        if autoTeleportEnabled then
-            local char = player.Character or player.CharacterAdded:Wait()
-            teleportToTarget(char)
-        end
-    end
-})
-
--- Toggle (aktif/nonaktif teleport auto)
+-- 🦈 Shark Hunt
 Tabs.Active:Toggle({
-    Title = "Teleport To Event",
+    Title = "Teleport To Shark Hunt",
     Value = false,
     Callback = function(state)
-        autoTeleportEnabled = state
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
         if state then
-            teleportToTarget(char)
-            if respawnConnection then respawnConnection:Disconnect() end
-            respawnConnection = player.CharacterAdded:Connect(function(newChar)
-                teleportToTarget(newChar)
-            end)
+            local obj = workspace.Props:FindFirstChild("Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Shark Hunt", obj.Part)
+            end
         else
-            removeFreeze()
-            stopMonitor()
-            if savedCFrame then
-                hrp.CFrame = savedCFrame
-            end
-
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-            if respawnConnection then
-                respawnConnection:Disconnect()
-                respawnConnection = nil
-            end
-
-            savedCFrame = nil
-            targetCFrame = nil
+            runningChecks["Shark Hunt"] = false
+            backToSaved()
         end
     end
 })
+
+-- 👻 Ghost Shark Hunt
+Tabs.Active:Toggle({
+    Title = "Teleport To Ghost Shark Hunt",
+    Value = false,
+    Callback = function(state)
+        if state then
+            local obj = workspace.Props:FindFirstChild("Ghost Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Ghost Shark Hunt", obj.Part)
+            end
+        else
+            runningChecks["Ghost Shark Hunt"] = false
+            backToSaved()
+        end
+    end
+})
+
+-- 🐋 Megalodon Hunt
+Tabs.Active:Toggle({
+    Title = "Teleport To Megalodon Hunt",
+    Value = false,
+    Callback = function(state)
+        if state then
+            local obj = workspace.Props:FindFirstChild("Megalodon Hunt")
+            if obj and obj:FindFirstChild("Color") then
+                tpAndFreeze(obj.Color)
+                autoCheck("Megalodon Hunt", obj.Color)
+            end
+        else
+            runningChecks["Megalodon Hunt"] = false
+            backToSaved()
+        end
+    end
+})
+
+-- 🪱 Worm Hunt (Model)
+Tabs.Active:Toggle({
+    Title = "Teleport To Worm Hunt",
+    Value = false,
+    Callback = function(state)
+        if state then
+            local obj = workspace.Props:FindFirstChild("Model")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Model", obj.Part)
+            end
+        else
+            runningChecks["Model"] = false
+            backToSaved()
+        end
+    end
+})
+
 
 Tabs.Player:Section({ Title = "Settings" })
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local player = Players.LocalPlayer
-
-local jumpConnection -- buat simpan koneksi
-
-Tabs.Player:Toggle({
-    Title = "Infinite Jump",
-    Value = false,
-    Callback = function(state)
-        if state then
-            -- Aktifkan Infinite Jump
-            _G.InfiniteJumpEnabled = true
-
-            -- Bikin koneksi sekali saja
-            if not jumpConnection then
-                jumpConnection = UserInputService.JumpRequest:Connect(function()
-                    if _G.InfiniteJumpEnabled then
-                        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-                        if humanoid then
-                            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                            humanoid.Jump = true
-                        end
-                    end
-                end)
-            end
-        else
-            -- Nonaktifkan Infinite Jump
-            _G.InfiniteJumpEnabled = false
-
-            -- Putus koneksi biar gak dobel
-            if jumpConnection then
-                jumpConnection:Disconnect()
-                jumpConnection = nil
-            end
-        end
-    end
-})
-
 
 Tabs.Player:Toggle({
     Title = "Bypass Oxygen Tank",
@@ -520,130 +407,6 @@ Tabs.Player:Toggle({
     end
 })
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local respawnConnection -- simpan koneksi respawn
-
--- 🔹 Slider WalkSpeed Value
-Tabs.Player:Slider({
-    Title = "WalkSpeed Value",
-    Step = 1,
-    Value = {
-        Min = 16,
-        Max = 100,
-        Default = 50,
-    },
-    Callback = function(value)
-        _G.CustomWalkSpeedValue = value
-        if _G.CustomWalkSpeedEnabled then
-            local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.WalkSpeed = value
-            end
-        end
-    end
-})
-
--- 🔹 Toggle WalkSpeed
-Tabs.Player:Toggle({
-    Title = "WalkSpeed",
-    Value = false,
-    Callback = function(state)
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:WaitForChild("Humanoid")
-
-        _G.CustomWalkSpeedEnabled = state
-
-        if state then
-            humanoid.WalkSpeed = _G.CustomWalkSpeedValue or 50
-        else
-            humanoid.WalkSpeed = 16 -- default Roblox
-        end
-
-        -- Hindari duplikat koneksi
-        if respawnConnection then
-            respawnConnection:Disconnect()
-            respawnConnection = nil
-        end
-
-        -- Supaya tetap update saat respawn
-        respawnConnection = player.CharacterAdded:Connect(function(char)
-            humanoid = char:WaitForChild("Humanoid")
-            if _G.CustomWalkSpeedEnabled then
-                humanoid.WalkSpeed = _G.CustomWalkSpeedValue or 50
-            else
-                humanoid.WalkSpeed = 16
-            end
-        end)
-    end
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-
-local noclipConnection
-local respawnConnection
-
-Tabs.Player:Toggle({
-    Title = "Noclip",
-    Value = false,
-    Callback = function(state)
-        _G.NoclipEnabled = state
-
-        -- Hentikan loop lama kalau ada
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
-
-        if state then
-            local function NoclipLoop(char)
-                -- loop sekali per frame
-                noclipConnection = RunService.Stepped:Connect(function()
-                    if _G.NoclipEnabled and char and char.Parent then
-                        for _, part in pairs(char:GetDescendants()) do
-                            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                                part.CanCollide = false
-                            end
-                        end
-                    end
-                end)
-            end
-
-            -- mulai untuk character sekarang
-            local character = player.Character
-            if character then
-                NoclipLoop(character)
-            end
-
-            -- Pastikan tetap aktif saat respawn
-            if respawnConnection then
-                respawnConnection:Disconnect()
-                respawnConnection = nil
-            end
-            respawnConnection = player.CharacterAdded:Connect(function(char)
-                if _G.NoclipEnabled then
-                    NoclipLoop(char)
-                end
-            end)
-
-        else
-            -- Reset CanCollide saat dimatikan
-            local character = player.Character
-            if character then
-                for _, part in pairs(character:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end
-    end
-})
-
 Tabs.Player:Section({ Title = "Codes" })
 
 local allCodes = {
@@ -669,70 +432,6 @@ Tabs.Player:Button({
         end
     end
 })
-
-Tabs.Farm:Section({ Title = "Info Fish!!" })
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- UI Notif
-local smallNotif = playerGui:WaitForChild("Small Notification")
-local display = smallNotif:WaitForChild("Display")
-local container = display:WaitForChild("Container")
-
-local notifications = playerGui:WaitForChild("Text Notifications")
-local frame = notifications:WaitForChild("Frame")
-
--- posisi default (before) dan sukses
-local beforePos = UDim2.new(0.5, 0, -1.89999998, 0)
-local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
-
--- counter sukses & gagal
-local successCount = 0
-local failCount = 0
-
--- satu paragraph gabungan
-local ProgressParagraph = Tabs.Farm:Paragraph({
-    Title = "Fishing Attempts",
-    Desc = "Success: 0\nFailed: 0"
-})
-
--- update text paragraph
-local function updateParagraph()
-    ProgressParagraph:SetDesc("Success: " .. successCount .. "\nFailed: " .. failCount)
-end
-
--- === SUCCESS DETECTION (berdasarkan posisi container) ===
-container:GetPropertyChangedSignal("Position"):Connect(function()
-    local pos = container.Position
-
-    if pos == successPos then
-        successCount += 1
-        updateParagraph()
-    end
-end)
-
--- === FAIL DETECTION (berdasarkan notifikasi text) ===
-frame.ChildAdded:Connect(function(child)
-    if child.Name == "TextTile" then
-        local header = child:WaitForChild("Header", 5)
-        if header and header:IsA("TextLabel") then
-            if header.Text == "The fish got away!" then
-                failCount += 1
-                updateParagraph()
-            end
-
-            -- listen kalau text berubah setelah spawn
-            header:GetPropertyChangedSignal("Text"):Connect(function()
-                if header.Text == "The fish got away!" then
-                    failCount += 1
-                    updateParagraph()
-                end
-            end)
-        end
-    end
-end)
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
@@ -817,141 +516,129 @@ task.spawn(function()
     end
 end)
 
--- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Net = ReplicatedStorage:WaitForChild("Packages")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- RemoteFunction & RemoteEvent references
+local chargeRF = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
+    :WaitForChild("RF/ChargeFishingRod")
 
-local player = game.Players.LocalPlayer
-local container = player:WaitForChild("PlayerGui")
-    :WaitForChild("Small Notification")
-    :WaitForChild("Display")
-    :WaitForChild("Container")
+local requestMinigameRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RF/RequestFishingMinigameStarted")
 
--- Posisi awal container
-local initialPos = UDim2.new(0.5, 0, -1.9, 0)
+local unequipRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RE/UnequipToolFromHotbar")
 
--- Toggle & Mode
-local AutoFish = false
-local FishMode = "PERFECT"
+local equipRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RE/EquipToolFromHotbar")
 
--- Step 1 → Charge Fishing Rod
-local function Step1()
-    Net:WaitForChild("RF/ChargeFishingRod"):InvokeServer(os.clock())
-end
+local notification = player.PlayerGui:WaitForChild("Small Notification"):WaitForChild("Display"):WaitForChild("Container")
 
--- Step 2 → Start Fishing Minigame
-local function Step2()
-    local args
-    if FishMode == "PERFECT" then
-        args = { -0.75, 0.9949902531063812 }
-    elseif FishMode == "OK" then
-        args = { -0.75, 0.3251698002015836 }
-    elseif FishMode == "AMAZING" then
-        args = { -0.5718746185302734, 0.8702929274284 }
-    elseif FishMode == "GREAT" then
-        args = { -0.5718746185302734, 0.744264094698844 }
-    else
-        args = { -0.75, 0.9949902531063812 }
+-- Status toggle dan FishMode
+local autoFishing = false
+local FishMode = "Perfect" -- default
+
+-- Toggle Auto Fishing v2
+Tabs.Farm:Toggle({ 
+    Title = "Auto Fishing v2",
+    Value = false,
+    Callback = function(state)
+        autoFishing = state
     end
-    Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
-end
+})
 
--- Helper: Fast reset rod
-local function FastResetRod()
-    Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
-    task.wait(0.03)
-    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
-end
-
--- Step 3 → Tunggu container berubah atau timeout 10 detik
-local function Step3(callback)
-    local connection
-
-    connection = container:GetPropertyChangedSignal("Position"):Connect(function()
-        local currentPos = container.Position
-        if currentPos ~= initialPos then
-            if connection and connection.Connected then
-                connection:Disconnect()
-            end
-            callback() -- lanjut Step4
-        end
-    end)
-
-    -- Timeout 10 detik
-    task.delay(10, function()
-        if connection and connection.Connected then
-            connection:Disconnect()
-            -- langsung ke Step4 (fast reset)
-            Step4()
-        end
-    end)
-end
-
--- Step 4 → Reset rod cepat lalu ulang Step1
-function Step4()
-    FastResetRod()
-    if AutoFish then
-        task.wait(0.001)
-        RunCycle()
-    end
-end
-
--- Jalankan siklus Auto Fish
-function RunCycle()
-    task.spawn(function()
-        while AutoFish do
-            Step1()
-            task.wait(0.18)
-            Step2()
-            Step3(function()
-                -- Step3 selesai → Step4
-                Step4()
-            end)
-            break
-        end
-    end)
-end
-
--- WindUI Dropdown
+-- Dropdown untuk pilih FishMode
 Tabs.Farm:Dropdown({ 
-    Title = "Choose Charge Mode", 
-    Values = { "PERFECT", "OK", "AMAZING", "GREAT"}, 
-    Value = "PERFECT", 
-    Callback = function(option) 
+    Title = "Fish Mode",
+    Values = { "Perfect", "Ok", "Amazing", "Great" },
+    Value = "Perfect",
+    Callback = function(option)
         FishMode = option
     end
 })
 
--- WindUI Toggle
-Tabs.Farm:Toggle({
-    Title = "Auto Fish v2",
-    Desc = "Auto fish with Step4 rod reset",
-    Value = false,
-    Callback = function(state)
-        AutoFish = state
-        if state then
-            RunCycle()
+-- Loop auto fishing
+spawn(function()
+    while true do
+        if autoFishing then
+            -- Step 1: Charge Fishing Rod
+            local chargeArgs = {1758180240.3862}
+            chargeRF:InvokeServer(unpack(chargeArgs))
+            wait(0.001)
+
+            -- Step 2: Request Minigame Started sesuai FishMode
+            local args
+            if FishMode == "Perfect" then
+                args = {-0.75, 0.9949902531063812}
+            elseif FishMode == "Ok" then
+                args = {-0.75, 0.3251698002015836}
+            elseif FishMode == "Amazing" then
+                args = {-0.5718746185302734, 0.8702929274284}
+            elseif FishMode == "Great" then
+                args = {-0.5718746185302734, 0.744264094698844}
+            else
+                args = {-0.75, 0.9949902531063812}
+            end
+            requestMinigameRF:InvokeServer(unpack(args))
+            wait(0.001)
+
+            -- Step 3: Tunggu notifikasi sampai posisi tertentu
+            repeat
+                RunService.Heartbeat:Wait()
+                wait(0.001)
+            until notification.Position == UDim2.new(0.5, 0, 0.100000001, 0)
+
+            -- Step 4: Unequip & Equip Rod
+            unequipRF:FireServer()
+            wait(0.001)
+            equipRF:FireServer(1)
+            wait(0.001)
+        else
+            wait(0.001)
         end
     end
-})
+end)
 
-Tabs.Farm:Toggle({ 
-    Title = "Auto Complete Fishing",
+Tabs.Farm:Toggle({
+    Title = "Auto Fishing",
     Value = false,
     Callback = function(state)
-        AutoCompleteFish = state
         if state then
+            -- Aktifkan loop auto fishing
+            getgenv().AutoFishing = true
             task.spawn(function()
-                while AutoCompleteFish do
-                    Net:WaitForChild("RE/FishingCompleted"):FireServer()
-                    task.wait(0.01)
+                while getgenv().AutoFishing do
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Packages")
+                            :WaitForChild("_Index")
+                            :WaitForChild("sleitnick_net@0.2.0")
+                            :WaitForChild("net")
+                            :WaitForChild("RE/FishingCompleted")
+                            :FireServer()
+                    end)
+                    task.wait(0,001) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
+        else
+            -- Matikan loop auto fishing
+            getgenv().AutoFishing = false
         end
+        print("Auto Fishing: " .. tostring(state))
     end
 })
 
@@ -996,150 +683,68 @@ Tabs.Farm:Toggle({
     end
 })
 
-
-
 Tabs.Farm:Section({ Title = "Best Farm" })
 
--- Daftar lokasi teleport Farm
+-- ===================================
+-- LIST LOKASI TELEPORT FARM
+-- ===================================
 local locations = {
-    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346, -0.803171635, 5.9872491e-08, -0.595747709, 9.3994899e-08, 1, -2.62217448e-08, 0.595747709, -7.70578055e-08, -0.803171635),
-    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454, -0.918708026, -1.96595673e-09, 0.394937396, -3.33787185e-08, 1, -7.26680796e-08, -0.394937396, -7.99432485e-08, -0.918708026),
-    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865, -0.964095712, 2.82167214e-08, -0.265554935, -4.54795757e-09, 1, 1.2276702e-07, 0.265554935, 1.19566891e-07, -0.964095712),
-    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451, -0.589090407, -9.40972313e-08, -0.808067143, -7.97141695e-08, 1, -5.83347344e-08, 0.808067143, 3.00499643e-08, -0.589090407),
-    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367, 0.0369801782, 0.421751857, -0.905956864, -4.17893498e-09, 0.906576991, 0.422040522, 0.999315977, -0.0156071307, 0.0335253812)
+    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346),
+    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454),
+    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865),
+    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451),
+    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367)
 }
 
-local selectedLocation = "Stone"
-
--- Toggle Teleport (sekalian freeze)
-local tpToggle = false
-local freezePos = nil
-local bv, bg
-
--- Dropdown Select Farm
-Tabs.Farm:Dropdown({
-    Title = "Select Farm",
-    Values = {"Stone", "Coin", "Exp", "Coin2", "Ocean"},
-    Default = selectedLocation,
-    Callback = function(value)
-        selectedLocation = value
-
-        -- Kalau toggle masih aktif, langsung teleport ke lokasi baru
-        if tpToggle then
-            local player = game.Players.LocalPlayer
-            local char = player.Character or player.CharacterAdded:Wait()
-            local hrp = char:WaitForChild("HumanoidRootPart")
-
-            local target = locations[selectedLocation]
-            if target then
-                char:PivotTo(target)
-                freezePos = hrp.Position -- update freezePos juga
-            end
-        end
-    end
-})
-
-Tabs.Farm:Toggle({
-    Title = "Teleport Now",
-    Default = false,
-    Callback = function(state)
-        local player = game.Players.LocalPlayer
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        tpToggle = state
-
-        if state then
-            -- Teleport ke lokasi
-            local target = locations[selectedLocation]
-            if target then
-                char:PivotTo(target)
-            end
-
-            -- Simpan posisi freeze
-            freezePos = hrp.Position
-
-            -- BodyVelocity (supaya nggak jatuh)
-            bv = Instance.new("BodyVelocity")
-            bv.Velocity = Vector3.new(0, 0, 0)
-            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            bv.Parent = hrp
-
-            -- BodyGyro (supaya orientasi stabil)
-            bg = Instance.new("BodyGyro")
-            bg.CFrame = hrp.CFrame
-            bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            bg.P = 1e5
-            bg.Parent = hrp
-
-            -- Anti-geser loop
-            task.spawn(function()
-                while tpToggle and hrp and hrp.Parent do
-                    local dist = (hrp.Position - freezePos).Magnitude
-                    if dist > 2 then
-                        hrp.CFrame = CFrame.new(freezePos) -- kembalikan ke posisi awal
-                    end
-                    task.wait(0.2)
-                end
-            end)
-
-        else
-            -- Matikan freeze
-            if bv then bv:Destroy() bv = nil end
-            if bg then bg:Destroy() bg = nil end
-            freezePos = nil
-        end
-    end
-})
-
--- VARIABEL UTAMA
-local savedPos = nil
-local savedOrientation = nil
-local teleportOn = false
+-- ===================================
+-- VARIABEL
+-- ===================================
 local player = game.Players.LocalPlayer
-local bodyVelocity -- untuk freeze
-local bodyGyro -- untuk arah
 local runService = game:GetService("RunService")
-local monitorConnection -- loop untuk cek posisi
 
--- FUNGSI FREEZE & GYRO
-local function applyFreeze(hrp)
-    if not bodyVelocity then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Velocity = Vector3.new(0,0,0)
-        bodyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)
-        bodyVelocity.P = 9e9
-        bodyVelocity.Parent = hrp
+local selectedLocation = "Stone"
+local savedPos = nil
+local freezeOn = false
+local monitorConnection = nil
+
+local bv, bg -- freeze tools
+
+-- ===================================
+-- FREEZE HANDLER
+-- ===================================
+local function applyFreeze(hrp, cframe)
+    if not hrp then return end
+
+    if not bv then
+        bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(0,0,0)
+        bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+        bv.Parent = hrp
     end
 
-    if not bodyGyro then
-        bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
-        bodyGyro.P = 9e4
-        bodyGyro.D = 500
-        bodyGyro.CFrame = savedOrientation or hrp.CFrame
-        bodyGyro.Parent = hrp
+    if not bg then
+        bg = Instance.new("BodyGyro")
+        bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+        bg.P = 1e5
+        bg.CFrame = cframe or hrp.CFrame
+        bg.Parent = hrp
     end
 end
 
 local function removeFreeze()
-    if bodyVelocity then
-        bodyVelocity:Destroy()
-        bodyVelocity = nil
-    end
-    if bodyGyro then
-        bodyGyro:Destroy()
-        bodyGyro = nil
-    end
+    if bv then bv:Destroy() bv = nil end
+    if bg then bg:Destroy() bg = nil end
 end
 
--- MONITOR POSISI (biar balik kalau kesenggol)
+-- ===================================
+-- MONITOR BIAR TIDAK GESER
+-- ===================================
 local function startMonitor(hrp)
     if monitorConnection then monitorConnection:Disconnect() end
     monitorConnection = runService.Heartbeat:Connect(function()
-        if teleportOn and savedPos and hrp then
-            local distance = (hrp.Position - savedPos.Position).Magnitude
-            if distance > 2 then -- kalau lebih dari 5 stud dari posisi save
+        if freezeOn and savedPos and hrp and hrp.Parent then
+            local dist = (hrp.Position - savedPos.Position).Magnitude
+            if dist > 2 then
                 hrp.CFrame = savedPos
             end
         end
@@ -1153,131 +758,161 @@ local function stopMonitor()
     end
 end
 
--- BUTTON SAVE POSISI
-Tabs.Farm:Button({ 
-    Title = "Save Lock Position", 
-    Callback = function() 
+-- ===================================
+-- UI SETTING (URUTAN SESUAI MINTAAN)
+-- ===================================
+
+-- 1. Dropdown pilih lokasi
+Tabs.Farm:Dropdown({
+    Title = "Select Farm",
+    Values = {"Stone", "Coin", "Coin2", "Exp", "Ocean"},
+    Default = selectedLocation,
+    Callback = function(value)
+        selectedLocation = value
+    end
+})
+
+-- 2. Toggle teleport ke lokasi dropdown
+Tabs.Farm:Toggle({
+    Title = "Teleport To Location",
+    Value = false,
+    Callback = function(state)
+        freezeOn = state
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        if freezeOn then
+            local target = locations[selectedLocation]
+            if target then
+                hrp.CFrame = target
+                savedPos = target
+            end
+            applyFreeze(hrp, savedPos)
+            startMonitor(hrp)
+        else
+            removeFreeze()
+            stopMonitor()
+            savedPos = nil
+        end
+    end
+})
+
+-- 3. Button simpan posisi lock
+Tabs.Farm:Button({
+    Title = "Save Lock Position",
+    Callback = function()
         local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart")
         savedPos = hrp.CFrame
-        savedOrientation = hrp.CFrame
 
         WindUI:Notify({
             Title = "Position Saved",
-            Content = "Saved CFrame: " .. tostring(savedPos),
+            Content = "Saved CFrame: " .. tostring(savedPos.Position),
             Duration = 1,
         })
     end
 })
 
--- TOGGLE TELEPORT & FREEZE
-Tabs.Farm:Toggle({ 
-    Title = "Teleport To Lock Position", 
+-- 4. Toggle teleport ke posisi manual (save)
+Tabs.Farm:Toggle({
+    Title = "Teleport To Lock Position",
     Value = false,
     Callback = function(state)
-        teleportOn = state
-        local char = player.Character
-        if not char then return end
+        freezeOn = state
+        local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart")
 
-        if teleportOn and savedPos then
-            -- Teleport ke posisi simpan
+        if freezeOn and savedPos then
             hrp.CFrame = savedPos
-
-            -- Freeze + Arah
-            applyFreeze(hrp)
-
-            -- Mulai monitor biar balik kalau kesenggol
+            applyFreeze(hrp, savedPos)
             startMonitor(hrp)
         else
-            -- Lepas freeze & stop monitor
             removeFreeze()
             stopMonitor()
         end
     end
 })
 
+-- ===================================
 -- HANDLE RESPAWN
+-- ===================================
 player.CharacterAdded:Connect(function(char)
     local hrp = char:WaitForChild("HumanoidRootPart")
-    if teleportOn and savedPos then
+    if freezeOn and savedPos then
         task.wait(0.5)
         hrp.CFrame = savedPos
-        applyFreeze(hrp)
+        applyFreeze(hrp, savedPos)
         startMonitor(hrp)
     end
 end)
 
 Tabs.Farm:Section({ Title = "Sell" })
 
--- Default values
-getgenv().SellDelay = 1
-getgenv().AutoSell = false
-getgenv().SellMode = "Delay" -- Default mode
+-- Auto Sell All Items dengan slider & deteksi BagSize full
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Dropdown pilih mode Auto Sell
-Tabs.Farm:Dropdown({ 
-    Title = "Auto Sell Mode", 
-    Values = { "Delay", "Backpack Full" },
-    Value = "Delay", 
-    Callback = function(option)
-        getgenv().SellMode = option
-    end
-})
+local player = Players.LocalPlayer
+local sellRemote = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RF/SellAllItems")
 
--- Slider Sell Delay (hanya dipakai kalau mode = Delay)
+local autoSell = false
+local sellDelay = 2 -- default delay (detik)
+
+-- Slider untuk atur delay
 Tabs.Farm:Slider({
-    Title = "Sell Delay",
-    Default = 1,
-    Min = 1,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(val)
-        getgenv().SellDelay = val
+    Title = "Sell Delay (seconds)",
+    Step = 1,
+    Value = {
+        Min = 1,
+        Max = 30,
+        Default = 2,
+    },
+    Callback = function(value)
+        sellDelay = value
     end
 })
 
 -- Toggle Auto Sell
 Tabs.Farm:Toggle({
-    Title = "Auto Sell Items",
+    Title = "Auto Sell All Items",
     Default = false,
     Callback = function(state)
-        getgenv().AutoSell = state
-
-        if state then
+        autoSell = state
+        if autoSell then
             task.spawn(function()
-                local remote = game:GetService("ReplicatedStorage")
-                    :WaitForChild("Packages")
-                    :WaitForChild("_Index")
-                    :WaitForChild("sleitnick_net@0.2.0")
-                    :WaitForChild("net")
-                    :WaitForChild("RF/SellAllItems")
-
-                local bagLabel = game:GetService("Players").LocalPlayer
-                    .PlayerGui.Inventory.Main.Top.Options.Fish.Label.BagSize
-
-                while getgenv().AutoSell do
+                while autoSell do
                     pcall(function()
-                        if getgenv().SellMode == "Delay" then
-                            -- Mode Delay
-                            remote:InvokeServer()
-                            task.wait(getgenv().SellDelay)
+                        local bagLabel = player.PlayerGui
+                            :WaitForChild("Inventory")
+                            :WaitForChild("Main")
+                            :WaitForChild("Top")
+                            :WaitForChild("Options")
+                            :WaitForChild("Fish")
+                            :WaitForChild("Label")
+                            :WaitForChild("BagSize")
 
-                        elseif getgenv().SellMode == "Backpack Full" then
-                            -- Mode Backpack Full (cek tiap 1 detik)
-                            if bagLabel and bagLabel.Text ~= "" then
-                                local current, max = string.match(bagLabel.Text, "([%d,]+)/([%d,]+)")
+                        if bagLabel and bagLabel.Text ~= "" then
+                            if string.find(bagLabel.Text, "/") then
+                                local current, max = bagLabel.Text:match("([%d,]+)/([%d,]+)")
                                 if current and max then
                                     current = tonumber((current:gsub(",", "")))
                                     max = tonumber((max:gsub(",", "")))
-                                    if current >= max then
-                                        remote:InvokeServer()
+
+                                    if current and max and current >= max then
+                                        sellRemote:InvokeServer()
                                     end
                                 end
                             end
-                            task.wait(1)
-                        end
+                        else
+                            -- kalau ga bisa cek bag, tetap auto sell sesuai delay
+                            sellRemote:InvokeServer()
+                        end -- << ini yang kemarin lupa
                     end)
+                    task.wait(sellDelay)
                 end
             end)
         end
