@@ -182,3 +182,506 @@ RunService.RenderStepped:Connect(function(dt)
         accFrames = 0
     end
 end)
+
+
+
+Tabs.Farm:Section({ Title = "Fishing" })
+
+-- Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local fishingGui = playerGui:WaitForChild("Fishing")
+local mainFrame = fishingGui:WaitForChild("Main")
+local vim = game:GetService("VirtualInputManager")
+local camera = workspace.CurrentCamera
+
+-- Default settings
+local beforePosition = UDim2.new(0.5, 0, 1.5, 0)  -- posisi awal Main
+local delayTime = 0.1  -- default delay klik (detik)
+local toggleState = false  -- status toggle dari UI
+
+-- Mapping dropdown ke delay
+local delayMapping = {
+    Slow = 0.8,
+    Normal = 0.1,
+    Fast = 0.05,
+    ["Super Fast"] = 0.005,
+    ["God Speed"] = 0.0001 
+}
+
+-- ==========================
+-- WindUI Dropdown: Atur Delay Klik
+-- ==========================
+Tabs.Farm:Dropdown({
+    Title = "Click Speed",
+    Values = {"Slow", "Normal", "Fast", "Super Fast", "God Speed"},
+    Value = "Slow", -- default
+    Callback = function(option)
+        delayTime = delayMapping[option] or 0.1
+    end
+})
+
+-- ==========================
+-- WindUI Toggle: Auto Fishing
+-- ==========================
+Tabs.Farm:Toggle({ 
+    Title = "Auto Fish v1",
+    Desc = "You must be at least level 3",
+    Value = false,
+    Callback = function(state)
+        -- Simpan status toggle
+        toggleState = state
+
+        -- Kirim status Auto Fishing ke server
+        local args = { state }
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/UpdateAutoFishingState")
+            :InvokeServer(unpack(args))
+    end
+})
+
+-- ==========================
+-- Loop cek posisi Main & Auto Click ke UDim2 target
+-- ==========================
+task.spawn(function()
+    while true do
+        task.wait(delayTime)
+
+        -- Hanya jalan kalau toggle aktif DAN posisi Main berubah
+        if toggleState and mainFrame.Position ~= beforePosition then
+            local screenSize = camera.ViewportSize
+            local target = UDim2.new(0.88, 0, 0.89, -20)
+
+            -- konversi ke pixel
+            local targetX = (screenSize.X * target.X.Scale) + target.X.Offset
+            local targetY = (screenSize.Y * target.Y.Scale) + target.Y.Offset
+
+            -- klik
+            vim:SendMouseButtonEvent(targetX, targetY, 0, true, game, 0)  -- down
+            vim:SendMouseButtonEvent(targetX, targetY, 0, false, game, 0) -- up
+        end
+    end
+end)
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- RemoteFunction & RemoteEvent references
+local chargeRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RF/ChargeFishingRod")
+
+local requestMinigameRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RF/RequestFishingMinigameStarted")
+
+local unequipRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RE/UnequipToolFromHotbar")
+
+local equipRF = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+    :WaitForChild("RE/EquipToolFromHotbar")
+
+local notification = player.PlayerGui:WaitForChild("Small Notification"):WaitForChild("Display"):WaitForChild("Container")
+
+-- Status toggle dan FishMode
+local autoFishing = false
+local FishMode = "Perfect" -- default
+
+-- Toggle Auto Fishing v2
+Tabs.Farm:Toggle({ 
+    Title = "Auto Fishing v2",
+    Value = false,
+    Callback = function(state)
+        autoFishing = state
+    end
+})
+
+-- Dropdown untuk pilih FishMode
+Tabs.Farm:Dropdown({ 
+    Title = "Fish Mode",
+    Values = { "Perfect", "Ok", "Amazing", "Great" },
+    Value = "Perfect",
+    Callback = function(option)
+        FishMode = option
+    end
+})
+
+-- Loop auto fishing
+spawn(function()
+    while true do
+        if autoFishing then
+            -- Step 1: Charge Fishing Rod
+            local chargeArgs = {1758180240.3862}
+            chargeRF:InvokeServer(unpack(chargeArgs))
+            wait(0.001)
+
+            -- Step 2: Request Minigame Started sesuai FishMode
+            local args
+            if FishMode == "Perfect" then
+                args = {-0.75, 0.9949902531063812}
+            elseif FishMode == "Ok" then
+                args = {-0.75, 0.3251698002015836}
+            elseif FishMode == "Amazing" then
+                args = {-0.5718746185302734, 0.8702929274284}
+            elseif FishMode == "Great" then
+                args = {-0.5718746185302734, 0.744264094698844}
+            else
+                args = {-0.75, 0.9949902531063812}
+            end
+            requestMinigameRF:InvokeServer(unpack(args))
+            wait(0.001)
+
+            -- Step 3: Tunggu notifikasi sampai posisi tertentu
+            repeat
+                RunService.Heartbeat:Wait()
+                wait(0.001)
+            until notification.Position == UDim2.new(0.5, 0, 0.100000001, 0)
+
+            -- Step 4: Unequip & Equip Rod
+            unequipRF:FireServer()
+            wait(0.001)
+            equipRF:FireServer(1)
+            wait(0.001)
+        else
+            wait(0.001)
+        end
+    end
+end)
+
+Tabs.Farm:Toggle({
+    Title = "Auto Fishing",
+    Value = false,
+    Callback = function(state)
+        if state then
+            -- Aktifkan loop auto fishing
+            getgenv().AutoFishing = true
+            task.spawn(function()
+                while getgenv().AutoFishing do
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Packages")
+                            :WaitForChild("_Index")
+                            :WaitForChild("sleitnick_net@0.2.0")
+                            :WaitForChild("net")
+                            :WaitForChild("RE/FishingCompleted")
+                            :FireServer()
+                    end)
+                    task.wait(0,001) -- delay biar server nggak ke-spam terlalu cepat
+                end
+            end)
+        else
+            -- Matikan loop auto fishing
+            getgenv().AutoFishing = false
+        end
+        print("Auto Fishing: " .. tostring(state))
+    end
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote events
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
+local UnequipRemote = Net:WaitForChild("RE/UnequipToolFromHotbar")
+
+local equipLoop = nil
+
+Tabs.Farm:Toggle({
+    Title = "Auto Equip Rod",
+    Desc = "Automatically equips your fishing rod in slot 1 and unequips it when turned off",
+    Value = false,
+    Callback = function(state)
+        local char = workspace:WaitForChild("Characters"):WaitForChild(LocalPlayer.Name)
+
+        if state then
+            -- Mulai loop auto-equip
+            equipLoop = task.spawn(function()
+                while task.wait(1) do
+                    -- Kalau masih ada !!!FISHING_VIEW_MODEL!!! berarti rod BELUM dipegang → equip
+                    if char:FindFirstChild("!!!FISHING_VIEW_MODEL!!!") then
+                        EquipRemote:FireServer(1)
+                    end
+                end
+            end)
+        else
+            -- Hentikan loop
+            if equipLoop then
+                task.cancel(equipLoop)
+                equipLoop = nil
+            end
+
+            -- Langsung unequip
+            UnequipRemote:FireServer()
+        end
+    end
+})
+
+Tabs.Farm:Section({ Title = "Best Farm" })
+
+-- ===================================
+-- LIST LOKASI TELEPORT FARM
+-- ===================================
+local locations = {
+    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346),
+    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454),
+    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865),
+    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451),
+    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367)
+}
+
+-- ===================================
+-- VARIABEL
+-- ===================================
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+
+local selectedLocation = "Stone"
+local savedPos = nil
+local freezeOn = false
+local monitorConnection = nil
+
+local bv, bg -- freeze tools
+
+-- ===================================
+-- FREEZE HANDLER
+-- ===================================
+local function applyFreeze(hrp, cframe)
+    if not hrp then return end
+
+    if not bv then
+        bv = Instance.new("BodyVelocity")
+        bv.Velocity = Vector3.new(0,0,0)
+        bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+        bv.Parent = hrp
+    end
+
+    if not bg then
+        bg = Instance.new("BodyGyro")
+        bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+        bg.P = 1e5
+        bg.CFrame = cframe or hrp.CFrame
+        bg.Parent = hrp
+    end
+end
+
+local function removeFreeze()
+    if bv then bv:Destroy() bv = nil end
+    if bg then bg:Destroy() bg = nil end
+end
+
+-- ===================================
+-- MONITOR BIAR TIDAK GESER
+-- ===================================
+local function startMonitor(hrp)
+    if monitorConnection then monitorConnection:Disconnect() end
+    monitorConnection = runService.Heartbeat:Connect(function()
+        if freezeOn and savedPos and hrp and hrp.Parent then
+            local dist = (hrp.Position - savedPos.Position).Magnitude
+            if dist > 2 then
+                hrp.CFrame = savedPos
+            end
+        end
+    end)
+end
+
+local function stopMonitor()
+    if monitorConnection then
+        monitorConnection:Disconnect()
+        monitorConnection = nil
+    end
+end
+
+-- ===================================
+-- UI SETTING (URUTAN SESUAI MINTAAN)
+-- ===================================
+
+-- 1. Dropdown pilih lokasi
+Tabs.Farm:Dropdown({
+    Title = "Select Farm",
+    Values = {"Stone", "Coin", "Coin2", "Exp", "Ocean"},
+    Default = selectedLocation,
+    Callback = function(value)
+        selectedLocation = value
+    end
+})
+
+-- 2. Toggle teleport ke lokasi dropdown
+Tabs.Farm:Toggle({
+    Title = "Teleport To Location",
+    Value = false,
+    Callback = function(state)
+        freezeOn = state
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        if freezeOn then
+            local target = locations[selectedLocation]
+            if target then
+                hrp.CFrame = target
+                savedPos = target
+            end
+            applyFreeze(hrp, savedPos)
+            startMonitor(hrp)
+        else
+            removeFreeze()
+            stopMonitor()
+            savedPos = nil
+        end
+    end
+})
+
+-- 3. Button simpan posisi lock
+Tabs.Farm:Button({
+    Title = "Save Lock Position",
+    Callback = function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        savedPos = hrp.CFrame
+
+        WindUI:Notify({
+            Title = "Position Saved",
+            Content = "Saved CFrame: " .. tostring(savedPos.Position),
+            Duration = 1,
+        })
+    end
+})
+
+-- 4. Toggle teleport ke posisi manual (save)
+Tabs.Farm:Toggle({
+    Title = "Teleport To Lock Position",
+    Value = false,
+    Callback = function(state)
+        freezeOn = state
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+
+        if freezeOn and savedPos then
+            hrp.CFrame = savedPos
+            applyFreeze(hrp, savedPos)
+            startMonitor(hrp)
+        else
+            removeFreeze()
+            stopMonitor()
+        end
+    end
+})
+
+-- ===================================
+-- HANDLE RESPAWN
+-- ===================================
+player.CharacterAdded:Connect(function(char)
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    if freezeOn and savedPos then
+        task.wait(0.5)
+        hrp.CFrame = savedPos
+        applyFreeze(hrp, savedPos)
+        startMonitor(hrp)
+    end
+end)
+
+Tabs.Farm:Section({ Title = "Sell" })
+
+-- Default values
+getgenv().SellDelay = 1
+getgenv().AutoSell = false
+getgenv().SellMode = "Delay" -- Default mode
+
+-- Dropdown pilih mode Auto Sell
+Tabs.Farm:Dropdown({ 
+    Title = "Auto Sell Mode", 
+    Values = { "Delay", "Backpack Full" },
+    Value = "Delay", 
+    Callback = function(option)
+        getgenv().SellMode = option
+    end
+})
+
+-- Slider Sell Delay (hanya dipakai kalau mode = Delay)
+Tabs.Farm:Slider({
+    Title = "Sell Delay",
+    Default = 1,
+    Min = 1,
+    Max = 100,
+    Rounding = 0,
+    Callback = function(val)
+        getgenv().SellDelay = val
+    end
+})
+
+-- Toggle Auto Sell
+Tabs.Farm:Toggle({
+    Title = "Auto Sell Items",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoSell = state
+
+        if state then
+            task.spawn(function()
+                local remote = game:GetService("ReplicatedStorage")
+                    :WaitForChild("Packages")
+                    :WaitForChild("_Index")
+                    :WaitForChild("sleitnick_net@0.2.0")
+                    :WaitForChild("net")
+                    :WaitForChild("RF/SellAllItems")
+
+                local bagLabel = game:GetService("Players").LocalPlayer
+                    .PlayerGui.Inventory.Main.Top.Options.Fish.Label.BagSize
+
+                while getgenv().AutoSell do
+                    local success, err = pcall(function()
+                        if getgenv().SellMode == "Delay" then
+                            -- Mode Delay
+                            remote:InvokeServer()
+                            task.wait(getgenv().SellDelay)
+
+                        elseif getgenv().SellMode == "Backpack Full" then
+                            -- Mode Backpack Full (cek tiap 1 detik)
+                            if bagLabel and bagLabel.Text ~= "" then
+                                local current, max = bagLabel.Text:match("([%d,]+)/([%d,]+)")
+                                if current and max then
+                                    current = tonumber((current:gsub(",", "")))
+                                    max = tonumber((max:gsub(",", "")))
+                                    if current and max and current >= max then
+                                        remote:InvokeServer()
+                                    end
+                                end
+                            end
+                            task.wait(1)
+                        else
+                            task.wait(1)
+                        end
+                    end)
+
+                    if not success then
+                        WindUI:Notify({
+                            Title = "Auto Sell Error",
+                            Content = tostring(err),
+                            Duration = 5,
+                        })
+                        task.wait(1)
+                    end
+                end
+            end)
+        end
+    end
+})
+
