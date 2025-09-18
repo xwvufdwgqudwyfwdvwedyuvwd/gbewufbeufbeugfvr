@@ -516,105 +516,130 @@ task.spawn(function()
     end
 end)
 
-local RunService = game:GetService("RunService")
+-- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
--- RemoteFunction & RemoteEvent references
-local chargeRF = ReplicatedStorage:WaitForChild("Packages")
+local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
-    :WaitForChild("RF/ChargeFishingRod")
 
-local requestMinigameRF = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-    :WaitForChild("RF/RequestFishingMinigameStarted")
+local player = game.Players.LocalPlayer
+local container = player:WaitForChild("PlayerGui")
+    :WaitForChild("Small Notification")
+    :WaitForChild("Display")
+    :WaitForChild("Container")
 
-local unequipRF = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-    :WaitForChild("RE/UnequipToolFromHotbar")
+-- Posisi awal container
+local initialPos = UDim2.new(0.5, 0, -1.9, 0)
 
-local equipRF = ReplicatedStorage:WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_net@0.2.0")
-    :WaitForChild("net")
-    :WaitForChild("RE/EquipToolFromHotbar")
+-- Toggle & Mode
+local AutoFish = false
+local FishMode = "PERFECT"
 
-local notification = player.PlayerGui:WaitForChild("Small Notification"):WaitForChild("Display"):WaitForChild("Container")
+-- Step 1 → Charge Fishing Rod
+local function Step1()
+    Net:WaitForChild("RF/ChargeFishingRod"):InvokeServer(os.clock())
+end
 
--- Status toggle dan FishMode
-local autoFishing = false
-local FishMode = "Perfect" -- default
-
--- Toggle Auto Fishing v2
-Tabs.Farm:Toggle({ 
-    Title = "Auto Fishing v2",
-    Value = false,
-    Callback = function(state)
-        autoFishing = state
+-- Step 2 → Start Fishing Minigame
+local function Step2()
+    local args
+    if FishMode == "PERFECT" then
+        args = { -0.75, 0.9949902531063812 }
+    elseif FishMode == "OK" then
+        args = { -0.75, 0.3251698002015836 }
+    elseif FishMode == "AMAZING" then
+        args = { -0.5718746185302734, 0.8702929274284 }
+    elseif FishMode == "GREAT" then
+        args = { -0.5718746185302734, 0.744264094698844 }
+    else
+        args = { -0.75, 0.9949902531063812 }
     end
-})
+    Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
+end
 
--- Dropdown untuk pilih FishMode
+-- Helper: Fast reset rod
+local function FastResetRod()
+    Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
+    task.wait(0.03)
+    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
+    task.wait(0.03)
+end
+
+-- Step 3 → Tunggu container berubah atau timeout 10 detik
+local function Step3(callback)
+    local connection
+
+    connection = container:GetPropertyChangedSignal("Position"):Connect(function()
+        local currentPos = container.Position
+        if currentPos ~= initialPos then
+            if connection and connection.Connected then
+                connection:Disconnect()
+            end
+            callback() -- lanjut Step4
+        end
+    end)
+
+    -- Timeout 10 detik
+    task.delay(10, function()
+        if connection and connection.Connected then
+            connection:Disconnect()
+            -- langsung ke Step4 (fast reset)
+            Step4()
+        end
+    end)
+end
+
+-- Step 4 → Reset rod cepat lalu ulang Step1
+function Step4()
+    FastResetRod()
+    if AutoFish then
+        task.wait(0.001)
+        RunCycle()
+    end
+end
+
+-- Jalankan siklus Auto Fish
+function RunCycle()
+    task.spawn(function()
+        while AutoFish do
+            Step1()
+            task.wait(0.18)
+            Step2()
+            Step3(function()
+                -- Step3 selesai → Step4
+                Step4()
+            end)
+            break
+        end
+    end)
+end
+
+-- WindUI Dropdown
 Tabs.Farm:Dropdown({ 
-    Title = "Fish Mode",
-    Values = { "Perfect", "Ok", "Amazing", "Great" },
-    Value = "Perfect",
-    Callback = function(option)
+    Title = "Choose Charge Mode", 
+    Values = { "PERFECT", "OK", "AMAZING", "GREAT"}, 
+    Value = "PERFECT", 
+    Callback = function(option) 
         FishMode = option
     end
 })
 
--- Loop auto fishing
-spawn(function()
-    while true do
-        if autoFishing then
-            -- Step 1: Charge Fishing Rod
-            local chargeArgs = {1758180240.3862}
-            chargeRF:InvokeServer(unpack(chargeArgs))
-            wait(0.001)
-
-            -- Step 2: Request Minigame Started sesuai FishMode
-            local args
-            if FishMode == "Perfect" then
-                args = {-0.75, 0.9949902531063812}
-            elseif FishMode == "Ok" then
-                args = {-0.75, 0.3251698002015836}
-            elseif FishMode == "Amazing" then
-                args = {-0.5718746185302734, 0.8702929274284}
-            elseif FishMode == "Great" then
-                args = {-0.5718746185302734, 0.744264094698844}
-            else
-                args = {-0.75, 0.9949902531063812}
-            end
-            requestMinigameRF:InvokeServer(unpack(args))
-            wait(0.001)
-
-            -- Step 3: Tunggu notifikasi sampai posisi tertentu
-            repeat
-                RunService.Heartbeat:Wait()
-                wait(0.001)
-            until notification.Position == UDim2.new(0.5, 0, 0.100000001, 0)
-
-            -- Step 4: Unequip & Equip Rod
-            unequipRF:FireServer()
-            wait(0.001)
-            equipRF:FireServer(1)
-            wait(0.001)
-        else
-            wait(0.001)
+-- WindUI Toggle
+Tabs.Farm:Toggle({
+    Title = "Auto Fish v2",
+    Desc = "Auto fish with Step4 rod reset",
+    Value = false,
+    Callback = function(state)
+        AutoFish = state
+        if state then
+            RunCycle()
         end
     end
-end)
+})
 
 Tabs.Farm:Toggle({
-    Title = "Auto Fishing",
+    Title = "Auto Fishing Completed",
     Value = false,
     Callback = function(state)
         if state then
@@ -631,16 +656,16 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(0,001) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(0.01) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
             -- Matikan loop auto fishing
             getgenv().AutoFishing = false
         end
-        print("Auto Fishing: " .. tostring(state))
     end
 })
+
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -848,11 +873,9 @@ end)
 
 Tabs.Farm:Section({ Title = "Sell" })
 
--- Auto Sell All Items dengan slider & deteksi BagSize full
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local player = Players.LocalPlayer
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local sellRemote = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
     :WaitForChild("sleitnick_net@0.2.0")
@@ -860,9 +883,10 @@ local sellRemote = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("RF/SellAllItems")
 
 local autoSell = false
-local sellDelay = 2 -- default delay (detik)
+local sellDelay = 2 -- default delay
+local mode = "Sell Delay" -- default mode
 
--- Slider untuk atur delay
+-- Slider untuk delay
 Tabs.Farm:Slider({
     Title = "Sell Delay (seconds)",
     Step = 1,
@@ -876,7 +900,17 @@ Tabs.Farm:Slider({
     end
 })
 
--- Toggle Auto Sell
+-- Dropdown untuk mode
+Tabs.Farm:Dropdown({
+    Title = "Select Mode",
+    Values = { "Backpack Full", "Sell Delay" },
+    Value = "Sell Delay",
+    Callback = function(option)
+        mode = option
+    end
+})
+
+-- Toggle auto sell
 Tabs.Farm:Toggle({
     Title = "Auto Sell All Items",
     Default = false,
@@ -886,38 +920,23 @@ Tabs.Farm:Toggle({
             task.spawn(function()
                 while autoSell do
                     pcall(function()
-                        local bagLabel = player.PlayerGui
-                            :WaitForChild("Inventory")
-                            :WaitForChild("Main")
-                            :WaitForChild("Top")
-                            :WaitForChild("Options")
-                            :WaitForChild("Fish")
-                            :WaitForChild("Label")
-                            :WaitForChild("BagSize")
-
-                        if bagLabel and bagLabel.Text ~= "" then
-                            if string.find(bagLabel.Text, "/") then
-                                local current, max = bagLabel.Text:match("([%d,]+)/([%d,]+)")
-                                if current and max then
-                                    current = tonumber((current:gsub(",", "")))
-                                    max = tonumber((max:gsub(",", "")))
-
-                                    if current and max and current >= max then
-                                        sellRemote:InvokeServer()
-                                    end
-                                end
-                            end
-                        else
-                            -- kalau ga bisa cek bag, tetap auto sell sesuai delay
+                        if mode == "Sell Delay" then
                             sellRemote:InvokeServer()
-                        end -- << ini yang kemarin lupa
+                            task.wait(sellDelay)
+                        elseif mode == "Backpack Full" then
+                            local bagLabel = LocalPlayer.PlayerGui.Inventory.Main.Top.Options.Fish.Label.BagSize
+                            if bagLabel and bagLabel.Text == "5,000/5,000" then
+                                sellRemote:InvokeServer()
+                            end
+                            task.wait(1)
+                        end
                     end)
-                    task.wait(sellDelay)
                 end
             end)
         end
     end
 })
+
 
 Tabs.Auto:Section({ Title = "Info Quest" })
 
