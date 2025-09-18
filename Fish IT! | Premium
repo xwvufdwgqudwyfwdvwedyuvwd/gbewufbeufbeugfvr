@@ -185,47 +185,41 @@ end)
 
 Tabs.Active:Section({ Title = "Event" })
 
-local statusLabel = Tabs.Active:Paragraph({
-    Title = "Event Status",
-    Desc = "Waiting for data..."
-})
+-- daftar props yang mau dicek
+local propsList = {
+    ["Megalodon Hunt"] = "Megalodon Hunt Status",
+    ["Shark Hunt"] = "Shark Hunt Status",
+    ["Model"] = "Model Status",
+    ["Fishing Hunt"] = "Fishing Hunt Status",
+    ["Ghost Shark Hunt"] = "Ghost Shark Hunt Status"
+}
 
-task.spawn(function()
-    while task.wait(1) do
-        local statusText = {}
+-- tabel untuk menyimpan paragraf tiap props
+local statusParagraphs = {}
 
-        -- cek Megalodon Hunt
-        if workspace.Props:FindFirstChild("Megalodon Hunt") then
-            table.insert(statusText, "✅ Megalodon Hunt")
-        else
-            table.insert(statusText, "❌ Megalodon Hunt")
+-- buat paragraf awal untuk tiap props
+for propName, title in pairs(propsList) do
+    statusParagraphs[propName] = Tabs.StatusTab:Paragraph({
+        Title = title,
+        Desc = "Checking..."
+    })
+end
+
+-- loop untuk update status tiap detik
+spawn(function()
+    while true do
+        wait(1)
+        for propName, _ in pairs(propsList) do
+            local prop = workspace.Props:FindFirstChild(propName)
+            if prop and prop:FindFirstChild("Part") then
+                statusParagraphs[propName]:Set("Spawned!")
+            else
+                statusParagraphs[propName]:Set("Not Spawned")
+            end
         end
-
-        -- cek Shark Hunt
-        if workspace.Props:FindFirstChild("Shark Hunt") then
-            table.insert(statusText, "✅ Shark Hunt")
-        else
-            table.insert(statusText, "❌ Shark Hunt")
-        end
-
-        -- cek Ghost Shark Hunt
-        if workspace.Props:FindFirstChild("Ghost Shark Hunt") then
-            table.insert(statusText, "✅ Ghost Shark Hunt")
-        else
-            table.insert(statusText, "❌ Ghost Shark Hunt")
-        end
-
-        -- cek Worm Hunt (Model.Part)
-        local model = workspace.Props:FindFirstChild("Model")
-        if model and model:FindFirstChild("Part") then
-            table.insert(statusText, "✅ Worm Hunt")
-        else
-            table.insert(statusText, "❌ Worm Hunt")
-        end
-
-        statusLabel:SetDesc(table.concat(statusText, "\n"))
     end
 end)
+
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
