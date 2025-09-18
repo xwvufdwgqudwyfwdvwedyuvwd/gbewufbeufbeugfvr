@@ -183,48 +183,49 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
-local Props = workspace:WaitForChild("Props")
+Tabs.Active:Section({ Title = "Event" })
 
--- List nama hunt (mapping objectName -> displayName)
-local huntTargets = {
-    {objectName = "Megalodon Hunt", child = "Color", displayName = "Megalodon Hunt"},
-    {objectName = "Shark Hunt", child = "Part", displayName = "Shark Hunt"},
-    {objectName = "Ghost Shark Hunt", child = "Part", displayName = "Ghost Shark Hunt"},
-    {objectName = "Fishing Hunt", child = "Part", displayName = "Fishing Hunt"},
-    {objectName = "Model", child = "Part", displayName = "Worm Hunt"},
-}
-
--- Buat paragraf status
-local statusParagraph = Tabs.Active:Paragraph({
+local statusLabel = Tabs.Active:Paragraph({
     Title = "Event Status",
     Desc = "Waiting for data..."
 })
 
--- fungsi update status
-local function updateStatus()
-    local activeHunts = {}
-
-    for _, hunt in ipairs(huntTargets) do
-        local parent = Props:FindFirstChild(hunt.objectName)
-        if parent and parent:FindFirstChild(hunt.child) then
-            table.insert(activeHunts, Event.displayName .. " ✅")
-        end
-    end
-
-    if #activeHunts == 0 then
-        statusParagraph:SetDesc("No Event spawns ❌")
-    else
-        statusParagraph:SetDesc(table.concat(activeHunts, "\n"))
-    end
-end
-
--- update otomatis setiap 1 detik
 task.spawn(function()
     while task.wait(1) do
-        updateStatus()
+        local statusText = {}
+
+        -- cek Megalodon Hunt
+        if workspace.Props:FindFirstChild("Megalodon Hunt") then
+            table.insert(statusText, "✅ Megalodon Hunt")
+        else
+            table.insert(statusText, "❌ Megalodon Hunt")
+        end
+
+        -- cek Shark Hunt
+        if workspace.Props:FindFirstChild("Shark Hunt") then
+            table.insert(statusText, "✅ Shark Hunt")
+        else
+            table.insert(statusText, "❌ Shark Hunt")
+        end
+
+        -- cek Ghost Shark Hunt
+        if workspace.Props:FindFirstChild("Ghost Shark Hunt") then
+            table.insert(statusText, "✅ Ghost Shark Hunt")
+        else
+            table.insert(statusText, "❌ Ghost Shark Hunt")
+        end
+
+        -- cek Worm Hunt (Model.Part)
+        local model = workspace.Props:FindFirstChild("Model")
+        if model and model:FindFirstChild("Part") then
+            table.insert(statusText, "✅ Worm Hunt")
+        else
+            table.insert(statusText, "❌ Worm Hunt")
+        end
+
+        statusLabel:SetDesc(table.concat(statusText, "\n"))
     end
 end)
-
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -233,6 +234,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 
 local savedCFrame -- posisi awal
 local bv, bg -- body movers
+local runningChecks = {} -- status pengecekan tiap toggle
 
 -- fungsi freeze
 local function freezeHumanoidRootPart(part)
@@ -269,14 +271,39 @@ local function backToSaved()
     end
 end
 
+-- fungsi cek otomatis
+local function autoCheck(name, path)
+    -- stop dulu kalau ada loop lama
+    if runningChecks[name] then
+        runningChecks[name] = false
+    end
+
+    runningChecks[name] = true
+    task.spawn(function()
+        while runningChecks[name] do
+            task.wait(1)
+            if not path or not path.Parent then
+                backToSaved()
+                runningChecks[name] = false
+                break
+            end
+        end
+    end)
+end
+
 -- 🦈 Shark Hunt
 Tabs.Active:Toggle({
     Title = "Teleport To Shark Hunt",
     Value = false,
     Callback = function(state)
         if state then
-            tpAndFreeze(workspace.Props["Shark Hunt"].Part)
+            local obj = workspace.Props:FindFirstChild("Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Shark Hunt", obj.Part)
+            end
         else
+            runningChecks["Shark Hunt"] = false
             backToSaved()
         end
     end
@@ -288,8 +315,13 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            tpAndFreeze(workspace.Props["Ghost Shark Hunt"].Part)
+            local obj = workspace.Props:FindFirstChild("Ghost Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Ghost Shark Hunt", obj.Part)
+            end
         else
+            runningChecks["Ghost Shark Hunt"] = false
             backToSaved()
         end
     end
@@ -301,21 +333,31 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            tpAndFreeze(workspace.Props["Megalodon Hunt"].Color)
+            local obj = workspace.Props:FindFirstChild("Megalodon Hunt")
+            if obj and obj:FindFirstChild("Color") then
+                tpAndFreeze(obj.Color)
+                autoCheck("Megalodon Hunt", obj.Color)
+            end
         else
+            runningChecks["Megalodon Hunt"] = false
             backToSaved()
         end
     end
 })
 
--- 📦 Model
+-- 🪱 Worm Hunt (Model)
 Tabs.Active:Toggle({
     Title = "Teleport To Worm Hunt",
     Value = false,
     Callback = function(state)
         if state then
-            tpAndFreeze(workspace.Props["Model"].Part)
+            local obj = workspace.Props:FindFirstChild("Model")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Model", obj.Part)
+            end
         else
+            runningChecks["Model"] = false
             backToSaved()
         end
     end
