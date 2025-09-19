@@ -1,4 +1,117 @@
--- Load WindUI
+-- Anti-Crash Drop-in (tanpa URL)
+-- Taruh ini di paling atas LocalScript kamu
+
+-- Simpan original (jika ada)
+local _ORIG = {}
+_ORIG.loadstring = loadstring
+-- coba ambil game.HttpGet dengan aman
+local ok, httpfn = pcall(function() return game and game.HttpGet end)
+_ORIG.HttpGet = ok and httpfn or nil
+
+local function warnf(fmt, ...)
+    local ok, msg = pcall(string.format, fmt, ...)
+    if ok then warn("⚠️ AntiCrash: " .. msg) else warn("⚠️ AntiCrash: warning formatting failed") end
+end
+
+-- safeCall: panggil function tanpa crash
+local function safeCall(fn, ...)
+    if type(fn) ~= "function" then
+        warnf("safeCall: attempt to call non-function (%s).", tostring(fn))
+        return nil
+    end
+    local ok, res = pcall(fn, ...)
+    if not ok then
+        warnf("safeCall: error when calling function => %s", tostring(res))
+        return nil
+    end
+    return res
+end
+
+-- safeLoadString: compile src jadi chunk, kembalikan wrapper yang aman
+local function safeLoadString(src)
+    if type(src) ~= "string" then
+        warnf("safeLoadString: source bukan string (type=%s).", type(src))
+        return function() end
+    end
+
+    if type(_ORIG.loadstring) ~= "function" then
+        -- tidak ada loadstring di environment -> return noop
+        warnf("safeLoadString: loadstring tidak tersedia di environment.")
+        return function() end
+    end
+
+    local ok, chunkOrErr = pcall(_ORIG.loadstring, src)
+    if not ok then
+        warnf("safeLoadString: compile error => %s", tostring(chunkOrErr))
+        return function() end
+    end
+
+    if type(chunkOrErr) ~= "function" then
+        warnf("safeLoadString: hasil compile bukan function.")
+        return function() end
+    end
+
+    -- kembalikan wrapper function yang melakukan pcall saat dieksekusi
+    return function(...)
+        local ok2, res = pcall(chunkOrErr, ...)
+        if not ok2 then
+            warnf("safeLoadString: runtime error => %s", tostring(res))
+            return nil
+        end
+        return res
+    end
+end
+
+-- Override global loadstring dengan versi aman (drop-in)
+do
+    if type(_ORIG.loadstring) == "function" then
+        loadstring = function(src)
+            -- kembalikan wrapper function agar panggilan loadstring(src)() aman
+            return safeLoadString(src)
+        end
+    else
+        -- jika tidak ada original, buat fallback noop
+        loadstring = function() return function() end end
+    end
+end
+
+-- Jika tersedia, bungkus game:HttpGet supaya tidak crash (opsional & aman)
+do
+    if type(_ORIG.HttpGet) == "function" then
+        local originalHttpGet = _ORIG.HttpGet
+        -- safe wrapper: game:HttpGet(url)
+        local function safeHttpGet(self, url, ...)
+            if type(url) ~= "string" then
+                warnf("safeHttpGet: url harus string (dapat: %s)", tostring(url))
+                return nil
+            end
+            local ok, res = pcall(originalHttpGet, game, url, ...)
+            if not ok then
+                warnf("safeHttpGet: HttpGet error => %s", tostring(res))
+                return nil
+            end
+            return res
+        end
+
+        -- coba assign; jika environment melarang, tangkap error
+        pcall(function() game.HttpGet = safeHttpGet end)
+    end
+end
+
+-- Pasang helpers di _G untuk akses mudah dari script lain
+if type(_G) == "table" then
+    _G.safeCall = safeCall
+    _G.safeLoadString = safeLoadString
+    -- note: loadstring sudah di-override global
+end
+
+-- Penjelasan singkat penggunaan:
+-- - Gunakan safeCall(fn, ...) ketika kamu memanggil function yang mungkin nil atau error.
+-- - Jika script lain memanggil loadstring(src)(), sekarang sudah otomatis aman.
+-- - Jika executor tidak punya HttpGet, script ini tidak akan memaksa koneksi.
+
+print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)() aman.")
+
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Ambil nama player
@@ -6,37 +119,40 @@ local player = game.Players.LocalPlayer
 local playerName = player.Name
 local playerDisplayName = player.DisplayName
 
--- Buat Window versi baru
-local Window = WindUI:CreateWindow({
-    Title = "Nexa - [Beta Acsess]",
-    Icon = "rbxassetid://107488593993096",
-    Author = "Fish IT! Script | @ Han",
-    Folder = "Hanzo",
-    Size = UDim2.fromOffset(540, 420),
-    Transparent = true,
-    Theme = "Dark",
-    
-    HidePanelBackground = true,
-    NewElements = false,
+if WindUI then
+    local Window = WindUI:CreateWindow({
+        Title = "Nexa - Beta",
+        Icon = "rbxassetid://107488593993096",
+        Author = "Fish IT! Script | @ Han",
+        Folder = "Hanzo",
+        Size = UDim2.fromOffset(540, 420),
+        Transparent = true,
+        Theme = "Dark",
+        
+        HidePanelBackground = true,
+        NewElements = false,
 
-    User = {
-        Enabled = true,
-        Anonymous = false,           -- false biar muncul nama asli
-        Name = playerDisplayName,    -- Nama tampilan
-        UserName = "@" .. playerName, -- Username Roblox
-        Callback = function()
-            WindUI:Notify({
-                Title = "User Profile",
-                Content = "User profile clicked!",
-                Duration = 3
-            })
-        end
-    },
-    
-    Acrylic = false,
-    HideSearchBar = false,
-    SideBarWidth = 200,
-})
+        User = {
+            Enabled = true,
+            Anonymous = false,            -- false biar muncul nama asli
+            Name = playerDisplayName,     -- Nama tampilan
+            UserName = "@" .. playerName, -- Username Roblox
+            Callback = function()
+                WindUI:Notify({
+                    Title = "User Profile",
+                    Content = "User profile clicked!",
+                    Duration = 3
+                })
+            end
+        },
+        
+        Acrylic = false,
+        HideSearchBar = false,
+        SideBarWidth = 200,
+    })
+else
+    warn("⚠️ WindUI gagal dimuat, cek koneksi atau URL.")
+end
 
 Window:Tag({
     Title = "v1.1.8",
@@ -185,56 +301,38 @@ end)
 
 Tabs.Active:Section({ Title = "Event" })
 
-local statusLabel = Tabs.Active:Paragraph({
-    Title = "Event Status",
-    Desc = "Waiting for data..."
-})
+-- daftar props yang mau dicek
+local propsList = {
+    ["Megalodon Hunt"] = "Megalodon Hunt Status",
+    ["Shark Hunt"] = "Shark Hunt Status",
+    ["Model"] = "Model Status",
+    ["Fishing Hunt"] = "Fishing Hunt Status",
+    ["Ghost Shark Hunt"] = "Ghost Shark Hunt Status"
+}
 
--- fungsi cek child, bisa langsung di Props atau Props.Props
-local function getHunt(name)
-    local obj = workspace.Props:FindFirstChild(name)
-    if obj then return obj end
-    local nested = workspace.Props:FindFirstChild("Props")
-    if nested then
-        return nested:FindFirstChild(name)
-    end
-    return nil
+-- tabel untuk menyimpan paragraf tiap props
+local statusParagraphs = {}
+
+-- buat paragraf awal untuk tiap props
+for propName, title in pairs(propsList) do
+    statusParagraphs[propName] = Tabs.Active:Paragraph({
+        Title = title,
+        Desc = "Checking..."
+    })
 end
 
-task.spawn(function()
-    while task.wait(1) do
-        local statusText = {}
-
-        -- cek Megalodon Hunt
-        if getHunt("Megalodon Hunt") then
-            table.insert(statusText, "✅ Megalodon Hunt")
-        else
-            table.insert(statusText, "❌ Megalodon Hunt")
+-- loop untuk update status tiap detik
+spawn(function()
+    while true do
+        wait(1)
+        for propName, _ in pairs(propsList) do
+            local prop = workspace.Props:FindFirstChild(propName)
+            if prop and prop:FindFirstChild("Part") then
+                statusParagraphs[propName]:Set("Spawned!")
+            else
+                statusParagraphs[propName]:Set("Not Spawned")
+            end
         end
-
-        -- cek Shark Hunt
-        if getHunt("Shark Hunt") then
-            table.insert(statusText, "✅ Shark Hunt")
-        else
-            table.insert(statusText, "❌ Shark Hunt")
-        end
-
-        -- cek Ghost Shark Hunt
-        if getHunt("Ghost Shark Hunt") then
-            table.insert(statusText, "✅ Ghost Shark Hunt")
-        else
-            table.insert(statusText, "❌ Ghost Shark Hunt")
-        end
-
-        -- cek Worm Hunt (Model.Part)
-        local model = getHunt("Model")
-        if model and model:FindFirstChild("Part") then
-            table.insert(statusText, "✅ Worm Hunt")
-        else
-            table.insert(statusText, "❌ Worm Hunt")
-        end
-
-        statusLabel:SetDesc(table.concat(statusText, "\n"))
     end
 end)
 
@@ -309,13 +407,10 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            local props = workspace:FindFirstChild("Props")
-            if props then
-                local obj = props:FindFirstChild("Shark Hunt")
-                if obj and obj:FindFirstChild("Part") then
-                    tpAndFreeze(obj.Part)
-                    autoCheck("Shark Hunt", obj.Part)
-                end
+            local obj = workspace.Props:FindFirstChild("Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Shark Hunt", obj.Part)
             end
         else
             runningChecks["Shark Hunt"] = false
@@ -330,13 +425,10 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            local props = workspace:FindFirstChild("Props")
-            if props then
-                local obj = props:FindFirstChild("Ghost Shark Hunt")
-                if obj and obj:FindFirstChild("Part") then
-                    tpAndFreeze(obj.Part)
-                    autoCheck("Ghost Shark Hunt", obj.Part)
-                end
+            local obj = workspace.Props:FindFirstChild("Ghost Shark Hunt")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Ghost Shark Hunt", obj.Part)
             end
         else
             runningChecks["Ghost Shark Hunt"] = false
@@ -351,13 +443,10 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            local props = workspace:FindFirstChild("Props")
-            if props then
-                local obj = props:FindFirstChild("Megalodon Hunt")
-                if obj and obj:FindFirstChild("Color") then
-                    tpAndFreeze(obj.Color)
-                    autoCheck("Megalodon Hunt", obj.Color)
-                end
+            local obj = workspace.Props:FindFirstChild("Megalodon Hunt")
+            if obj and obj:FindFirstChild("Color") then
+                tpAndFreeze(obj.Color)
+                autoCheck("Megalodon Hunt", obj.Color)
             end
         else
             runningChecks["Megalodon Hunt"] = false
@@ -372,13 +461,10 @@ Tabs.Active:Toggle({
     Value = false,
     Callback = function(state)
         if state then
-            local props = workspace:FindFirstChild("Props")
-            if props then
-                local obj = props:FindFirstChild("Model")
-                if obj and obj:FindFirstChild("Part") then
-                    tpAndFreeze(obj.Part)
-                    autoCheck("Model", obj.Part)
-                end
+            local obj = workspace.Props:FindFirstChild("Model")
+            if obj and obj:FindFirstChild("Part") then
+                tpAndFreeze(obj.Part)
+                autoCheck("Model", obj.Part)
             end
         else
             runningChecks["Model"] = false
@@ -456,70 +542,6 @@ Tabs.Player:Button({
         end
     end
 })
-
-Tabs.Farm:Section({ Title = "Info Fish!!" })
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- UI Notif
-local smallNotif = playerGui:WaitForChild("Small Notification")
-local display = smallNotif:WaitForChild("Display")
-local container = display:WaitForChild("Container")
-
-local notifications = playerGui:WaitForChild("Text Notifications")
-local frame = notifications:WaitForChild("Frame")
-
--- posisi default (before) dan sukses
-local beforePos = UDim2.new(0.5, 0, -1.89999998, 0)
-local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
-
--- counter sukses & gagal
-local successCount = 0
-local failCount = 0
-
--- satu paragraph gabungan
-local ProgressParagraph = Tabs.Farm:Paragraph({
-    Title = "Fishing Attempts",
-    Desc = "Success: 0\nFailed: 0"
-})
-
--- update text paragraph
-local function updateParagraph()
-    ProgressParagraph:SetDesc("Success: " .. successCount .. "\nFailed: " .. failCount)
-end
-
--- === SUCCESS DETECTION (berdasarkan posisi container) ===
-container:GetPropertyChangedSignal("Position"):Connect(function()
-    local pos = container.Position
-
-    if pos == successPos then
-        successCount += 1
-        updateParagraph()
-    end
-end)
-
--- === FAIL DETECTION (berdasarkan notifikasi text) ===
-frame.ChildAdded:Connect(function(child)
-    if child.Name == "TextTile" then
-        local header = child:WaitForChild("Header", 5)
-        if header and header:IsA("TextLabel") then
-            if header.Text == "The fish got away!" then
-                failCount += 1
-                updateParagraph()
-            end
-
-            -- listen kalau text berubah setelah spawn
-            header:GetPropertyChangedSignal("Text"):Connect(function()
-                if header.Text == "The fish got away!" then
-                    failCount += 1
-                    updateParagraph()
-                end
-            end)
-        end
-    end
-end)
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
@@ -604,7 +626,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
+-- Auto Fish v3 dengan Step4 + reset karakter jika container stuck
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
@@ -654,7 +676,7 @@ local function FastResetRod()
     task.wait(0.03)
 end
 
--- Step 3 → Tunggu container berubah atau timeout 10 detik
+-- Step 3 → Tunggu container berubah atau timeout 9 detik
 local function Step3(callback)
     local connection
 
@@ -668,12 +690,17 @@ local function Step3(callback)
         end
     end)
 
-    -- Timeout 10 detik
-    task.delay(10, function()
+    -- Timeout 9 detik → reset karakter + ulang Step1
+    task.delay(9, function()
         if connection and connection.Connected then
             connection:Disconnect()
-            -- langsung ke Step4 (fast reset)
-            Step4()
+            -- Reset karakter jika container stuck
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = player.Character.HumanoidRootPart
+                hrp.CFrame = CFrame.new(Vector3.new(0, 5, 0)) -- teleport ke posisi awal / spawn
+            end
+            task.wait(0.5) -- tunggu posisi stabil
+            Step4() -- reset rod dan ulang Step1
         end
     end)
 end
@@ -682,7 +709,7 @@ end
 function Step4()
     FastResetRod()
     if AutoFish then
-        task.wait(0.001)
+        task.wait(0.1)
         RunCycle()
     end
 end
@@ -695,8 +722,7 @@ function RunCycle()
             task.wait(0.18)
             Step2()
             Step3(function()
-                -- Step3 selesai → Step4
-                Step4()
+                Step4() -- Step3 selesai → Step4
             end)
             break
         end
@@ -715,8 +741,8 @@ Tabs.Farm:Dropdown({
 
 -- WindUI Toggle
 Tabs.Farm:Toggle({
-    Title = "Auto Fish v2",
-    Desc = "Auto fish with Step4 rod reset",
+    Title = "Auto Fish v3",
+    Desc = "Auto fish with Step4 rod reset + auto reset character if stuck",
     Value = false,
     Callback = function(state)
         AutoFish = state
@@ -729,7 +755,7 @@ Tabs.Farm:Toggle({
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
-    Value = false,
+    Value = true,
     Callback = function(state)
         if state then
             -- Aktifkan loop auto fishing
@@ -745,7 +771,7 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(0.01) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
@@ -754,6 +780,7 @@ Tabs.Farm:Toggle({
         end
     end
 })
+
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -802,11 +829,11 @@ Tabs.Farm:Section({ Title = "Best Farm" })
 -- LIST LOKASI TELEPORT FARM
 -- ===================================
 local locations = {
-    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346, -0.803171635, 5.9872491e-08, -0.595747709, 9.3994899e-08, 1, -2.62217448e-08, 0.595747709, -7.70578055e-08, -0.803171635),
-    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454, -0.918708026, -1.96595673e-09, 0.394937396, -3.33787185e-08, 1, -7.26680796e-08, -0.394937396, -7.99432485e-08, -0.918708026),
-    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865, -0.964095712, 2.82167214e-08, -0.265554935, -4.54795757e-09, 1, 1.2276702e-07, 0.265554935, 1.19566891e-07, -0.964095712),
-    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451, -0.589090407, -9.40972313e-08, -0.808067143, -7.97141695e-08, 1, -5.83347344e-08, 0.808067143, 3.00499643e-08, -0.589090407),
-    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367, 0.0369801782, 0.421751857, -0.905956864, -4.17893498e-09, 0.906576991, 0.422040522, 0.999315977, -0.0156071307, 0.0335253812)
+    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346),
+    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454),
+    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865),
+    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451),
+    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367)
 }
 
 -- ===================================
@@ -1024,6 +1051,7 @@ Tabs.Farm:Toggle({
         end
     end
 })
+
 
 Tabs.Auto:Section({ Title = "Info Quest" })
 
@@ -2460,3 +2488,10 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+if WindUI then
+    WindUI:Notify({
+        Title = "Nexa Loaded",
+        Content = "Script berhasil dijalankan!",
+        Duration = 3
+    })
+end
