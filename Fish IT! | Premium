@@ -845,9 +845,8 @@ Tabs.Farm:Toggle({
 })
 
 -- Variabel global
-local savedPosition = nil
+local savedCFrame = nil
 local teleportEnabled = false
-local freezePart = nil -- HumanoidRootPart
 
 -- Tombol Save Position
 Tabs.Farm:Button({ 
@@ -856,16 +855,16 @@ Tabs.Farm:Button({
         local player = game.Players.LocalPlayer
         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            savedPosition = hrp.Position
+            savedCFrame = hrp.CFrame -- simpan CFrame lengkap (posisi + arah)
             WindUI:Notify({
                 Title = "Saved",
-                Content = "Position saved successfully!",
+                Content = "Posisi berhasil disimpan!",
                 Duration = 5,
             })
         else
             WindUI:Notify({
                 Title = "Error",
-                Content = "The character is not ready!",
+                Content = "Karakter belum siap!",
                 Duration = 5,
             })
         end
@@ -876,9 +875,9 @@ Tabs.Farm:Button({
 local function freezeCharacter()
     local player = game.Players.LocalPlayer
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp or not savedPosition then return end
+    if not hrp or not savedCFrame then return end
 
-    -- Buat BodyVelocity dan BodyGyro
+    -- BodyVelocity & BodyGyro
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(1e5,1e5,1e5)
     bv.Velocity = Vector3.new(0,0,0)
@@ -886,15 +885,15 @@ local function freezeCharacter()
 
     local bg = Instance.new("BodyGyro")
     bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
-    bg.CFrame = CFrame.new(hrp.Position)
+    bg.CFrame = savedCFrame
     bg.Parent = hrp
 
     -- Loop freeze & check distance
     spawn(function()
         while teleportEnabled and hrp and hrp.Parent do
-            local distance = (hrp.Position - savedPosition).Magnitude
+            local distance = (hrp.Position - savedCFrame.Position).Magnitude
             if distance > 2 then
-                hrp.CFrame = CFrame.new(savedPosition)
+                hrp.CFrame = savedCFrame
             end
             task.wait(0.1)
         end
