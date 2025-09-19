@@ -127,7 +127,7 @@ end
 -- Kalau berhasil, baru buat Window
 if WindUI then
     local Window = WindUI:CreateWindow({
-        Title = "Nexa - Beta",
+        Title = "Nexa - Premium",
         Icon = "rbxassetid://107488593993096",
         Author = "Fish IT! Script | @ Han",
         Folder = "Hanzo",
@@ -777,7 +777,7 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(0.05) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
