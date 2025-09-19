@@ -776,7 +776,7 @@ Tabs.Farm:Toggle({
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
-    Value = true,
+    Value = false,
     Callback = function(state)
         if state then
             -- Aktifkan loop auto fishing
