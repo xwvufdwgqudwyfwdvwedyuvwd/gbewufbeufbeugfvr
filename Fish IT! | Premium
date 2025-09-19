@@ -650,7 +650,7 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(0.01) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
