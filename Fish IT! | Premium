@@ -112,31 +112,37 @@ end
 
 print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)() aman.")
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+-- Coba load WindUI dengan aman
+local WindUI
+local ok, result = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
 
--- Ambil nama player
-local player = game.Players.LocalPlayer
-local playerName = player.Name
-local playerDisplayName = player.DisplayName
+if ok and result then
+    WindUI = result
+else
+    warn("❌ Gagal memuat WindUI, cek koneksi atau executor (loadstring/HttpGet tidak ada).")
+end
 
+-- Kalau berhasil, baru buat Window
 if WindUI then
     local Window = WindUI:CreateWindow({
-        Title = "Nexa - Premium",
+        Title = "Nexa - Beta",
         Icon = "rbxassetid://107488593993096",
         Author = "Fish IT! Script | @ Han",
         Folder = "Hanzo",
         Size = UDim2.fromOffset(540, 420),
         Transparent = true,
         Theme = "Dark",
-        
+
         HidePanelBackground = true,
         NewElements = false,
 
         User = {
             Enabled = true,
-            Anonymous = false,            -- false biar muncul nama asli
-            Name = playerDisplayName,     -- Nama tampilan
-            UserName = "@" .. playerName, -- Username Roblox
+            Anonymous = false,
+            Name = game.Players.LocalPlayer.DisplayName,
+            UserName = "@" .. game.Players.LocalPlayer.Name,
             Callback = function()
                 WindUI:Notify({
                     Title = "User Profile",
@@ -145,13 +151,18 @@ if WindUI then
                 })
             end
         },
-        
+
         Acrylic = false,
         HideSearchBar = false,
         SideBarWidth = 200,
     })
-else
-    warn("⚠️ WindUI gagal dimuat, cek koneksi atau URL.")
+
+    -- Notifikasi akhir
+    WindUI:Notify({
+        Title = "✅ Nexa Loaded",
+        Content = "Script berhasil dijalankan!",
+        Duration = 3
+    })
 end
 
 Window:Tag({
@@ -2482,12 +2493,3 @@ UserInputService.InputChanged:Connect(function(input)
         update(input)
     end
 end)
-
-
-if WindUI then
-    WindUI:Notify({
-        Title = "Nexa Loaded",
-        Content = "Script Runs Successfully! Enjoy to my script!",
-        Duration = 3
-    })
-end
