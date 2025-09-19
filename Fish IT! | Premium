@@ -159,8 +159,8 @@ if WindUI then
 
     -- Notifikasi akhir
     WindUI:Notify({
-        Title = "✅ Nexa Loaded",
-        Content = "Script berhasil dijalankan!",
+        Title = "Nexa Loaded",
+        Content = "Script Runs Successfully! Enjoy my script!",
         Duration = 3
     })
 end
