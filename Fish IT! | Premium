@@ -1,4 +1,117 @@
--- Load WindUI
+-- Anti-Crash Drop-in (tanpa URL)
+-- Taruh ini di paling atas LocalScript kamu
+
+-- Simpan original (jika ada)
+local _ORIG = {}
+_ORIG.loadstring = loadstring
+-- coba ambil game.HttpGet dengan aman
+local ok, httpfn = pcall(function() return game and game.HttpGet end)
+_ORIG.HttpGet = ok and httpfn or nil
+
+local function warnf(fmt, ...)
+    local ok, msg = pcall(string.format, fmt, ...)
+    if ok then warn("⚠️ AntiCrash: " .. msg) else warn("⚠️ AntiCrash: warning formatting failed") end
+end
+
+-- safeCall: panggil function tanpa crash
+local function safeCall(fn, ...)
+    if type(fn) ~= "function" then
+        warnf("safeCall: attempt to call non-function (%s).", tostring(fn))
+        return nil
+    end
+    local ok, res = pcall(fn, ...)
+    if not ok then
+        warnf("safeCall: error when calling function => %s", tostring(res))
+        return nil
+    end
+    return res
+end
+
+-- safeLoadString: compile src jadi chunk, kembalikan wrapper yang aman
+local function safeLoadString(src)
+    if type(src) ~= "string" then
+        warnf("safeLoadString: source bukan string (type=%s).", type(src))
+        return function() end
+    end
+
+    if type(_ORIG.loadstring) ~= "function" then
+        -- tidak ada loadstring di environment -> return noop
+        warnf("safeLoadString: loadstring tidak tersedia di environment.")
+        return function() end
+    end
+
+    local ok, chunkOrErr = pcall(_ORIG.loadstring, src)
+    if not ok then
+        warnf("safeLoadString: compile error => %s", tostring(chunkOrErr))
+        return function() end
+    end
+
+    if type(chunkOrErr) ~= "function" then
+        warnf("safeLoadString: hasil compile bukan function.")
+        return function() end
+    end
+
+    -- kembalikan wrapper function yang melakukan pcall saat dieksekusi
+    return function(...)
+        local ok2, res = pcall(chunkOrErr, ...)
+        if not ok2 then
+            warnf("safeLoadString: runtime error => %s", tostring(res))
+            return nil
+        end
+        return res
+    end
+end
+
+-- Override global loadstring dengan versi aman (drop-in)
+do
+    if type(_ORIG.loadstring) == "function" then
+        loadstring = function(src)
+            -- kembalikan wrapper function agar panggilan loadstring(src)() aman
+            return safeLoadString(src)
+        end
+    else
+        -- jika tidak ada original, buat fallback noop
+        loadstring = function() return function() end end
+    end
+end
+
+-- Jika tersedia, bungkus game:HttpGet supaya tidak crash (opsional & aman)
+do
+    if type(_ORIG.HttpGet) == "function" then
+        local originalHttpGet = _ORIG.HttpGet
+        -- safe wrapper: game:HttpGet(url)
+        local function safeHttpGet(self, url, ...)
+            if type(url) ~= "string" then
+                warnf("safeHttpGet: url harus string (dapat: %s)", tostring(url))
+                return nil
+            end
+            local ok, res = pcall(originalHttpGet, game, url, ...)
+            if not ok then
+                warnf("safeHttpGet: HttpGet error => %s", tostring(res))
+                return nil
+            end
+            return res
+        end
+
+        -- coba assign; jika environment melarang, tangkap error
+        pcall(function() game.HttpGet = safeHttpGet end)
+    end
+end
+
+-- Pasang helpers di _G untuk akses mudah dari script lain
+if type(_G) == "table" then
+    _G.safeCall = safeCall
+    _G.safeLoadString = safeLoadString
+    -- note: loadstring sudah di-override global
+end
+
+-- Penjelasan singkat penggunaan:
+-- - Gunakan safeCall(fn, ...) ketika kamu memanggil function yang mungkin nil atau error.
+-- - Jika script lain memanggil loadstring(src)(), sekarang sudah otomatis aman.
+-- - Jika executor tidak punya HttpGet, script ini tidak akan memaksa koneksi.
+
+print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)() aman.")
+
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Ambil nama player
@@ -6,37 +119,40 @@ local player = game.Players.LocalPlayer
 local playerName = player.Name
 local playerDisplayName = player.DisplayName
 
--- Buat Window versi baru
-local Window = WindUI:CreateWindow({
-    Title = "Nexa - Premium",
-    Icon = "rbxassetid://107488593993096",
-    Author = "Fish IT! Script | @ Han",
-    Folder = "Hanzo",
-    Size = UDim2.fromOffset(540, 420),
-    Transparent = true,
-    Theme = "Dark",
-    
-    HidePanelBackground = true,
-    NewElements = false,
+if WindUI then
+    local Window = WindUI:CreateWindow({
+        Title = "Nexa - Premium",
+        Icon = "rbxassetid://107488593993096",
+        Author = "Fish IT! Script | @ Han",
+        Folder = "Hanzo",
+        Size = UDim2.fromOffset(540, 420),
+        Transparent = true,
+        Theme = "Dark",
+        
+        HidePanelBackground = true,
+        NewElements = false,
 
-    User = {
-        Enabled = true,
-        Anonymous = false,           -- false biar muncul nama asli
-        Name = playerDisplayName,    -- Nama tampilan
-        UserName = "@" .. playerName, -- Username Roblox
-        Callback = function()
-            WindUI:Notify({
-                Title = "User Profile",
-                Content = "User profile clicked!",
-                Duration = 3
-            })
-        end
-    },
-    
-    Acrylic = false,
-    HideSearchBar = false,
-    SideBarWidth = 200,
-})
+        User = {
+            Enabled = true,
+            Anonymous = false,            -- false biar muncul nama asli
+            Name = playerDisplayName,     -- Nama tampilan
+            UserName = "@" .. playerName, -- Username Roblox
+            Callback = function()
+                WindUI:Notify({
+                    Title = "User Profile",
+                    Content = "User profile clicked!",
+                    Duration = 3
+                })
+            end
+        },
+        
+        Acrylic = false,
+        HideSearchBar = false,
+        SideBarWidth = 200,
+    })
+else
+    warn("⚠️ WindUI gagal dimuat, cek koneksi atau URL.")
+end
 
 Window:Tag({
     Title = "v1.1.8",
@@ -575,7 +691,7 @@ local function Step3(callback)
     end)
 
     -- Timeout 10 detik
-    task.delay(9, function()
+    task.delay(10, function()
         if connection and connection.Connected then
             connection:Disconnect()
             -- langsung ke Step4 (fast reset)
@@ -2366,3 +2482,12 @@ UserInputService.InputChanged:Connect(function(input)
         update(input)
     end
 end)
+
+
+if WindUI then
+    WindUI:Notify({
+        Title = "Nexa Loaded",
+        Content = "Script Runs Successfully! Enjoy to my script!",
+        Duration = 3
+    })
+end
