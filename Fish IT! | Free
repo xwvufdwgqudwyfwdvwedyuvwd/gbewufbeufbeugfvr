@@ -1153,7 +1153,7 @@ spawn(function()
     end
 end)
 
--- Variabel target CFrame
+-- Target CFrame
 local targetCFrame = CFrame.new(
     88.2434769, 9.53157043, 2685.2605,
     0.999735832, -1.020575e-08, 0.0228940968,
@@ -1161,7 +1161,6 @@ local targetCFrame = CFrame.new(
     -0.0228940968, 3.54192586e-08, 0.999735832
 )
 
--- Toggle di Tab Auto
 Tabs.Auto:Toggle({
     Title = "Auto Aura Boat Quest",
     Value = false,
@@ -1169,42 +1168,85 @@ Tabs.Auto:Toggle({
         local player = game.Players.LocalPlayer
         local character = player.Character or player.CharacterAdded:Wait()
         local hrp = character:WaitForChild("HumanoidRootPart")
+        local overhead = hrp:WaitForChild("Overhead")
+        local levelLabel = overhead:WaitForChild("LevelContainer"):WaitForChild("Label")
 
         if state then
-            -- BodyVelocity dan BodyGyro untuk freeze
+            -- BodyVelocity + BodyGyro untuk freeze saat teleport
             local bv = Instance.new("BodyVelocity")
-            bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            bv.MaxForce = Vector3.new(1e5,1e5,1e5)
             bv.Velocity = Vector3.new(0,0,0)
             bv.Parent = hrp
 
             local bg = Instance.new("BodyGyro")
-            bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+            bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
             bg.CFrame = hrp.CFrame
             bg.Parent = hrp
 
-            -- Loop untuk teleport + freeze
-            _G.TeleportFreeze = true
+            _G.AutoAuraQuest = true
             spawn(function()
-                while _G.TeleportFreeze do
+                while _G.AutoAuraQuest do
                     wait(0.1)
-                    local distance = (hrp.Position - targetCFrame.Position).Magnitude
-                    if distance > 2 then
-                        hrp.CFrame = targetCFrame
+                    -- Step 1: cek level
+                    local text = levelLabel.Text
+                    local level = tonumber(text:match("%d+")) or 0
+                    if level >= 200 then
+                        -- Step 2: aktifkan quest
+                        local args = {"AuraQuest"}
+                        local success, err = pcall(function()
+                            game:GetService("ReplicatedStorage")
+                                :WaitForChild("Packages")
+                                :WaitForChild("_Index")
+                                :WaitForChild("sleitnick_net@0.2.0")
+                                :WaitForChild("net")
+                                :WaitForChild("RF/ActivateQuestLine")
+                                :InvokeServer(unpack(args))
+                        end)
+                        if success then
+                            WindUI:Notify({
+                                Title = "Quest Activated",
+                                Content = "AuraQuest successfully activated!",
+                                Duration = 5,
+                            })
+                        else
+                            WindUI:Notify({
+                                Title = "Error",
+                                Content = "Failed to ActivateQuestLine: "..err,
+                                Duration = 5,
+                            })
+                        end
+
+                        -- Step 3: teleport ke target
+                        local distance = (hrp.Position - targetCFrame.Position).Magnitude
+                        if distance > 2 then
+                            hrp.CFrame = targetCFrame
+                        end
+                        bv.Velocity = Vector3.new(0,0,0)
+                        bg.CFrame = targetCFrame
+                    else
+                        -- Level kurang dari 200
+                        WindUI:Notify({
+                            Title = "Level Kurang",
+                            Content = "Level kamu belum 200, tidak bisa lanjut",
+                            Duration = 5,
+                        })
                     end
-                    bv.Velocity = Vector3.new(0,0,0)
-                    bg.CFrame = targetCFrame
                 end
             end)
 
         else
-            -- Matikan freeze
-            _G.TeleportFreeze = false
-            -- Hapus BV & BG
+            -- matikan auto quest
+            _G.AutoAuraQuest = false
             for _, v in pairs(hrp:GetChildren()) do
                 if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
                     v:Destroy()
                 end
             end
+            WindUI:Notify({
+                Title = "Auto Aura Quest",
+                Content = "Fungsi dimatikan.",
+                Duration = 0,
+            })
         end
     end
 })
