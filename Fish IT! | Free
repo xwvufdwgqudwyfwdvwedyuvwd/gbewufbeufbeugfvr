@@ -1,169 +1,42 @@
--- Anti-Crash Drop-in (tanpa URL)
--- Taruh ini di paling atas LocalScript kamu
+-- Load WindUI
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- Simpan original (jika ada)
-local _ORIG = {}
-_ORIG.loadstring = loadstring
--- coba ambil game.HttpGet dengan aman
-local ok, httpfn = pcall(function() return game and game.HttpGet end)
-_ORIG.HttpGet = ok and httpfn or nil
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
 
-local function warnf(fmt, ...)
-    local ok, msg = pcall(string.format, fmt, ...)
-    if ok then warn("⚠️ AntiCrash: " .. msg) else warn("⚠️ AntiCrash: warning formatting failed") end
-end
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - Free",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Fish IT! Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
 
--- safeCall: panggil function tanpa crash
-local function safeCall(fn, ...)
-    if type(fn) ~= "function" then
-        warnf("safeCall: attempt to call non-function (%s).", tostring(fn))
-        return nil
-    end
-    local ok, res = pcall(fn, ...)
-    if not ok then
-        warnf("safeCall: error when calling function => %s", tostring(res))
-        return nil
-    end
-    return res
-end
-
--- safeLoadString: compile src jadi chunk, kembalikan wrapper yang aman
-local function safeLoadString(src)
-    if type(src) ~= "string" then
-        warnf("safeLoadString: source bukan string (type=%s).", type(src))
-        return function() end
-    end
-
-    if type(_ORIG.loadstring) ~= "function" then
-        -- tidak ada loadstring di environment -> return noop
-        warnf("safeLoadString: loadstring tidak tersedia di environment.")
-        return function() end
-    end
-
-    local ok, chunkOrErr = pcall(_ORIG.loadstring, src)
-    if not ok then
-        warnf("safeLoadString: compile error => %s", tostring(chunkOrErr))
-        return function() end
-    end
-
-    if type(chunkOrErr) ~= "function" then
-        warnf("safeLoadString: hasil compile bukan function.")
-        return function() end
-    end
-
-    -- kembalikan wrapper function yang melakukan pcall saat dieksekusi
-    return function(...)
-        local ok2, res = pcall(chunkOrErr, ...)
-        if not ok2 then
-            warnf("safeLoadString: runtime error => %s", tostring(res))
-            return nil
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
         end
-        return res
-    end
-end
-
--- Override global loadstring dengan versi aman (drop-in)
-do
-    if type(_ORIG.loadstring) == "function" then
-        loadstring = function(src)
-            -- kembalikan wrapper function agar panggilan loadstring(src)() aman
-            return safeLoadString(src)
-        end
-    else
-        -- jika tidak ada original, buat fallback noop
-        loadstring = function() return function() end end
-    end
-end
-
--- Jika tersedia, bungkus game:HttpGet supaya tidak crash (opsional & aman)
-do
-    if type(_ORIG.HttpGet) == "function" then
-        local originalHttpGet = _ORIG.HttpGet
-        -- safe wrapper: game:HttpGet(url)
-        local function safeHttpGet(self, url, ...)
-            if type(url) ~= "string" then
-                warnf("safeHttpGet: url harus string (dapat: %s)", tostring(url))
-                return nil
-            end
-            local ok, res = pcall(originalHttpGet, game, url, ...)
-            if not ok then
-                warnf("safeHttpGet: HttpGet error => %s", tostring(res))
-                return nil
-            end
-            return res
-        end
-
-        -- coba assign; jika environment melarang, tangkap error
-        pcall(function() game.HttpGet = safeHttpGet end)
-    end
-end
-
--- Pasang helpers di _G untuk akses mudah dari script lain
-if type(_G) == "table" then
-    _G.safeCall = safeCall
-    _G.safeLoadString = safeLoadString
-    -- note: loadstring sudah di-override global
-end
-
--- Penjelasan singkat penggunaan:
--- - Gunakan safeCall(fn, ...) ketika kamu memanggil function yang mungkin nil atau error.
--- - Jika script lain memanggil loadstring(src)(), sekarang sudah otomatis aman.
--- - Jika executor tidak punya HttpGet, script ini tidak akan memaksa koneksi.
-
-print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)() aman.")
-
--- Coba load WindUI dengan aman
-local WindUI
-local ok, result = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-end)
-
-if ok and result then
-    WindUI = result
-else
-    warn("❌ Gagal memuat WindUI, cek koneksi atau executor (loadstring/HttpGet tidak ada).")
-end
-
--- Kalau berhasil, baru buat Window
-if WindUI then
-    local Window = WindUI:CreateWindow({
-        Title = "Nexa - Free",
-        Icon = "rbxassetid://107488593993096",
-        Author = "Fish IT! Script | @ Han",
-        Folder = "Hanzo",
-        Size = UDim2.fromOffset(540, 420),
-        Transparent = true,
-        Theme = "Dark",
-
-        HidePanelBackground = true,
-        NewElements = false,
-
-        User = {
-            Enabled = true,
-            Anonymous = false,
-            Name = game.Players.LocalPlayer.DisplayName,
-            UserName = "@" .. game.Players.LocalPlayer.Name,
-            Callback = function()
-                WindUI:Notify({
-                    Title = "User Profile",
-                    Content = "User profile clicked!",
-                    Duration = 3
-                })
-            end
-        },
-
-        Acrylic = false,
-        HideSearchBar = false,
-        SideBarWidth = 200,
-    })
-
-    -- Notifikasi akhir
-    WindUI:Notify({
-        Title = "Nexa Loaded",
-        Content = "Script Runs Successfully! Enjoy my script!",
-        Duration = 3
-    })
-end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
 
 Window:Tag({
     Title = "v1.1.8",
@@ -255,7 +128,6 @@ Tabs.Home:Paragraph({
 
 Tabs.Active:Section({ Title = "Status" })
 
-Tabs.Active:Divider()
 -- FPS, Ping, dan Lama di Server ke WindUI Paragraph
 
 local RunService = game:GetService("RunService")
@@ -310,180 +182,259 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
-Tabs.Active:Section({ Title = "Event" })
+Tabs.Active:Section({ Title = "Info Event" })
 
--- daftar props yang mau dicek
-local propsList = {
-    ["Megalodon Hunt"] = "Megalodon Hunt Status",
-    ["Shark Hunt"] = "Shark Hunt Status",
-    ["Model"] = "Model Status",
-    ["Fishing Hunt"] = "Fishing Hunt Status",
-    ["Ghost Shark Hunt"] = "Ghost Shark Hunt Status"
+local huntMap = {
+    ["Shark Hunt"] = "Props 1",
+    ["Model"] = "Props 2",
+    ["Megalodon Hunt"] = "Props 3",
+    ["Ghost Shark Hunt"] = "Props 4",
+    ["Fishing Hunt"] = "Props 5",
 }
 
--- tabel untuk menyimpan paragraf tiap props
-local statusParagraphs = {}
-
--- buat paragraf awal untuk tiap props
-for propName, title in pairs(propsList) do
-    statusParagraphs[propName] = Tabs.Active:Paragraph({
-        Title = title,
-        Desc = "Checking..."
-    })
-end
-
--- loop untuk update status tiap detik
-spawn(function()
+task.spawn(function()
     while true do
-        wait(1)
-        for propName, _ in pairs(propsList) do
-            local prop = workspace.Props:FindFirstChild(propName)
-            if prop and prop:FindFirstChild("Part") then
-                statusParagraphs[propName]:Set("Spawned!")
-            else
-                statusParagraphs[propName]:Set("Not Spawned")
+        local propsFolder = workspace:FindFirstChild("Props")
+            or workspace:FindFirstChild("Props 1")
+            or workspace:FindFirstChild("Props 2")
+            or workspace:FindFirstChild("Props 3")
+            or workspace:FindFirstChild("Props 4")
+            or workspace:FindFirstChild("Props 5")
+
+        if propsFolder then
+            local renamed = false
+
+            for childName, newName in pairs(huntMap) do
+                if propsFolder:FindFirstChild(childName) then
+                    propsFolder.Name = newName
+                    renamed = true
+                    break -- stop kalau sudah ketemu yang cocok
+                end
+            end
+
+            -- kalau nggak ada hunt yang cocok → balik ke Props
+            if not renamed then
+                propsFolder.Name = "Props"
             end
         end
+
+        task.wait(1)
     end
 end)
 
+local huntStatus = Tabs.Active:Paragraph({
+    Title = "Hunt Status",
+    Desc = "Checking..."
+})
+
+-- daftar props & nama hunt
+local hunts = {
+    ["Props 1"] = "Shark Hunt",
+    ["Props 2"] = "Model", -- Worm Hunt
+    ["Props 3"] = "Megalodon Hunt",
+    ["Props 4"] = "Ghost Shark Hunt",
+    ["Props 5"] = "Fishing Hunt",
+}
+
+-- fungsi update status
+local function updateStatus()
+    local statusText = ""
+
+    for i = 1, 5 do
+        local propName = "Props " .. i
+        local huntName = hunts[propName]
+        local prop = workspace:FindFirstChild(propName)
+        local found = false
+
+        if prop and huntName then
+            if prop:FindFirstChild(huntName) then
+                found = true
+            end
+        end
+
+        -- Worm Hunt khusus (Props 2 → "Model")
+        if propName == "Props 2" then
+            if prop and prop:FindFirstChild("Model") then
+                found = true
+            end
+            statusText = statusText .. "Worm Hunt: " .. (found and "Spawned!" or "Not Found") .. "\n"
+        else
+            statusText = statusText .. hunts[propName] .. ": " .. (found and "Spawned!" or "Not Found") .. "\n"
+        end
+    end
+
+    -- hapus newline terakhir
+    statusText = statusText:sub(1, #statusText - 1)
+
+    huntStatus:SetDesc(statusText)
+end
+
+-- update awal
+updateStatus()
+
+-- auto update kalau ada Props masuk/keluar workspace
+workspace.ChildAdded:Connect(function(child)
+    if string.match(child.Name, "Props") then
+        updateStatus()
+    end
+end)
+
+workspace.ChildRemoved:Connect(function(child)
+    if string.match(child.Name, "Props") then
+        updateStatus()
+    end
+end)
+
+-- auto update kalau child di dalam Props berubah (misalnya Hunt spawn/despawn)
+for i = 1, 5 do
+    local prop = workspace:FindFirstChild("Props " .. i)
+    if prop then
+        prop.ChildAdded:Connect(updateStatus)
+        prop.ChildRemoved:Connect(updateStatus)
+    end
+end
+
+Tabs.Active:Section({ Title = "Event Hunt" })
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 
-local savedCFrame -- posisi awal
-local bv, bg -- body movers
-local runningChecks = {} -- status pengecekan tiap toggle
+-- Variabel penyimpanan
+local oldCFrame
+local freezeBV, freezeBG
+local selectedTarget = nil
+local isActive = false
 
--- fungsi freeze
-local function freezeHumanoidRootPart(part)
-    bv = Instance.new("BodyVelocity")
-    bv.Velocity = Vector3.new(0, 0, 0)
-    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    bv.Parent = part
+-- Offset per event (biar ga nabrak Part/Color)
+local offsets = {
+    ["Shark Hunt"] = Vector3.new(0, 15, 0),
+    ["Worm Hunt"] = Vector3.new(0, 12, 0),
+    ["Megalodon Hunt"] = Vector3.new(0, 20, 0),
+    ["Ghost Shark Hunt"] = Vector3.new(0, 18, 0),
+    ["Fishing Hunt"] = Vector3.new(0, 10, 0),
+}
 
-    bg = Instance.new("BodyGyro")
-    bg.CFrame = part.CFrame
-    bg.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
-    bg.P = 1e5
-    bg.Parent = part
+-- Target finder
+local targets = {
+    ["Shark Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 1")
+        return props and props:FindFirstChild("Shark Hunt") and props["Shark Hunt"]:FindFirstChild("Part")
+    end,
+    ["Worm Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 2")
+        return props and props:FindFirstChild("Model") and props.Model:FindFirstChild("Part")
+    end,
+    ["Megalodon Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 3")
+        return props and props:FindFirstChild("Megalodon Hunt") and props["Megalodon Hunt"]:FindFirstChild("Color")
+    end,
+    ["Ghost Shark Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 4")
+        return props and props:FindFirstChild("Ghost Shark Hunt") and props["Ghost Shark Hunt"]:FindFirstChild("Part")
+    end,
+    ["Fishing Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 5")
+        return props and props:FindFirstChild("Fishing Hunt") and props["Fishing Hunt"]:FindFirstChild("Part")
+    end,
+}
+
+-- Freeze player di tempat
+local function ApplyFreeze()
+    if freezeBV then freezeBV:Destroy() end
+    if freezeBG then freezeBG:Destroy() end
+
+    freezeBV = Instance.new("BodyVelocity")
+    freezeBV.Velocity = Vector3.new(0, 0, 0)
+    freezeBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    freezeBV.Parent = hrp
+
+    freezeBG = Instance.new("BodyGyro")
+    freezeBG.CFrame = hrp.CFrame
+    freezeBG.D = 10
+    freezeBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    freezeBG.Parent = hrp
 end
 
--- fungsi unfreeze
-local function unfreeze()
-    if bv then bv:Destroy() bv = nil end
-    if bg then bg:Destroy() bg = nil end
+local function RemoveFreeze()
+    if freezeBV then freezeBV:Destroy() freezeBV = nil end
+    if freezeBG then freezeBG:Destroy() freezeBG = nil end
 end
 
--- fungsi umum: teleport + freeze
-local function tpAndFreeze(target)
-    savedCFrame = hrp.CFrame
-    hrp.CFrame = target.CFrame + Vector3.new(0, 5, 0)
-    freezeHumanoidRootPart(hrp)
-end
+-- Fungsi teleport
+local function TeleportToTarget()
+    if not selectedTarget then return end
+    local getTarget = targets[selectedTarget]
+    if not getTarget then return end
 
-local function backToSaved()
-    unfreeze()
-    if savedCFrame then
-        hrp.CFrame = savedCFrame
-        savedCFrame = nil
-    end
-end
-
--- fungsi cek otomatis
-local function autoCheck(name, path)
-    -- stop dulu kalau ada loop lama
-    if runningChecks[name] then
-        runningChecks[name] = false
-    end
-
-    runningChecks[name] = true
-    task.spawn(function()
-        while runningChecks[name] do
+    -- Tunggu sampai Props muncul
+    local targetPart
+    while isActive and not targetPart do
+        targetPart = getTarget()
+        if not targetPart then
             task.wait(1)
-            if not path or not path.Parent then
-                backToSaved()
-                runningChecks[name] = false
-                break
-            end
         end
-    end)
+    end
+
+    if targetPart and isActive then
+        oldCFrame = hrp.CFrame
+        local offset = offsets[selectedTarget] or Vector3.new(0, 10, 0)
+        hrp.CFrame = targetPart.CFrame + offset
+        ApplyFreeze()
+
+        -- Auto cek kalau Props hilang
+        task.spawn(function()
+            while isActive and task.wait(1) do
+                if not getTarget() then
+                    break
+                end
+            end
+            if isActive then
+                RemoveFreeze()
+                if oldCFrame then
+                    hrp.CFrame = oldCFrame
+                end
+                isActive = false
+            end
+        end)
+    end
 end
 
--- 🦈 Shark Hunt
-Tabs.Active:Toggle({
-    Title = "Teleport To Shark Hunt",
-    Value = false,
-    Callback = function(state)
-        if state then
-            local obj = workspace.Props:FindFirstChild("Shark Hunt")
-            if obj and obj:FindFirstChild("Part") then
-                tpAndFreeze(obj.Part)
-                autoCheck("Shark Hunt", obj.Part)
-            end
-        else
-            runningChecks["Shark Hunt"] = false
-            backToSaved()
-        end
+-- Dropdown pilihan event
+Tabs.Active:Dropdown({
+    Title = "Select Event",
+    Values = {
+        "Shark Hunt",
+        "Worm Hunt",
+        "Megalodon Hunt",
+        "Ghost Shark Hunt",
+        "Fishing Hunt",
+    },
+    Value = "Shark Hunt", -- string, bukan table
+    Multi = false,
+    AllowNone = false,
+    Callback = function(option)
+        selectedTarget = option -- langsung string
     end
 })
 
--- 👻 Ghost Shark Hunt
+-- Toggle Teleport
 Tabs.Active:Toggle({
-    Title = "Teleport To Ghost Shark Hunt",
+    Title = "Teleport To Event",
     Value = false,
     Callback = function(state)
+        isActive = state
         if state then
-            local obj = workspace.Props:FindFirstChild("Ghost Shark Hunt")
-            if obj and obj:FindFirstChild("Part") then
-                tpAndFreeze(obj.Part)
-                autoCheck("Ghost Shark Hunt", obj.Part)
-            end
+            TeleportToTarget()
         else
-            runningChecks["Ghost Shark Hunt"] = false
-            backToSaved()
+            RemoveFreeze()
+            if oldCFrame then
+                hrp.CFrame = oldCFrame
+            end
         end
     end
 })
-
--- 🐋 Megalodon Hunt
-Tabs.Active:Toggle({
-    Title = "Teleport To Megalodon Hunt",
-    Value = false,
-    Callback = function(state)
-        if state then
-            local obj = workspace.Props:FindFirstChild("Megalodon Hunt")
-            if obj and obj:FindFirstChild("Color") then
-                tpAndFreeze(obj.Color)
-                autoCheck("Megalodon Hunt", obj.Color)
-            end
-        else
-            runningChecks["Megalodon Hunt"] = false
-            backToSaved()
-        end
-    end
-})
-
--- 🪱 Worm Hunt (Model)
-Tabs.Active:Toggle({
-    Title = "Teleport To Worm Hunt",
-    Value = false,
-    Callback = function(state)
-        if state then
-            local obj = workspace.Props:FindFirstChild("Model")
-            if obj and obj:FindFirstChild("Part") then
-                tpAndFreeze(obj.Part)
-                autoCheck("Model", obj.Part)
-            end
-        else
-            runningChecks["Model"] = false
-            backToSaved()
-        end
-    end
-})
-
 
 Tabs.Player:Section({ Title = "Settings" })
 
@@ -553,6 +504,70 @@ Tabs.Player:Button({
         end
     end
 })
+
+Tabs.Farm:Section({ Title = "Info Fish!!" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- UI Notif
+local smallNotif = playerGui:WaitForChild("Small Notification")
+local display = smallNotif:WaitForChild("Display")
+local container = display:WaitForChild("Container")
+
+local notifications = playerGui:WaitForChild("Text Notifications")
+local frame = notifications:WaitForChild("Frame")
+
+-- posisi default (before) dan sukses
+local beforePos = UDim2.new(0.5, 0, -1.89999998, 0)
+local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
+
+-- counter sukses & gagal
+local successCount = 0
+local failCount = 0
+
+-- satu paragraph gabungan
+local ProgressParagraph = Tabs.Farm:Paragraph({
+    Title = "Fishing Attempts",
+    Desc = "Success: 0\nFailed: 0"
+})
+
+-- update text paragraph
+local function updateParagraph()
+    ProgressParagraph:SetDesc("Success: " .. successCount .. "\nFailed: " .. failCount)
+end
+
+-- === SUCCESS DETECTION (berdasarkan posisi container) ===
+container:GetPropertyChangedSignal("Position"):Connect(function()
+    local pos = container.Position
+
+    if pos == successPos then
+        successCount += 1
+        updateParagraph()
+    end
+end)
+
+-- === FAIL DETECTION (berdasarkan notifikasi text) ===
+frame.ChildAdded:Connect(function(child)
+    if child.Name == "TextTile" then
+        local header = child:WaitForChild("Header", 5)
+        if header and header:IsA("TextLabel") then
+            if header.Text == "The fish got away!" then
+                failCount += 1
+                updateParagraph()
+            end
+
+            -- listen kalau text berubah setelah spawn
+            header:GetPropertyChangedSignal("Text"):Connect(function()
+                if header.Text == "The fish got away!" then
+                    failCount += 1
+                    updateParagraph()
+                end
+            end)
+        end
+    end
+end)
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
@@ -829,168 +844,77 @@ Tabs.Farm:Toggle({
     end
 })
 
-Tabs.Farm:Section({ Title = "Best Farm" })
+-- Variabel global
+local savedPosition = nil
+local teleportEnabled = false
+local freezePart = nil -- HumanoidRootPart
 
--- ===================================
--- LIST LOKASI TELEPORT FARM
--- ===================================
-local locations = {
-    ["Stone"] = CFrame.new(-2083.80884, 9.69523144, 3664.54346),
-    ["Coin"]  = CFrame.new(-645.36969, 45.7505226, 171.437454),
-    ["Coin2"] = CFrame.new(1004.17523, 11.5092144, 5015.11865),
-    ["Exp"]   = CFrame.new(-2165.05469, 7.76960087, 3639.87451),
-    ["Ocean"] = CFrame.new(-2458.021, 11.5490398, 96.0804367)
-}
-
--- ===================================
--- VARIABEL
--- ===================================
-local player = game.Players.LocalPlayer
-local runService = game:GetService("RunService")
-
-local selectedLocation = "Stone"
-local savedPos = nil
-local freezeOn = false
-local monitorConnection = nil
-
-local bv, bg -- freeze tools
-
--- ===================================
--- FREEZE HANDLER
--- ===================================
-local function applyFreeze(hrp, cframe)
-    if not hrp then return end
-
-    if not bv then
-        bv = Instance.new("BodyVelocity")
-        bv.Velocity = Vector3.new(0,0,0)
-        bv.MaxForce = Vector3.new(9e9,9e9,9e9)
-        bv.Parent = hrp
-    end
-
-    if not bg then
-        bg = Instance.new("BodyGyro")
-        bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
-        bg.P = 1e5
-        bg.CFrame = cframe or hrp.CFrame
-        bg.Parent = hrp
-    end
-end
-
-local function removeFreeze()
-    if bv then bv:Destroy() bv = nil end
-    if bg then bg:Destroy() bg = nil end
-end
-
--- ===================================
--- MONITOR BIAR TIDAK GESER
--- ===================================
-local function startMonitor(hrp)
-    if monitorConnection then monitorConnection:Disconnect() end
-    monitorConnection = runService.Heartbeat:Connect(function()
-        if freezeOn and savedPos and hrp and hrp.Parent then
-            local dist = (hrp.Position - savedPos.Position).Magnitude
-            if dist > 2 then
-                hrp.CFrame = savedPos
-            end
+-- Tombol Save Position
+Tabs.Farm:Button({ 
+    Title = "Save Position", 
+    Callback = function() 
+        local player = game.Players.LocalPlayer
+        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            savedPosition = hrp.Position
+            WindUI:Notify({
+                Title = "Saved",
+                Content = "Position saved successfully!",
+                Duration = 5,
+            })
+        else
+            WindUI:Notify({
+                Title = "Error",
+                Content = "The character is not ready!",
+                Duration = 5,
+            })
         end
+    end
+})
+
+-- Fungsi Freeze dan kembalikan ke posisi
+local function freezeCharacter()
+    local player = game.Players.LocalPlayer
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp or not savedPosition then return end
+
+    -- Buat BodyVelocity dan BodyGyro
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(1e5,1e5,1e5)
+    bv.Velocity = Vector3.new(0,0,0)
+    bv.Parent = hrp
+
+    local bg = Instance.new("BodyGyro")
+    bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
+    bg.CFrame = CFrame.new(hrp.Position)
+    bg.Parent = hrp
+
+    -- Loop freeze & check distance
+    spawn(function()
+        while teleportEnabled and hrp and hrp.Parent do
+            local distance = (hrp.Position - savedPosition).Magnitude
+            if distance > 2 then
+                hrp.CFrame = CFrame.new(savedPosition)
+            end
+            task.wait(0.1)
+        end
+        -- Hapus BV & BG saat toggle dimatikan
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
     end)
 end
 
-local function stopMonitor()
-    if monitorConnection then
-        monitorConnection:Disconnect()
-        monitorConnection = nil
-    end
-end
-
--- ===================================
--- UI SETTING (URUTAN SESUAI MINTAAN)
--- ===================================
-
--- 1. Dropdown pilih lokasi
-Tabs.Farm:Dropdown({
-    Title = "Select Farm",
-    Values = {"Stone", "Coin", "Coin2", "Exp", "Ocean"},
-    Default = selectedLocation,
-    Callback = function(value)
-        selectedLocation = value
-    end
-})
-
--- 2. Toggle teleport ke lokasi dropdown
-Tabs.Farm:Toggle({
-    Title = "Teleport To Location",
+-- Toggle Teleport + Freeze
+Tabs.Farm:Toggle({ 
+    Title = "Teleport to Saved Position", 
     Value = false,
-    Callback = function(state)
-        freezeOn = state
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        if freezeOn then
-            local target = locations[selectedLocation]
-            if target then
-                hrp.CFrame = target
-                savedPos = target
-            end
-            applyFreeze(hrp, savedPos)
-            startMonitor(hrp)
-        else
-            removeFreeze()
-            stopMonitor()
-            savedPos = nil
+    Callback = function(state) 
+        teleportEnabled = state
+        if teleportEnabled then
+            freezeCharacter()
         end
     end
 })
-
--- 3. Button simpan posisi lock
-Tabs.Farm:Button({
-    Title = "Save Lock Position",
-    Callback = function()
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-        savedPos = hrp.CFrame
-
-        WindUI:Notify({
-            Title = "Position Saved",
-            Content = "Saved CFrame: " .. tostring(savedPos.Position),
-            Duration = 1,
-        })
-    end
-})
-
--- 4. Toggle teleport ke posisi manual (save)
-Tabs.Farm:Toggle({
-    Title = "Teleport To Lock Position",
-    Value = false,
-    Callback = function(state)
-        freezeOn = state
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        if freezeOn and savedPos then
-            hrp.CFrame = savedPos
-            applyFreeze(hrp, savedPos)
-            startMonitor(hrp)
-        else
-            removeFreeze()
-            stopMonitor()
-        end
-    end
-})
-
--- ===================================
--- HANDLE RESPAWN
--- ===================================
-player.CharacterAdded:Connect(function(char)
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    if freezeOn and savedPos then
-        task.wait(0.5)
-        hrp.CFrame = savedPos
-        applyFreeze(hrp, savedPos)
-        startMonitor(hrp)
-    end
-end)
 
 Tabs.Farm:Section({ Title = "Sell" })
 
@@ -1057,7 +981,6 @@ Tabs.Farm:Toggle({
         end
     end
 })
-
 
 Tabs.Auto:Section({ Title = "Info Quest" })
 
@@ -1901,113 +1824,6 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
-Tabs.Server:Section({ Title = "Error Log" })
-
-local HttpService = game:GetService("HttpService")
-local ScriptContext = game:GetService("ScriptContext")
-local LogService = game:GetService("LogService")
-
--- Variabel global
-local webhookUrl = ""
-local webhookEnabled = false
-
--- Input webhook URL
-Tabs.Server:Input({
-    Title = "Webhook Url",
-    Value = "",
-    Placeholder = "Url",
-    Callback = function(input) 
-        webhookUrl = input
-        print("Webhook URL set:", webhookUrl)
-    end
-})
-
--- Toggle webhook
-Tabs.Server:Toggle({
-    Title = "Enable Webhook",
-    Value = false,
-    Callback = function(state) 
-        webhookEnabled = state
-        print("Webhook enabled:", webhookEnabled)
-    end
-})
-
--- Helper buat gabung message dengan aman
-local function toMessage(...)
-    local parts = {}
-    for _, v in ipairs({...}) do
-        table.insert(parts, tostring(v))
-    end
-    return table.concat(parts, " ")
-end
-
--- Fungsi kirim ke webhook (bypass executor block)
-local function sendToWebhook(msg)
-    if webhookEnabled and webhookUrl ~= "" then
-        local data = {
-            ["content"] = "**[Console Log]**\n```lua\n".. msg .. "\n```"
-        }
-
-        local body = HttpService:JSONEncode(data)
-
-        -- pilih request function sesuai executor
-        local request = syn and syn.request or http_request or request or (http and http.request)
-
-        if request then
-            pcall(function()
-                request({
-                    Url = webhookUrl,
-                    Method = "POST",
-                    Headers = {
-                        ["Content-Type"] = "application/json"
-                    },
-                    Body = body
-                })
-            end)
-        else
-            -- fallback ke PostAsync kalau executor nggak punya request
-            pcall(function()
-                HttpService:PostAsync(webhookUrl, body)
-            end)
-        end
-    end
-end
-
--- Tangkap semua error
-ScriptContext.Error:Connect(function(message, stackTrace)
-    sendToWebhook("[Error] " .. message .. "\n" .. stackTrace)
-end)
-
--- Tangkap semua log dari console (print, warn, error)
-LogService.MessageOut:Connect(function(message, messageType)
-    local prefix = "[Info]"
-    if messageType == Enum.MessageType.MessageWarning then
-        prefix = "[Warning]"
-    elseif messageType == Enum.MessageType.MessageError then
-        prefix = "[Error]"
-    end
-    sendToWebhook(prefix .. " " .. message)
-end)
-
--- Optional: override print/warn/error untuk executor tertentu
-local oldPrint = print
-print = function(...)
-    oldPrint(...)
-    sendToWebhook("[Print] " .. toMessage(...))
-end
-
-local oldWarn = warn
-warn = function(...)
-    oldWarn(...)
-    sendToWebhook("[Warn] " .. toMessage(...))
-end
-
-local oldError = error
-error = function(...)
-    oldError(...)
-    sendToWebhook("[ErrorFunc] " .. toMessage(...))
-end
-
 Tabs.Server:Section({ Title = "Staff" })
 
 local Players = game:GetService("Players")
@@ -2406,9 +2222,6 @@ Tabs.Visual:Toggle({
     end
 })
 
------------------------------------------------------
--- BAGIAN IMAGEBUTTON DI LAYAR
------------------------------------------------------
 local TweenService = game:GetService("TweenService")
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -2450,9 +2263,6 @@ ImgBtn.MouseButton1Click:Connect(function()
     isOpen = not isOpen
 end)
 
------------------------------------------------------
--- SISTEM DRAG IMAGEBUTTON (PC & HP SUPPORT)
------------------------------------------------------
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragInput, dragStart, startPos
