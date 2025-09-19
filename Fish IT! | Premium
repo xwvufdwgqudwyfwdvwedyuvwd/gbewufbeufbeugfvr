@@ -115,7 +115,7 @@ print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)(
 -- Coba load WindUI dengan aman
 local WindUI
 local ok, result = pcall(function()
-    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    return local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 end)
 
 if ok and result then
