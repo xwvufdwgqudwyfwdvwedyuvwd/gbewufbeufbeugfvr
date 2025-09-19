@@ -1,1 +1,845 @@
+-- Load WindUI
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - ???",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Fish IT! Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
+
+Window:Tag({
+    Title = "v1.1.8",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+WindUI:Notify({
+    Title = "Game Supported",
+    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
+    Icon = "gamepad",
+    Duration = 6
+})
+
+task.delay(6.5, function()
+    WindUI:Notify({
+        Title = "Bug Report",
+        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+        Icon = "cloud-alert",
+        Duration = 6
+    })
+end)
+
+task.delay(13, function()
+    WindUI:Notify({
+        Title = "Purchase",
+        Content = "If you want to buy this premium script key, join Discord to buy premium.",
+        Icon = "shopping-cart",
+        Duration = 6
+    })
+end)
+
+-- ✅ Tab dan UI
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Active = Window:Tab({ Title = "Active", Icon = "info"  }),
+    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
+    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
+    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
+    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
+    Server = Window:Tab({ Title = "Server", Icon = "server"  }),
+    Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
+}
+
+Tabs.Home:Section({ Title = "Update" })
+
+Tabs.Home:Divider()
+
+Tabs.Home:Paragraph({
+    Title = "Here's what's new:",
+    Desc = [[
+[+] Added Dropdwon Sell Mode
+ - Delay
+ - Backpack Full
+[/] Improve Auto Equip Rod
+    ]]
+})
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Active:Section({ Title = "Status" })
+
+-- FPS, Ping, dan Lama di Server ke WindUI Paragraph
+
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+
+local displayFPS = 0
+local accTime, accFrames = 0, 0
+local smoothing = 0.15
+
+-- Catat waktu join server
+local joinTime = tick()
+
+-- Buat Paragraph di tab Active
+local statusParagraph = Tabs.Active:Paragraph({
+    Title = "Status Player",
+    Desc = "FPS: ...\nPing: ...\nTime: ..."
+})
+
+-- Fungsi format waktu (hh:mm:ss)
+local function formatTime(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+-- Update tiap frame
+RunService.RenderStepped:Connect(function(dt)
+    accTime = accTime + dt
+    accFrames = accFrames + 1
+
+    if accTime >= 0.5 then
+        local instantFPS = accFrames / accTime
+        displayFPS = displayFPS + (instantFPS - displayFPS) * smoothing
+
+        -- Ambil ping (ms)
+        local ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+
+        -- Lama waktu di server
+        local elapsed = tick() - joinTime
+        local timePlayed = formatTime(elapsed)
+
+        -- Update Paragraph WindUI
+        statusParagraph:SetDesc(
+            "FPS: " .. math.floor(displayFPS + 0.5) ..
+            "\nPing: " .. math.floor(ping) .. " ms" ..
+            "\nTime: " .. timePlayed
+        )
+
+        accTime = 0
+        accFrames = 0
+    end
+end)
+
+Tabs.Active:Section({ Title = "Info Event" })
+
+local huntMap = {
+    ["Shark Hunt"] = "Props 1",
+    ["Model"] = "Props 2",
+    ["Megalodon Hunt"] = "Props 3",
+    ["Ghost Shark Hunt"] = "Props 4",
+    ["Fishing Hunt"] = "Props 5",
+}
+
+task.spawn(function()
+    while true do
+        local propsFolder = workspace:FindFirstChild("Props")
+            or workspace:FindFirstChild("Props 1")
+            or workspace:FindFirstChild("Props 2")
+            or workspace:FindFirstChild("Props 3")
+            or workspace:FindFirstChild("Props 4")
+            or workspace:FindFirstChild("Props 5")
+
+        if propsFolder then
+            local renamed = false
+
+            for childName, newName in pairs(huntMap) do
+                if propsFolder:FindFirstChild(childName) then
+                    propsFolder.Name = newName
+                    renamed = true
+                    break -- stop kalau sudah ketemu yang cocok
+                end
+            end
+
+            -- kalau nggak ada hunt yang cocok → balik ke Props
+            if not renamed then
+                propsFolder.Name = "Props"
+            end
+        end
+
+        task.wait(1)
+    end
+end)
+
+local huntStatus = Tabs.Active:Paragraph({
+    Title = "Hunt Status",
+    Desc = "Checking..."
+})
+
+-- daftar props & nama hunt
+local hunts = {
+    ["Props 1"] = "Shark Hunt",
+    ["Props 2"] = "Model", -- Worm Hunt
+    ["Props 3"] = "Megalodon Hunt",
+    ["Props 4"] = "Ghost Shark Hunt",
+    ["Props 5"] = "Fishing Hunt",
+}
+
+-- fungsi update status
+local function updateStatus()
+    local statusText = ""
+
+    for i = 1, 5 do
+        local propName = "Props " .. i
+        local huntName = hunts[propName]
+        local prop = workspace:FindFirstChild(propName)
+        local found = false
+
+        if prop and huntName then
+            if prop:FindFirstChild(huntName) then
+                found = true
+            end
+        end
+
+        -- Worm Hunt khusus (Props 2 → "Model")
+        if propName == "Props 2" then
+            if prop and prop:FindFirstChild("Model") then
+                found = true
+            end
+            statusText = statusText .. "Worm Hunt: " .. (found and "Spawned!" or "Not Found") .. "\n"
+        else
+            statusText = statusText .. hunts[propName] .. ": " .. (found and "Spawned!" or "Not Found") .. "\n"
+        end
+    end
+
+    -- hapus newline terakhir
+    statusText = statusText:sub(1, #statusText - 1)
+
+    huntStatus:SetDesc(statusText)
+end
+
+-- update awal
+updateStatus()
+
+-- auto update kalau ada Props masuk/keluar workspace
+workspace.ChildAdded:Connect(function(child)
+    if string.match(child.Name, "Props") then
+        updateStatus()
+    end
+end)
+
+workspace.ChildRemoved:Connect(function(child)
+    if string.match(child.Name, "Props") then
+        updateStatus()
+    end
+end)
+
+-- auto update kalau child di dalam Props berubah (misalnya Hunt spawn/despawn)
+for i = 1, 5 do
+    local prop = workspace:FindFirstChild("Props " .. i)
+    if prop then
+        prop.ChildAdded:Connect(updateStatus)
+        prop.ChildRemoved:Connect(updateStatus)
+    end
+end
+
+Tabs.Active:Section({ Title = "Event Hunt" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Variabel penyimpanan
+local oldCFrame
+local freezeBV, freezeBG
+local selectedTarget = nil
+local isActive = false
+
+-- Offset per event (biar ga nabrak Part/Color)
+local offsets = {
+    ["Shark Hunt"] = Vector3.new(0, 15, 0),
+    ["Worm Hunt"] = Vector3.new(0, 12, 0),
+    ["Megalodon Hunt"] = Vector3.new(0, 20, 0),
+    ["Ghost Shark Hunt"] = Vector3.new(0, 18, 0),
+    ["Fishing Hunt"] = Vector3.new(0, 10, 0),
+}
+
+-- Target finder
+local targets = {
+    ["Shark Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 1")
+        return props and props:FindFirstChild("Shark Hunt") and props["Shark Hunt"]:FindFirstChild("Part")
+    end,
+    ["Worm Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 2")
+        return props and props:FindFirstChild("Model") and props.Model:FindFirstChild("Part")
+    end,
+    ["Megalodon Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 3")
+        return props and props:FindFirstChild("Megalodon Hunt") and props["Megalodon Hunt"]:FindFirstChild("Color")
+    end,
+    ["Ghost Shark Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 4")
+        return props and props:FindFirstChild("Ghost Shark Hunt") and props["Ghost Shark Hunt"]:FindFirstChild("Part")
+    end,
+    ["Fishing Hunt"] = function()
+        local props = workspace:FindFirstChild("Props 5")
+        return props and props:FindFirstChild("Fishing Hunt") and props["Fishing Hunt"]:FindFirstChild("Part")
+    end,
+}
+
+-- Freeze player di tempat
+local function ApplyFreeze()
+    if freezeBV then freezeBV:Destroy() end
+    if freezeBG then freezeBG:Destroy() end
+
+    freezeBV = Instance.new("BodyVelocity")
+    freezeBV.Velocity = Vector3.new(0, 0, 0)
+    freezeBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    freezeBV.Parent = hrp
+
+    freezeBG = Instance.new("BodyGyro")
+    freezeBG.CFrame = hrp.CFrame
+    freezeBG.D = 10
+    freezeBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    freezeBG.Parent = hrp
+end
+
+local function RemoveFreeze()
+    if freezeBV then freezeBV:Destroy() freezeBV = nil end
+    if freezeBG then freezeBG:Destroy() freezeBG = nil end
+end
+
+-- Fungsi teleport
+local function TeleportToTarget()
+    if not selectedTarget then return end
+    local getTarget = targets[selectedTarget]
+    if not getTarget then return end
+
+    -- Tunggu sampai Props muncul
+    local targetPart
+    while isActive and not targetPart do
+        targetPart = getTarget()
+        if not targetPart then
+            task.wait(1)
+        end
+    end
+
+    if targetPart and isActive then
+        oldCFrame = hrp.CFrame
+        local offset = offsets[selectedTarget] or Vector3.new(0, 10, 0)
+        hrp.CFrame = targetPart.CFrame + offset
+        ApplyFreeze()
+
+        -- Auto cek kalau Props hilang
+        task.spawn(function()
+            while isActive and task.wait(1) do
+                if not getTarget() then
+                    break
+                end
+            end
+            if isActive then
+                RemoveFreeze()
+                if oldCFrame then
+                    hrp.CFrame = oldCFrame
+                end
+                isActive = false
+            end
+        end)
+    end
+end
+
+-- Dropdown pilihan event
+Tabs.Active:Dropdown({
+    Title = "Select Event",
+    Values = {
+        "Shark Hunt",
+        "Worm Hunt",
+        "Megalodon Hunt",
+        "Ghost Shark Hunt",
+        "Fishing Hunt",
+    },
+    Value = "Shark Hunt", -- string, bukan table
+    Multi = false,
+    AllowNone = false,
+    Callback = function(option)
+        selectedTarget = option -- langsung string
+    end
+})
+
+-- Toggle Teleport
+Tabs.Active:Toggle({
+    Title = "Teleport tO eVENT",
+    Value = false,
+    Callback = function(state)
+        isActive = state
+        if state then
+            TeleportToTarget()
+        else
+            RemoveFreeze()
+            if oldCFrame then
+                hrp.CFrame = oldCFrame
+            end
+        end
+    end
+})
+
+Tabs.Player:Section({ Title = "Settings" })
+
+Tabs.Player:Toggle({
+    Title = "Bypass Oxygen Tank",
+    Desc = "This toggle will equip an oxygen tank even though you don't have an oxygen tank. This is free. No coins needed",
+    Default = false,
+    Callback = function(state)
+        local RepStorage = game:GetService("ReplicatedStorage")
+        local Net = RepStorage:WaitForChild("Packages")
+                        :WaitForChild("_Index")
+                        :WaitForChild("sleitnick_net@0.2.0")
+                        :WaitForChild("net")
+        
+        if state then
+            -- Equip
+            local args = {105} -- ID tank
+            Net:WaitForChild("RF/EquipOxygenTank"):InvokeServer(unpack(args))
+        else
+            -- Unequip
+            Net:WaitForChild("RF/UnequipOxygenTank"):InvokeServer()
+        end
+    end
+})
+
+Tabs.Player:Toggle({
+    Title = "Bypass Radar",
+    Value = false,
+    Callback = function(state)
+        -- Update nilai di Window
+        Window.AlwayShowTab = state
+
+        -- Panggil RemoteFunction untuk UpdateFishingRadar
+        local args = { state }  -- true jika toggle ON, false jika OFF
+        local remoteFunc = game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/UpdateFishingRadar")
+        remoteFunc:InvokeServer(unpack(args))
+    end
+})
+
+Tabs.Player:Section({ Title = "Codes" })
+
+local allCodes = {
+    "SHARKSSS",
+    "100M",
+    "MUTATE"
+}
+
+Tabs.Player:Button({
+    Title = "Redeem All Codes",
+    Callback = function()
+        for _, code in ipairs(allCodes) do
+            local args = { code }
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Packages")
+                    :WaitForChild("_Index")
+                    :WaitForChild("sleitnick_net@0.2.0")
+                    :WaitForChild("net")
+                    :WaitForChild("RF/RedeemCode")
+                    :InvokeServer(unpack(args))
+            end)
+        end
+    end
+})
+
+Tabs.Farm:Section({ Title = "Info Fish!!" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- UI Notif
+local smallNotif = playerGui:WaitForChild("Small Notification")
+local display = smallNotif:WaitForChild("Display")
+local container = display:WaitForChild("Container")
+
+local notifications = playerGui:WaitForChild("Text Notifications")
+local frame = notifications:WaitForChild("Frame")
+
+-- posisi default (before) dan sukses
+local beforePos = UDim2.new(0.5, 0, -1.89999998, 0)
+local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
+
+-- counter sukses & gagal
+local successCount = 0
+local failCount = 0
+
+-- satu paragraph gabungan
+local ProgressParagraph = Tabs.Farm:Paragraph({
+    Title = "Fishing Attempts",
+    Desc = "Success: 0\nFailed: 0"
+})
+
+-- update text paragraph
+local function updateParagraph()
+    ProgressParagraph:SetDesc("Success: " .. successCount .. "\nFailed: " .. failCount)
+end
+
+-- === SUCCESS DETECTION (berdasarkan posisi container) ===
+container:GetPropertyChangedSignal("Position"):Connect(function()
+    local pos = container.Position
+
+    if pos == successPos then
+        successCount += 1
+        updateParagraph()
+    end
+end)
+
+-- === FAIL DETECTION (berdasarkan notifikasi text) ===
+frame.ChildAdded:Connect(function(child)
+    if child.Name == "TextTile" then
+        local header = child:WaitForChild("Header", 5)
+        if header and header:IsA("TextLabel") then
+            if header.Text == "The fish got away!" then
+                failCount += 1
+                updateParagraph()
+            end
+
+            -- listen kalau text berubah setelah spawn
+            header:GetPropertyChangedSignal("Text"):Connect(function()
+                if header.Text == "The fish got away!" then
+                    failCount += 1
+                    updateParagraph()
+                end
+            end)
+        end
+    end
+end)
+
+Tabs.Farm:Section({ Title = "Fishing" })
+
+-- Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local fishingGui = playerGui:WaitForChild("Fishing")
+local mainFrame = fishingGui:WaitForChild("Main")
+local vim = game:GetService("VirtualInputManager")
+local camera = workspace.CurrentCamera
+
+-- Default settings
+local beforePosition = UDim2.new(0.5, 0, 1.5, 0)  -- posisi awal Main
+local delayTime = 0.1  -- default delay klik (detik)
+local toggleState = false  -- status toggle dari UI
+
+-- Mapping dropdown ke delay
+local delayMapping = {
+    Slow = 0.8,
+    Normal = 0.1,
+    Fast = 0.05,
+    ["Super Fast"] = 0.005,
+    ["God Speed"] = 0.0001 
+}
+
+-- ==========================
+-- WindUI Dropdown: Atur Delay Klik
+-- ==========================
+Tabs.Farm:Dropdown({
+    Title = "Click Speed",
+    Values = {"Slow", "Normal", "Fast", "Super Fast", "God Speed"},
+    Value = "Slow", -- default
+    Callback = function(option)
+        delayTime = delayMapping[option] or 0.1
+    end
+})
+
+-- ==========================
+-- WindUI Toggle: Auto Fishing
+-- ==========================
+Tabs.Farm:Toggle({ 
+    Title = "Auto Fish v1",
+    Desc = "You must be at least level 3",
+    Value = false,
+    Callback = function(state)
+        -- Simpan status toggle
+        toggleState = state
+
+        -- Kirim status Auto Fishing ke server
+        local args = { state }
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/UpdateAutoFishingState")
+            :InvokeServer(unpack(args))
+    end
+})
+
+-- ==========================
+-- Loop cek posisi Main & Auto Click ke UDim2 target
+-- ==========================
+task.spawn(function()
+    while true do
+        task.wait(delayTime)
+
+        -- Hanya jalan kalau toggle aktif DAN posisi Main berubah
+        if toggleState and mainFrame.Position ~= beforePosition then
+            local screenSize = camera.ViewportSize
+            local target = UDim2.new(0.88, 0, 0.89, -20)
+
+            -- konversi ke pixel
+            local targetX = (screenSize.X * target.X.Scale) + target.X.Offset
+            local targetY = (screenSize.Y * target.Y.Scale) + target.Y.Offset
+
+            -- klik
+            vim:SendMouseButtonEvent(targetX, targetY, 0, true, game, 0)  -- down
+            vim:SendMouseButtonEvent(targetX, targetY, 0, false, game, 0) -- up
+        end
+    end
+end)
+
+-- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Net = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+
+local player = game.Players.LocalPlayer
+local container = player:WaitForChild("PlayerGui")
+    :WaitForChild("Small Notification")
+    :WaitForChild("Display")
+    :WaitForChild("Container")
+
+-- Posisi awal container
+local initialPos = UDim2.new(0.5, 0, -1.9, 0)
+
+-- Toggle & Mode
+local AutoFish = false
+local FishMode = "PERFECT"
+
+-- Step 1 → Charge Fishing Rod
+local function Step1()
+    Net:WaitForChild("RF/ChargeFishingRod"):InvokeServer(os.clock())
+end
+
+-- Step 2 → Start Fishing Minigame
+local function Step2()
+    local args
+    if FishMode == "PERFECT" then
+        args = { -0.75, 0.9949902531063812 }
+    elseif FishMode == "OK" then
+        args = { -0.75, 0.3251698002015836 }
+    elseif FishMode == "AMAZING" then
+        args = { -0.5718746185302734, 0.8702929274284 }
+    elseif FishMode == "GREAT" then
+        args = { -0.5718746185302734, 0.744264094698844 }
+    else
+        args = { -0.75, 0.9949902531063812 }
+    end
+    Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
+end
+
+-- Helper: Fast reset rod
+local function FastResetRod()
+    Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
+    task.wait(0.03)
+    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
+    task.wait(0.03)
+end
+
+-- Step 3 → Tunggu container berubah atau timeout 10 detik
+local function Step3(callback)
+    local connection
+
+    connection = container:GetPropertyChangedSignal("Position"):Connect(function()
+        local currentPos = container.Position
+        if currentPos ~= initialPos then
+            if connection and connection.Connected then
+                connection:Disconnect()
+            end
+            callback() -- lanjut Step4
+        end
+    end)
+
+    -- Timeout 10 detik
+    task.delay(10, function()
+        if connection and connection.Connected then
+            connection:Disconnect()
+            -- langsung ke Step4 (fast reset)
+            Step4()
+        end
+    end)
+end
+
+-- Step 4 → Reset rod cepat lalu ulang Step1
+function Step4()
+    FastResetRod()
+    if AutoFish then
+        task.wait(0.1)
+        RunCycle()
+    end
+end
+
+-- Jalankan siklus Auto Fish
+function RunCycle()
+    task.spawn(function()
+        while AutoFish do
+            Step1()
+            task.wait(0.18)
+            Step2()
+            Step3(function()
+                -- Step3 selesai → Step4
+                Step4()
+            end)
+            break
+        end
+    end)
+end
+
+-- WindUI Dropdown
+Tabs.Farm:Dropdown({ 
+    Title = "Choose Charge Mode", 
+    Values = { "PERFECT", "OK", "AMAZING", "GREAT"}, 
+    Value = "PERFECT", 
+    Callback = function(option) 
+        FishMode = option
+    end
+})
+
+-- WindUI Toggle
+Tabs.Farm:Toggle({
+    Title = "Auto Fish v2",
+    Desc = "Auto fish with Step4 rod reset",
+    Value = false,
+    Callback = function(state)
+        AutoFish = state
+        if state then
+            RunCycle()
+        end
+    end
+})
+
+Tabs.Farm:Toggle({
+    Title = "Auto Fishing Completed",
+    Value = true,
+    Callback = function(state)
+        if state then
+            -- Aktifkan loop auto fishing
+            getgenv().AutoFishing = true
+            task.spawn(function()
+                while getgenv().AutoFishing do
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Packages")
+                            :WaitForChild("_Index")
+                            :WaitForChild("sleitnick_net@0.2.0")
+                            :WaitForChild("net")
+                            :WaitForChild("RE/FishingCompleted")
+                            :FireServer()
+                    end)
+                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
+                end
+            end)
+        else
+            -- Matikan loop auto fishing
+            getgenv().AutoFishing = false
+        end
+    end
+})
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote events
+local Net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local EquipRemote = Net:WaitForChild("RE/EquipToolFromHotbar")
+local UnequipRemote = Net:WaitForChild("RE/UnequipToolFromHotbar")
+
+local equipLoop = nil
+
+Tabs.Farm:Toggle({
+    Title = "Auto Equip Rod",
+    Desc = "Automatically equips your fishing rod in slot 1 and unequips it when turned off",
+    Value = false,
+    Callback = function(state)
+        local char = workspace:WaitForChild("Characters"):WaitForChild(LocalPlayer.Name)
+
+        if state then
+            -- Mulai loop auto-equip
+            equipLoop = task.spawn(function()
+                while task.wait(1) do
+                    -- Kalau masih ada !!!FISHING_VIEW_MODEL!!! berarti rod BELUM dipegang → equip
+                    if char:FindFirstChild("!!!FISHING_VIEW_MODEL!!!") then
+                        EquipRemote:FireServer(1)
+                    end
+                end
+            end)
+        else
+            -- Hentikan loop
+            if equipLoop then
+                task.cancel(equipLoop)
+                equipLoop = nil
+            end
+
+            -- Langsung unequip
+            UnequipRemote:FireServer()
+        end
+    end
+})
