@@ -112,13 +112,19 @@ end
 
 print("✅ Anti-Crash (no-URL) installed. Gunakan _G.safeCall / loadstring(src)() aman.")
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+-- Coba load WindUI dengan aman
+local WindUI
+local ok, result = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
 
--- Ambil nama player
-local player = game.Players.LocalPlayer
-local playerName = player.Name
-local playerDisplayName = player.DisplayName
+if ok and result then
+    WindUI = result
+else
+    warn("❌ Gagal memuat WindUI, cek koneksi atau executor (loadstring/HttpGet tidak ada).")
+end
 
+-- Kalau berhasil, baru buat Window
 if WindUI then
     local Window = WindUI:CreateWindow({
         Title = "Nexa - Beta",
@@ -128,15 +134,15 @@ if WindUI then
         Size = UDim2.fromOffset(540, 420),
         Transparent = true,
         Theme = "Dark",
-        
+
         HidePanelBackground = true,
         NewElements = false,
 
         User = {
             Enabled = true,
-            Anonymous = false,            -- false biar muncul nama asli
-            Name = playerDisplayName,     -- Nama tampilan
-            UserName = "@" .. playerName, -- Username Roblox
+            Anonymous = false,
+            Name = game.Players.LocalPlayer.DisplayName,
+            UserName = "@" .. game.Players.LocalPlayer.Name,
             Callback = function()
                 WindUI:Notify({
                     Title = "User Profile",
@@ -145,13 +151,18 @@ if WindUI then
                 })
             end
         },
-        
+
         Acrylic = false,
         HideSearchBar = false,
         SideBarWidth = 200,
     })
-else
-    warn("⚠️ WindUI gagal dimuat, cek koneksi atau URL.")
+
+    -- Notifikasi akhir
+    WindUI:Notify({
+        Title = "Nexa Loaded",
+        Content = "Script Runs Successfully! Enjoy my script!",
+        Duration = 3
+    })
 end
 
 Window:Tag({
@@ -301,41 +312,143 @@ end)
 
 Tabs.Active:Section({ Title = "Event" })
 
--- daftar props yang mau dicek
-local propsList = {
-    ["Megalodon Hunt"] = "Megalodon Hunt Status",
-    ["Shark Hunt"] = "Shark Hunt Status",
-    ["Model"] = "Model Status",
-    ["Fishing Hunt"] = "Fishing Hunt Status",
-    ["Ghost Shark Hunt"] = "Ghost Shark Hunt Status"
+local huntMap = {
+    ["Shark Hunt"] = "Props 1",
+    ["Model"] = "Props 2",
+    ["Megalodon Hunt"] = "Props 3",
+    ["Ghost Shark Hunt"] = "Props 4",
+    ["Fishing Hunt"] = "Props 5",
 }
 
--- tabel untuk menyimpan paragraf tiap props
-local statusParagraphs = {}
+task.spawn(function()
+    while true do
+        local propsFolder = workspace:FindFirstChild("Props")
+            or workspace:FindFirstChild("Props 1")
+            or workspace:FindFirstChild("Props 2")
+            or workspace:FindFirstChild("Props 3")
+            or workspace:FindFirstChild("Props 4")
+            or workspace:FindFirstChild("Props 5")
 
--- buat paragraf awal untuk tiap props
-for propName, title in pairs(propsList) do
-    statusParagraphs[propName] = Tabs.Active:Paragraph({
-        Title = title,
-        Desc = "Checking..."
-    })
-end
+        if propsFolder then
+            local renamed = false
 
--- loop untuk update status tiap detik
+            for childName, newName in pairs(huntMap) do
+                if propsFolder:FindFirstChild(childName) then
+                    propsFolder.Name = newName
+                    renamed = true
+                    break -- stop kalau sudah ketemu yang cocok
+                end
+            end
+
+            -- kalau nggak ada hunt yang cocok → balik ke Props
+            if not renamed then
+                propsFolder.Name = "Props"
+            end
+        end
+
+        task.wait(1)
+    end
+end)
+
+-- bikin 1 paragraph aja
+local ghostStatus = Tabs.Active:Paragraph({
+    Title = "Ghost Shark Hunt",
+    Desc = "Checking..."
+})
+
+-- loop pengecekan model
 spawn(function()
     while true do
         wait(1)
-        for propName, _ in pairs(propsList) do
-            local prop = workspace.Props:FindFirstChild(propName)
-            if prop and prop:FindFirstChild("Part") then
-                statusParagraphs[propName]:Set("Spawned!")
-            else
-                statusParagraphs[propName]:Set("Not Spawned")
-            end
+        local ghostModel = workspace.Props 4:FindFirstChild("Ghost Shark Hunt")
+
+        if ghostModel then
+            ghostStatus:SetDesc("Spawned!")
+        else
+            ghostStatus:SetDesc("Not Found")
         end
     end
 end)
 
+-- bikin 2 paragraph aja
+local fishStatus = Tabs.Active:Paragraph({
+    Title = "Fishing Hunt",
+    Desc = "Checking..."
+})
+
+-- loop pengecekan model
+spawn(function()
+    while true do
+        wait(1)
+        local fishModel = workspace.Props 5:FindFirstChild("Fishing Hunt")
+
+        if fishModel then
+            fishStatus:SetDesc("Spawned!")
+        else
+            fishStatus:SetDesc("Not Found")
+        end
+    end
+end)
+
+-- bikin 3 paragraph aja
+local wormStatus = Tabs.Active:Paragraph({
+    Title = "Worm Hunt",
+    Desc = "Checking..."
+})
+
+-- loop pengecekan model
+spawn(function()
+    while true do
+        wait(1)
+        local wormModel = workspace.Props 2:FindFirstChild("Model") -- cek model Worm Hunt
+
+        if wormModel then
+            wormStatus:SetDesc("Spawned!")
+        else
+            wormStatus:SetDesc("Not Found")
+        end
+    end
+end)
+
+-- bikin 4 paragraph aja
+local sharkStatus = Tabs.Active:Paragraph({
+    Title = "Shark Hunt",
+    Desc = "Checking..."
+})
+
+-- loop pengecekan model
+spawn(function()
+    while true do
+        wait(1)
+        local sharkModel = workspace.Props 1:FindFirstChild("Shark Hunt")
+
+        if sharkModel then
+            sharkStatus:SetDesc("Spawned!")
+        else
+            sharkStatus:SetDesc("Not Found")
+        end
+    end
+end)
+
+-- bikin 5 paragraph aja
+local megaStatus = Tabs.StatusTab:Paragraph({
+    Title = "Megalodon Hunt",
+    Desc = "Checking..."
+})
+
+-- loop pengecekan model
+spawn(function()
+    while true do
+        wait(1)
+        local megaModel = workspace.Props 3:FindFirstChild("Megalodon Hunt")
+
+        if megaModel then
+            megaStatus:SetDesc("Spawned!")
+        else
+            megaStatus:SetDesc("Not Found")
+        end
+    end
+end)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -626,7 +739,7 @@ task.spawn(function()
     end
 end)
 
--- Auto Fish v3 dengan Step4 + reset karakter jika container stuck
+-- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
@@ -676,7 +789,7 @@ local function FastResetRod()
     task.wait(0.03)
 end
 
--- Step 3 → Tunggu container berubah atau timeout 9 detik
+-- Step 3 → Tunggu container berubah atau timeout 10 detik
 local function Step3(callback)
     local connection
 
@@ -690,17 +803,12 @@ local function Step3(callback)
         end
     end)
 
-    -- Timeout 9 detik → reset karakter + ulang Step1
-    task.delay(9, function()
+    -- Timeout 10 detik
+    task.delay(10, function()
         if connection and connection.Connected then
             connection:Disconnect()
-            -- Reset karakter jika container stuck
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = player.Character.HumanoidRootPart
-                hrp.CFrame = CFrame.new(Vector3.new(0, 5, 0)) -- teleport ke posisi awal / spawn
-            end
-            task.wait(0.5) -- tunggu posisi stabil
-            Step4() -- reset rod dan ulang Step1
+            -- langsung ke Step4 (fast reset)
+            Step4()
         end
     end)
 end
@@ -722,7 +830,8 @@ function RunCycle()
             task.wait(0.18)
             Step2()
             Step3(function()
-                Step4() -- Step3 selesai → Step4
+                -- Step3 selesai → Step4
+                Step4()
             end)
             break
         end
@@ -741,8 +850,8 @@ Tabs.Farm:Dropdown({
 
 -- WindUI Toggle
 Tabs.Farm:Toggle({
-    Title = "Auto Fish v3",
-    Desc = "Auto fish with Step4 rod reset + auto reset character if stuck",
+    Title = "Auto Fish v2",
+    Desc = "Auto fish with Step4 rod reset",
     Value = false,
     Callback = function(state)
         AutoFish = state
@@ -751,7 +860,6 @@ Tabs.Farm:Toggle({
         end
     end
 })
-
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
@@ -2487,11 +2595,3 @@ UserInputService.InputChanged:Connect(function(input)
         update(input)
     end
 end)
-
-if WindUI then
-    WindUI:Notify({
-        Title = "Nexa Loaded",
-        Content = "Script berhasil dijalankan!",
-        Duration = 3
-    })
-end
