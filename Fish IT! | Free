@@ -39,7 +39,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.1.8",
+    Title = "v1.2.0",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -94,10 +94,7 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Added Dropdwon Sell Mode
- - Delay
- - Backpack Full
-[/] Improve Auto Equip Rod
+[/] Fixed
     ]]
 })
 
