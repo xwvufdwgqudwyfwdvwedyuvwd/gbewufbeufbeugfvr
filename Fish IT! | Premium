@@ -575,7 +575,7 @@ local function Step3(callback)
     end)
 
     -- Timeout 10 detik
-    task.delay(10, function()
+    task.delay(9, function()
         if connection and connection.Connected then
             connection:Disconnect()
             -- langsung ke Step4 (fast reset)
@@ -588,7 +588,7 @@ end
 function Step4()
     FastResetRod()
     if AutoFish then
-        task.wait(0.001)
+        task.wait(0.1)
         RunCycle()
     end
 end
@@ -634,7 +634,7 @@ Tabs.Farm:Toggle({
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
-    Value = false,
+    Value = true,
     Callback = function(state)
         if state then
             -- Aktifkan loop auto fishing
