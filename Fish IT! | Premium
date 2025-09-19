@@ -1,3 +1,4 @@
+
 -- Load WindUI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -694,9 +695,9 @@ end
 -- Helper: Fast reset rod
 local function FastResetRod()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
-    task.wait(0.03)
+    task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
+    task.wait(0.01)
 end
 
 -- Step 3 → Tunggu container berubah atau timeout 10 detik
@@ -727,7 +728,7 @@ end
 function Step4()
     FastResetRod()
     if AutoFish then
-        task.wait(0.1)
+        task.wait(0.03)
         RunCycle()
     end
 end
@@ -978,7 +979,7 @@ Tabs.Farm:Toggle({
     end
 })
 
-Tabs.Auto:Section({ Title = "Info Quest" })
+Tabs.Auto:Section({ Title = "Deep Sea Quest" })
 
 local board = workspace["!!! MENU RINGS"]["Deep Sea Tracker"].Board
 local surfaceGui = board:WaitForChild("Gui")
@@ -1016,8 +1017,6 @@ for _, name in ipairs(labelNames) do
         label:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
     end
 end
-
-Tabs.Auto:Section({ Title = "Quest" })
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -1126,6 +1125,87 @@ Tabs.Auto:Toggle({
         else
             Unfreeze()
             savedCFrame = nil
+        end
+    end
+})
+
+Tabs.Auto:Section({ Title = "Aura Boat Quest" })
+
+-- Buat paragraph sekali saja
+local auraParagraph = Tabs.Auto:Paragraph({
+    Title = "Aura Boat Quest",
+    Desc = "" 
+})
+
+-- Update teks setiap 1 detik
+spawn(function()
+    while true do
+        local label1Text = workspace["!!! MENU RINGS"]["Aura Tracker"].Board.Gui.Content.Label1.Text
+        local label2Text = workspace["!!! MENU RINGS"]["Aura Tracker"].Board.Gui.Content.Label2.Text
+        local label3Text = workspace["!!! MENU RINGS"]["Aura Tracker"].Board.Gui.Content.Label3.Text
+
+        -- Gabungkan teks tanpa menampilkan "Label1/2/3"
+        local combinedText = label1Text .. "\n" .. label2Text .. "\n" .. label3Text
+
+        -- Update desc paragraph saja
+        auraParagraph:SetDesc(combinedText)
+
+        wait(1)
+    end
+end)
+
+-- Variabel target CFrame
+local targetCFrame = CFrame.new(
+    88.2434769, 9.53157043, 2685.2605,
+    0.999735832, -1.020575e-08, 0.0228940968,
+    1.1017133e-08, 1, 3.51753293e-08,
+    -0.0228940968, 3.54192586e-08, 0.999735832
+)
+
+-- Toggle di Tab Auto
+Tabs.Auto:Toggle({
+    Title = "Auto Aura Boat Quest",
+    Value = false,
+    Callback = function(state)
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+
+        if state then
+            -- BodyVelocity dan BodyGyro untuk freeze
+            local bv = Instance.new("BodyVelocity")
+            bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            bv.Velocity = Vector3.new(0,0,0)
+            bv.Parent = hrp
+
+            local bg = Instance.new("BodyGyro")
+            bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+            bg.CFrame = hrp.CFrame
+            bg.Parent = hrp
+
+            -- Loop untuk teleport + freeze
+            _G.TeleportFreeze = true
+            spawn(function()
+                while _G.TeleportFreeze do
+                    wait(0.1)
+                    local distance = (hrp.Position - targetCFrame.Position).Magnitude
+                    if distance > 2 then
+                        hrp.CFrame = targetCFrame
+                    end
+                    bv.Velocity = Vector3.new(0,0,0)
+                    bg.CFrame = targetCFrame
+                end
+            end)
+
+        else
+            -- Matikan freeze
+            _G.TeleportFreeze = false
+            -- Hapus BV & BG
+            for _, v in pairs(hrp:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                    v:Destroy()
+                end
+            end
         end
     end
 })
