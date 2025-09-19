@@ -1206,7 +1206,7 @@ Tabs.Auto:Toggle({
                             WindUI:Notify({
                                 Title = "Quest Activated",
                                 Content = "AuraQuest successfully activated!",
-                                Duration = 5,
+                                Duration = 0,
                             })
                         else
                             WindUI:Notify({
