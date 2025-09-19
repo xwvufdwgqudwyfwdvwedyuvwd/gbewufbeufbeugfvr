@@ -1,4 +1,3 @@
-
 -- Load WindUI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -40,7 +39,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.0",
+    Title = "v1.2.1",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -95,7 +94,7 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[/] Fixed
+[+] Added Aura Boat Quest
     ]]
 })
 
