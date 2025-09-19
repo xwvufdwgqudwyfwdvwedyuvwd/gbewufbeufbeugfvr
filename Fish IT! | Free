@@ -697,9 +697,9 @@ end
 -- Helper: Fast reset rod
 local function FastResetRod()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
-    task.wait(0.03)
+    task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
+    task.wait(0.01)
 end
 
 -- Step 3 → Tunggu container berubah atau timeout 10 detik
@@ -730,7 +730,7 @@ end
 function Step4()
     FastResetRod()
     if AutoFish then
-        task.wait(0.1)
+        task.wait(0.03)
         RunCycle()
     end
 end
