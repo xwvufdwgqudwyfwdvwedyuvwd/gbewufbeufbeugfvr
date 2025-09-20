@@ -761,7 +761,6 @@ Tabs.Farm:Dropdown({
 -- WindUI Toggle
 Tabs.Farm:Toggle({
     Title = "Auto Fish v2",
-    Desc = "Auto fish with Step4 rod reset",
     Value = false,
     Callback = function(state)
         AutoFish = state
