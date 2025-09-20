@@ -666,7 +666,7 @@ local initialPos = UDim2.new(0.5, 0, -1.9, 0)
 
 local AutoFish = false
 local FishMode = "PERFECT"
-local runningCycle = false -- untuk mencegah tumpukan siklus
+local runningCycle = false -- mencegah tumpukan siklus
 
 -- Step 1 → Charge Fishing Rod
 local function Step1()
@@ -690,8 +690,8 @@ local function Step2()
     Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
 end
 
--- Helper: Fast Reset Rod (Step4)
-local function FastResetRod()
+-- Step 4 → Reset rod cepat
+local function Step4()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
     task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
@@ -707,7 +707,7 @@ local function Step3(callback)
         if container.Position ~= initialPos and not finished then
             finished = true
             connection:Disconnect()
-            callback()
+            callback() -- lanjut Step4
         end
     end)
 
@@ -718,14 +718,11 @@ local function Step3(callback)
             if connection and connection.Connected then
                 connection:Disconnect()
             end
-            callback()
+            -- Container ga berubah → cancel fishing inputs
+            Net:WaitForChild("RF/CancelFishingInputs"):InvokeServer()
+            callback() -- lanjut Step4
         end
     end)
-end
-
--- Step 4 → Reset rod cepat
-local function Step4()
-    FastResetRod()
 end
 
 -- Jalankan siklus Auto Fish
@@ -777,6 +774,8 @@ Tabs.Farm:Toggle({
         end
     end
 })
+
+
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
