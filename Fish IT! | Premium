@@ -568,6 +568,11 @@ end)
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
+Tabs.Farm:Paragraph({
+    Title = "Pesan Developer",
+    Desc = "Semisal ada bug di auto Fish v2 pakai auto Fish v1 aja uda di fixed bug tapi masi sama aja"
+})
+
 -- Services
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
