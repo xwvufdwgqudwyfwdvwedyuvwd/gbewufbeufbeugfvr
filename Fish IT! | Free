@@ -306,11 +306,11 @@ local isActive = false
 
 -- Offset per event (biar ga nabrak Part/Color)
 local offsets = {
-    ["Shark Hunt"] = Vector3.new(0, 15, 0),
-    ["Worm Hunt"] = Vector3.new(0, 12, 0),
-    ["Megalodon Hunt"] = Vector3.new(0, 20, 0),
-    ["Ghost Shark Hunt"] = Vector3.new(0, 18, 0),
-    ["Fishing Hunt"] = Vector3.new(0, 10, 0),
+    ["Shark Hunt"] = Vector3.new(0, 4, 0),
+    ["Worm Hunt"] = Vector3.new(0, 10, 0),
+    ["Megalodon Hunt"] = Vector3.new(0, 4, 0),
+    ["Ghost Shark Hunt"] = Vector3.new(0, 4, 0),
+    ["Fishing Hunt"] = Vector3.new(0, 4, 0),
 }
 
 -- Target finder
