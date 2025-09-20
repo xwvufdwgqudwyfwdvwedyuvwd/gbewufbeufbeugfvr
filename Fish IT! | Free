@@ -711,7 +711,7 @@ local function Step3(callback)
     end)
 
     -- Timeout 10 detik
-    task.delay(10, function()
+    task.delay(6, function()
         if not finished then
             finished = true
             if connection and connection.Connected then
