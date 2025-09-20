@@ -776,6 +776,28 @@ Tabs.Farm:Toggle({
 })
 
 
+Tabs.Farm:Button({
+    Title = "Cancel Fishing",
+    Desc = "If there is a bug or stuck, click this to cancel and restart Fishv2 auto.",
+    Callback = function()
+        -- Panggil RemoteFunction CancelFishingInputs
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/CancelFishingInputs")
+            :InvokeServer()
+
+        -- Notifikasi
+        WindUI:Notify({
+            Title = "Fishing Cancelled",
+            Content = "You can now restart Fishv2 Auto.",
+            Duration = 5,
+        })
+    end
+})
+
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
