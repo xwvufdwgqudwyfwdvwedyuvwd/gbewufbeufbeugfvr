@@ -649,6 +649,7 @@ task.spawn(function()
     end
 end)
 
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
@@ -665,6 +666,7 @@ local initialPos = UDim2.new(0.5, 0, -1.9, 0)
 
 local AutoFish = false
 local FishMode = "PERFECT"
+local runningCycle = false -- untuk mencegah tumpukan siklus
 
 -- Step 1 → Charge Fishing Rod
 local function Step1()
@@ -688,6 +690,14 @@ local function Step2()
     Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
 end
 
+-- Helper: Fast Reset Rod (Step4)
+local function FastResetRod()
+    Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
+    task.wait(0.01)
+    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
+    task.wait(0.03)
+end
+
 -- Step 3 → Tunggu container berubah atau timeout
 local function Step3(callback)
     local connection
@@ -701,36 +711,48 @@ local function Step3(callback)
         end
     end)
 
+    -- Timeout 10 detik
     task.delay(10, function()
         if not finished then
             finished = true
             if connection and connection.Connected then
                 connection:Disconnect()
             end
-            callback() -- langsung Step4
+            callback()
         end
     end)
 end
 
--- Step 4 → Reset rod cepat dan lanjut cycle
+-- Step 4 → Reset rod cepat
 local function Step4()
-    Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
-    task.wait(0.01)
-    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
-    if AutoFish then
-        RunCycle() -- ulangi siklus
-    end
+    FastResetRod()
 end
 
 -- Jalankan siklus Auto Fish
 function RunCycle()
+    if runningCycle then return end
+    runningCycle = true
+
     task.spawn(function()
-        if not AutoFish then return end
-        Step1()
-        task.wait(0.18)
-        Step2()
-        Step3(Step4)
+        while AutoFish do
+            -- Step1
+            Step1()
+            task.wait(0.18)
+
+            -- Step2
+            Step2()
+
+            -- Step3 + Step4
+            local step3Finished = false
+            Step3(function()
+                Step4()
+                step3Finished = true
+            end)
+
+            -- Tunggu Step3+Step4 selesai sebelum ulang loop
+            repeat task.wait() until step3Finished
+        end
+        runningCycle = false
     end)
 end
 
@@ -774,7 +796,7 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(0.1) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
