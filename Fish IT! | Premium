@@ -1192,7 +1192,7 @@ Tabs.Auto:Toggle({
                     if level >= 200 then
                         -- Step 2: aktifkan quest
                         local args = {"AuraQuest"}
-                        local success, err = pcall(function()
+                        pcall(function()
                             game:GetService("ReplicatedStorage")
                                 :WaitForChild("Packages")
                                 :WaitForChild("_Index")
@@ -1201,19 +1201,6 @@ Tabs.Auto:Toggle({
                                 :WaitForChild("RF/ActivateQuestLine")
                                 :InvokeServer(unpack(args))
                         end)
-                        if success then
-                            WindUI:Notify({
-                                Title = "Quest Activated",
-                                Content = "AuraQuest successfully activated!",
-                                Duration = 0,
-                            })
-                        else
-                            WindUI:Notify({
-                                Title = "Error",
-                                Content = "Failed to ActivateQuestLine: "..err,
-                                Duration = 5,
-                            })
-                        end
 
                         -- Step 3: teleport ke target
                         local distance = (hrp.Position - targetCFrame.Position).Magnitude
@@ -1222,13 +1209,6 @@ Tabs.Auto:Toggle({
                         end
                         bv.Velocity = Vector3.new(0,0,0)
                         bg.CFrame = targetCFrame
-                    else
-                        -- Level kurang dari 200
-                        WindUI:Notify({
-                            Title = "Level Kurang",
-                            Content = "Level kamu belum 200, tidak bisa lanjut",
-                            Duration = 5,
-                        })
                     end
                 end
             end)
@@ -1241,14 +1221,10 @@ Tabs.Auto:Toggle({
                     v:Destroy()
                 end
             end
-            WindUI:Notify({
-                Title = "Auto Aura Quest",
-                Content = "Fungsi dimatikan.",
-                Duration = 0,
-            })
         end
     end
 })
+
 
 Tabs.Shop:Section({ Title = "Rod" })
 
