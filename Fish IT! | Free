@@ -649,7 +649,6 @@ task.spawn(function()
     end
 end)
 
--- Auto Fish v3 dengan Step4 (reset rod tiap cycle, tanpa warn spam)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
@@ -662,12 +661,11 @@ local container = player:WaitForChild("PlayerGui")
     :WaitForChild("Display")
     :WaitForChild("Container")
 
--- Posisi awal container
 local initialPos = UDim2.new(0.5, 0, -1.9, 0)
 
--- Toggle & Mode
 local AutoFish = false
 local FishMode = "PERFECT"
+local runningCycle = false -- mencegah tumpukan siklus
 
 -- Step 1 → Charge Fishing Rod
 local function Step1()
@@ -691,64 +689,70 @@ local function Step2()
     Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
 end
 
--- Helper: Fast reset rod
-local function FastResetRod()
+-- Step 4 → Reset rod cepat
+local function Step4()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
     task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.01)
+    task.wait(0.03)
 end
 
--- Step 3 → Tunggu container berubah atau timeout 10 detik
+-- Step 3 → Tunggu container berubah atau timeout
 local function Step3(callback)
     local connection
+    local finished = false
 
     connection = container:GetPropertyChangedSignal("Position"):Connect(function()
-        local currentPos = container.Position
-        if currentPos ~= initialPos then
-            if connection and connection.Connected then
-                connection:Disconnect()
-            end
+        if container.Position ~= initialPos and not finished then
+            finished = true
+            connection:Disconnect()
             callback() -- lanjut Step4
         end
     end)
 
     -- Timeout 10 detik
     task.delay(10, function()
-        if connection and connection.Connected then
-            connection:Disconnect()
-            -- langsung ke Step4 (fast reset)
-            Step4()
+        if not finished then
+            finished = true
+            if connection and connection.Connected then
+                connection:Disconnect()
+            end
+            -- Container ga berubah → cancel fishing inputs
+            Net:WaitForChild("RF/CancelFishingInputs"):InvokeServer()
+            callback() -- lanjut Step4
         end
     end)
-end
-
--- Step 4 → Reset rod cepat lalu ulang Step1
-function Step4()
-    FastResetRod()
-    if AutoFish then
-        task.wait(0.03)
-        RunCycle()
-    end
 end
 
 -- Jalankan siklus Auto Fish
 function RunCycle()
+    if runningCycle then return end
+    runningCycle = true
+
     task.spawn(function()
         while AutoFish do
+            -- Step1
             Step1()
             task.wait(0.18)
+
+            -- Step2
             Step2()
+
+            -- Step3 + Step4
+            local step3Finished = false
             Step3(function()
-                -- Step3 selesai → Step4
                 Step4()
+                step3Finished = true
             end)
-            break
+
+            -- Tunggu Step3+Step4 selesai sebelum ulang loop
+            repeat task.wait() until step3Finished
         end
+        runningCycle = false
     end)
 end
 
--- WindUI Dropdown
+-- UI Dropdown
 Tabs.Farm:Dropdown({ 
     Title = "Choose Charge Mode", 
     Values = { "PERFECT", "OK", "AMAZING", "GREAT"}, 
@@ -758,7 +762,7 @@ Tabs.Farm:Dropdown({
     end
 })
 
--- WindUI Toggle
+-- UI Toggle
 Tabs.Farm:Toggle({
     Title = "Auto Fish v2",
     Value = false,
@@ -788,7 +792,7 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(1) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(0.1) -- delay biar server nggak ke-spam terlalu cepat
                 end
             end)
         else
