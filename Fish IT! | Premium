@@ -134,7 +134,7 @@ Tabs.Home:Paragraph({
     Desc = [[
 [+] Added Anti Lava
 [/] Improve Auto Fish v2
-[/] Rework Teleport Event * Status Ecent
+[/] Rework Teleport Event & Status Ecent
 [-] Delete Tab Visual
 [/] Move Visual To Player Tab Place
     ]]
