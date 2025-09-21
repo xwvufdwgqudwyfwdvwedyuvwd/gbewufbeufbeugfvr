@@ -299,12 +299,12 @@ local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
 -- Variabel penyimpanan
-local oldCFrame
+local savePosition -- posisi awal sebelum teleport
 local freezeBV, freezeBG
-local selectedTarget = nil
+local selectedTargets = {} -- multi pilih
 local isActive = false
 
--- Offset per event (biar ga nabrak Part/Color)
+-- Offset per event
 local offsets = {
     ["Shark Hunt"] = Vector3.new(0, 4, 0),
     ["Worm Hunt"] = Vector3.new(0, 10, 0),
@@ -317,27 +317,27 @@ local offsets = {
 local targets = {
     ["Shark Hunt"] = function()
         local props = workspace:FindFirstChild("Props 1")
-        return props and props:FindFirstChild("Shark Hunt") and props["Shark Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Shark Hunt")
     end,
     ["Worm Hunt"] = function()
         local props = workspace:FindFirstChild("Props 2")
-        return props and props:FindFirstChild("Model") and props.Model:FindFirstChild("Part")
+        return props and props:FindFirstChild("Model")
     end,
     ["Megalodon Hunt"] = function()
         local props = workspace:FindFirstChild("Props 3")
-        return props and props:FindFirstChild("Megalodon Hunt") and props["Megalodon Hunt"]:FindFirstChild("Color")
+        return props and props:FindFirstChild("Megalodon Hunt")
     end,
     ["Ghost Shark Hunt"] = function()
         local props = workspace:FindFirstChild("Props 4")
-        return props and props:FindFirstChild("Ghost Shark Hunt") and props["Ghost Shark Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Ghost Shark Hunt")
     end,
     ["Fishing Hunt"] = function()
         local props = workspace:FindFirstChild("Props 5")
-        return props and props:FindFirstChild("Fishing Hunt") and props["Fishing Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Fishing Hunt")
     end,
 }
 
--- Freeze player di tempat
+-- Freeze player
 local function ApplyFreeze()
     if freezeBV then freezeBV:Destroy() end
     if freezeBG then freezeBG:Destroy() end
@@ -359,48 +359,58 @@ local function RemoveFreeze()
     if freezeBG then freezeBG:Destroy() freezeBG = nil end
 end
 
--- Fungsi teleport
-local function TeleportToTarget()
-    if not selectedTarget then return end
-    local getTarget = targets[selectedTarget]
-    if not getTarget then return end
-
-    -- Tunggu sampai Props muncul
-    local targetPart
-    while isActive and not targetPart do
-        targetPart = getTarget()
-        if not targetPart then
-            task.wait(1)
+-- Cari target aktif pertama dari selectedTargets
+local function FindActiveTarget()
+    for _, name in ipairs(selectedTargets) do
+        local getTarget = targets[name]
+        if getTarget then
+            local model = getTarget()
+            if model then
+                return name, model
+            end
         end
     end
-
-    if targetPart and isActive then
-        oldCFrame = hrp.CFrame
-        local offset = offsets[selectedTarget] or Vector3.new(0, 10, 0)
-        hrp.CFrame = targetPart.CFrame + offset
-        ApplyFreeze()
-
-        -- Auto cek kalau Props hilang
-        task.spawn(function()
-            while isActive and task.wait(1) do
-                if not getTarget() then
-                    break
-                end
-            end
-            if isActive then
-                RemoveFreeze()
-                if oldCFrame then
-                    hrp.CFrame = oldCFrame
-                end
-                isActive = false
-            end
-        end)
-    end
+    return nil, nil
 end
 
--- Dropdown pilihan event
+-- Fungsi teleport loop
+local function TeleportLoop()
+    task.spawn(function()
+        while isActive do
+            local eventName, targetModel = FindActiveTarget()
+            if eventName and targetModel then
+                local offset = offsets[eventName] or Vector3.new(0, 10, 0)
+                hrp.CFrame = targetModel:GetPivot() + offset
+                ApplyFreeze()
+
+                -- Tunggu sampai model hilang
+                repeat
+                    task.wait(1)
+                until not isActive or not targets[eventName]() -- model hilang
+
+                RemoveFreeze()
+                if isActive and savePosition then
+                    hrp.CFrame = savePosition -- kembali ke posisi awal
+                end
+            else
+                task.wait(1) -- tunggu lagi sampai ada hunt aktif
+            end
+        end
+    end)
+end
+
+-- Update ulang saat respawn
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    hrp = character:WaitForChild("HumanoidRootPart")
+    if isActive then
+        task.delay(1, TeleportLoop)
+    end
+end)
+
+-- Dropdown multi pilihan event
 Tabs.Active:Dropdown({
-    Title = "Select Event",
+    Title = "Select Events",
     Values = {
         "Shark Hunt",
         "Worm Hunt",
@@ -408,30 +418,40 @@ Tabs.Active:Dropdown({
         "Ghost Shark Hunt",
         "Fishing Hunt",
     },
-    Value = "Shark Hunt", -- string, bukan table
-    Multi = false,
-    AllowNone = false,
-    Callback = function(option)
-        selectedTarget = option -- langsung string
+    Multi = true,
+    AllowNone = true,
+    Callback = function(options)
+        selectedTargets = options
     end
 })
 
 -- Toggle Teleport
 Tabs.Active:Toggle({
-    Title = "Teleport To Event",
+    Title = "Teleport To Events",
     Value = false,
     Callback = function(state)
         isActive = state
         if state then
-            TeleportToTarget()
+            savePosition = hrp.CFrame -- simpan posisi awal saat toggle ON
+            TeleportLoop()
         else
             RemoveFreeze()
-            if oldCFrame then
-                hrp.CFrame = oldCFrame
+            if savePosition then
+                hrp.CFrame = savePosition
             end
         end
     end
 })
+
+-- Button manual untuk Save Position
+Tabs.Active:Button({
+    Title = "Save Position",
+    Desc = "If you want to teleport to an event, you have to save your position first so you can return to your starting position.",
+    Callback = function()
+        savePosition = hrp.CFrame
+    end
+})
+
 
 Tabs.Player:Section({ Title = "Settings" })
 
