@@ -20,22 +20,6 @@ local Localization = WindUI:Localization({
             ["THEME_SELECT"] = "Select Theme",
             ["TRANSPARENCY"] = "Window Transparency",
             ["LOCKED_TAB"] = "Locked Tab"
-        },
-        ["ms"] = { -- Bahasa Malaysia
-            ["WINDUI_EXAMPLE"] = "Contoh WindUI",
-            ["WELCOME"] = "Selamat datang ke WindUI!",
-            ["LIB_DESC"] = "Perpustakaan UI yang cantik untuk Roblox",
-            ["SETTINGS"] = "Tetapan",
-            ["APPEARANCE"] = "Penampilan",
-            ["FEATURES"] = "Ciri-ciri",
-            ["UTILITIES"] = "Utiliti",
-            ["UI_ELEMENTS"] = "Elemen UI",
-            ["CONFIGURATION"] = "Konfigurasi",
-            ["SAVE_CONFIG"] = "Simpan Konfigurasi",
-            ["LOAD_CONFIG"] = "Muat Konfigurasi",
-            ["THEME_SELECT"] = "Pilih Tema",
-            ["TRANSPARENCY"] = "Ketelusan Tetingkap",
-            ["LOCKED_TAB"] = "Tab Dikunci"
         }
     }
 })
@@ -54,6 +38,7 @@ local function gradient(text, startColor, endColor)
     end
     return result
 end
+
 
 -- Ambil nama player
 local player = game.Players.LocalPlayer
