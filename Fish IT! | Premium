@@ -674,7 +674,6 @@ task.spawn(function()
     end
 end)
 
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("_Index")
@@ -736,7 +735,7 @@ local function Step3(callback)
         end
     end)
 
-    -- Timeout 10 detik
+    -- Timeout 7 detik
     task.delay(7, function()
         if not finished then
             finished = true
@@ -750,7 +749,7 @@ local function Step3(callback)
     end)
 end
 
--- Jalankan siklus Auto Fish
+-- Jalankan siklus Auto Fish (serial)
 function RunCycle()
     if runningCycle then return end
     runningCycle = true
@@ -773,6 +772,9 @@ function RunCycle()
 
             -- Tunggu Step3+Step4 selesai sebelum ulang loop
             repeat task.wait() until step3Finished
+
+            -- Delay kecil agar tidak spam server
+            task.wait(0.1)
         end
         runningCycle = false
     end)
@@ -799,7 +801,6 @@ Tabs.Farm:Toggle({
         end
     end
 })
-
 
 Tabs.Farm:Button({
     Title = "Cancel Fishing",
