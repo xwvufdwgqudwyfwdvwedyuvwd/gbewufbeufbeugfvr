@@ -719,7 +719,7 @@ local function Step4()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
     task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
+    task.wait(0.01)
 end
 
 -- Step 3 → Tunggu container berubah atau timeout
@@ -758,7 +758,7 @@ function RunCycle()
         while AutoFish do
             -- Step1
             Step1()
-            task.wait(0.18)
+            task.wait(0.001)
 
             -- Step2
             Step2()
@@ -774,7 +774,7 @@ function RunCycle()
             repeat task.wait() until step3Finished
 
             -- Delay kecil agar tidak spam server
-            task.wait(0.1)
+            task.wait(0.001)
         end
         runningCycle = false
     end)
