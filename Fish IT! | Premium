@@ -1960,7 +1960,7 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
             local counterFields = {}
             for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
                 table.insert(counterFields, {
-                    ["name"] = "Total " .. name .. " 🎯",
+                    ["name"] = "X :  " .. name .. " 🎣",
                     ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
                     ["inline"] = true
                 })
@@ -1977,8 +1977,8 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                         {["name"] = "KG ⚖️", ["value"] = "```" .. fishWeight .. "```", ["inline"] = true},
                         {["name"] = "Tier 🥇", ["value"] = "```" .. tierName .. "```", ["inline"] = true},
                         {["name"] = "Rarity 🚀", ["value"] = "```" .. rarityText .. "```", ["inline"] = true},
-                        {["name"] = "BagSize 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
-                        {["name"] = "SellPrice 💴", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
+                        {["name"] = "Bag Size 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
+                        {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
                         {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
                     },
                     ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟"},
