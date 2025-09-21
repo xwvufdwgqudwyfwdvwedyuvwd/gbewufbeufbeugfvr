@@ -1702,7 +1702,7 @@ for _, v in pairs(workspace:GetDescendants()) do
 end
 
 -- WindUI Toggle
-Tabs.Visual:Toggle({ 
+Tabs.Player:Toggle({ 
     Title = "Black Screen",
     Value = false,
     Callback = function(state)
@@ -1766,7 +1766,7 @@ Tabs.Visual:Toggle({
     end
 })
 
-Tabs.Visual:Button({ 
+Tabs.Player:Button({ 
     Title = "Boost FPS",  -- Nama tombol
     Callback = function() 
         WindUI:Notify({
@@ -1801,7 +1801,7 @@ Tabs.Visual:Button({
     end
 })
 
-Tabs.Visual:Button({
+Tabs.Player:Button({
     Title = "Reduce Lag", -- Nama tombol
     Callback = function()
         -- Notifikasi
@@ -1847,7 +1847,7 @@ Tabs.Visual:Button({
 })
 
 -- WindUI Toggle: Disable Backpack
-Tabs.Visual:Toggle({
+Tabs.Player:Toggle({
     Title = "Disable Backpack",
     Value = false,
     Callback = function(state)
@@ -1871,7 +1871,7 @@ local AutoRemove = false
 local connection
 
 -- Buat Button di Tab Visual
-Tabs.Visual:Button({
+Tabs.Player:Button({
     Title = "Anti Lava",
     Icon = "shield-ban",
     Callback = function()
@@ -1907,11 +1907,12 @@ Tabs.Visual:Button({
         end
     end
 })
+
 Tabs.Player:Section({ Title = "Visual" })
 
 -- Tombol Shop UI: Rod
 local shopUIPrompt = workspace["!!! MENU RINGS"].Ring.ProximityPrompt
-Tabs.Visual:Button({
+Tabs.Player:Button({
     Title = "Shop UI: Rod",
     Callback = function()
         fireproximityprompt(shopUIPrompt)
@@ -1919,7 +1920,7 @@ Tabs.Visual:Button({
 })
 
 local shopUIPrompt = workspace["!!! MENU RINGS"]["Enchanted Crate"].Prompt.MenuPromptAttachment.ProximityPrompt
-Tabs.Visual:Button({
+Tabs.Player:Button({
     Title = "Shop UI: Skin Crates",
     Callback = function()
         fireproximityprompt(shopUIPrompt)
