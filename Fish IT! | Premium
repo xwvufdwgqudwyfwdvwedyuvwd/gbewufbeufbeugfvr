@@ -2129,9 +2129,6 @@ local WebhookActive = false
 -- Variabel filter tier dari dropdown
 local SelectedTiers = {}
 
--- Link Discord
-local DiscordLink = "discord.gg/ECxQFc97F5"
-
 -- Mapping Tier → Nama Rarity
 local TierMap = {
     [1] = "Common",
@@ -2178,7 +2175,7 @@ end
 local function SendEmbed(data, plainMessage)
     if WebhookURL ~= "" and Request then
         local payload = {
-            ["content"] = plainMessage or "Join Discord Nexa Hub discord.gg/ECxQFc97F5",
+            ["content"] = plainMessage or "",
             ["embeds"] = data.embeds
         }
 
@@ -2218,7 +2215,7 @@ Tabs.Server:Toggle({
                     ["color"] = 5763719,
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
-            }, "Join our Discord: " .. DiscordLink)
+            })
         else
             print("Webhook deactivated ❌")
         end
@@ -2303,7 +2300,7 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
             local counterFields = {}
             for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
                 table.insert(counterFields, {
-                    ["name"] = "X :  " .. name .. " 🎣",
+                    ["name"] = "Fish - " .. name .. " 🎣",
                     ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
                     ["inline"] = true
                 })
@@ -2324,7 +2321,7 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                         {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
                         {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
                     },
-                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟"},
+                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟 • discord.gg/ECxQFc97F5"},
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
             }
@@ -2338,8 +2335,8 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                 table.insert(Data.embeds[1].fields, {["name"] = "Info", ["value"] = "```" .. newLabelText .. "```", ["inline"] = false})
             end
 
-            -- Kirim webhook + link Discord plain message
-            SendEmbed(Data, "Join our Discord: " .. DiscordLink)
+            -- Kirim webhook tanpa link Discord
+            SendEmbed(Data, "")
         end
     end
 end)
