@@ -2195,6 +2195,14 @@ local function FindFishModule(fishName)
     return nil
 end
 
+-- Ambil Level GUI
+local LevelLabel = workspace:WaitForChild("Characters")
+    :WaitForChild("LocalPlayer")
+    :WaitForChild("HumanoidRootPart")
+    :WaitForChild("Overhead")
+    :WaitForChild("LevelContainer")
+    :WaitForChild("Label")
+
 -- Detect ikan dari GUI
 local Container = Notification.Display.Container
 local ItemName = Container:WaitForChild("ItemName")
@@ -2227,6 +2235,9 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
             local BagSizeLabel = Players.LocalPlayer.PlayerGui.Inventory.Main.Top.Options.Fish.Label:WaitForChild("BagSize")
             local bagSizeText = BagSizeLabel.Text or "Unknown"
 
+            -- Ambil Level
+            local levelText = LevelLabel.Text or "Unknown"
+
             -- Cek filter tier
             if #SelectedTiers > 0 then
                 if not table.find(SelectedTiers, "All") and not table.find(SelectedTiers, tierName) then
@@ -2239,14 +2250,10 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                 FishCounter[tierName] = FishCounter[tierName] + 1
             end
 
-            -- Buat field counter semua tier
-            local counterFields = {}
+            -- Gabungkan semua counter jadi satu string
+            local counterText = ""
             for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
-                table.insert(counterFields, {
-                    ["name"] = "Fish - " .. name .. " 🎣",
-                    ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
-                    ["inline"] = true
-                })
+                counterText = counterText .. name .. " : " .. tostring(FishCounter[name]) .. "\n"
             end
 
             -- Buat embed
@@ -2261,24 +2268,21 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                         {["name"] = "Tier 🥇", ["value"] = "```" .. tierName .. "```", ["inline"] = true},
                         {["name"] = "Rarity 🚀", ["value"] = "```" .. rarityText .. "```", ["inline"] = true},
                         {["name"] = "Bag Size 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
+                        {["name"] = "Level 🏅", ["value"] = "```" .. levelText .. "```", ["inline"] = true},
                         {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
                         {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
+                        {["name"] = "Fish Counter 🎣", ["value"] = "```" .. counterText .. "```", ["inline"] = false},
                     },
                     ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟 • discord.gg/ECxQFc97F5"},
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
             }
 
-            -- Tambahin semua counter ke fields
-            for _, f in ipairs(counterFields) do
-                table.insert(Data.embeds[1].fields, f)
-            end
-
             if newLabelText ~= "" then
                 table.insert(Data.embeds[1].fields, {["name"] = "Info", ["value"] = "```" .. newLabelText .. "```", ["inline"] = false})
             end
 
-            -- Kirim webhook tanpa link Discord
+            -- Kirim webhook
             SendEmbed(Data, "")
         end
     end
