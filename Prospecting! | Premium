@@ -165,7 +165,7 @@ local hrp = player.Character:WaitForChild("HumanoidRootPart")
 
 local args = { 0.75995642952621 }
 local running = false
-local delayTime = 0.5
+local delayTime = 0.01 -- spam collect lebih cepat
 
 -- Tempat save posisi
 local savedPos1 = nil
@@ -209,34 +209,22 @@ local function getAnyPan()
     return nil
 end
 
--- Invoke sekali
-local function tryCollectOnce()
-    if not running then return end
-    local rf = getAnyPan()
-    if rf then
-        pcall(function()
-            rf:InvokeServer(unpack(args))
-        end)
-    end
-end
-
--- Loop auto farm
-local function start()
-    if running then return end
-    running = true
-    task.spawn(function()
-        while running do
-            tryCollectOnce()
-            task.wait(delayTime)
+-- Spam collect
+task.spawn(function()
+    while true do
+        if running then
+            local rf = getAnyPan()
+            if rf then
+                pcall(function()
+                    rf:InvokeServer(unpack(args))
+                end)
+            end
         end
-    end)
-end
+        task.wait(delayTime)
+    end
+end)
 
-local function stop()
-    running = false
-end
-
--- Monitor Bar stuck (aktif hanya kalau toggle on)
+-- Monitor Bar stuck
 task.spawn(function()
     local lastSize = nil
     local lastChange = tick()
@@ -248,19 +236,12 @@ task.spawn(function()
                     lastSize = bar.Size
                     lastChange = tick()
                 else
-                    if tick() - lastChange >= 2 then
-                        if savedPos1 then
-                            if not running then continue end
-                            stop()
-                            local oldPos = hrp.CFrame
-                            if running == false then
-                                hrp.CFrame = savedPos1
-                                task.wait(1.5)
-                                hrp.CFrame = oldPos
-                                task.wait(0.5)
-                            end
-                            if running then start() end
-                        end
+                    if tick() - lastChange >= 2 and savedPos1 then
+                        local oldPos = hrp.CFrame
+                        hrp.CFrame = savedPos1
+                        task.wait(1.5)
+                        hrp.CFrame = oldPos
+                        task.wait(0.5)
                         lastChange = tick()
                     end
                 end
@@ -270,16 +251,14 @@ task.spawn(function()
     end
 end)
 
--- Auto teleport ke Pos2 kalau notif muncul (aktif hanya saat Auto Farm ON)
+-- Auto teleport ke Pos2 kalau notif muncul
 local notifFolder = player.PlayerGui:WaitForChild("MainUI"):WaitForChild("Notifications")
 notifFolder.ChildAdded:Connect(function(child)
-    if child:IsA("TextLabel") and child.Text == "Not enough sand!" then
-        if running and savedPos2 then
-            local oldPos = hrp.CFrame
-            hrp.CFrame = savedPos2
-            task.wait(1.5)
-            hrp.CFrame = oldPos
-        end
+    if running and child:IsA("TextLabel") and child.Text == "Not enough sand!" and savedPos2 then
+        local oldPos = hrp.CFrame
+        hrp.CFrame = savedPos2
+        task.wait(1.5)
+        hrp.CFrame = oldPos
     end
 end)
 
@@ -288,11 +267,7 @@ Tabs.Farm:Toggle({
     Title = "Auto Farm",
     Value = false,
     Callback = function(state)
-        if state then
-            start()
-        else
-            stop()
-        end
+        running = state
     end
 })
 
@@ -310,6 +285,7 @@ Tabs.Farm:Button({
         savedPos2 = hrp.CFrame
     end
 })
+
 
 local player = game:GetService("Players").LocalPlayer
 local running = false
