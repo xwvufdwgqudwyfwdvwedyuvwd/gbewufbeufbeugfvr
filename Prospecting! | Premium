@@ -358,12 +358,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local sellRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Shop"):WaitForChild("SellAll")
 
 local autoSell = false
-local sellDelay = 1 -- default
+local sellDelay = 1 -- default delay
 
 -- Slider untuk atur delay
 Tabs.Farm:Slider({
     Title = "Sell Delay", 
-    Step = 0.1,
+    Step = 1,
     Value = {
         Min = 1, 
         Max = 100, 
@@ -383,7 +383,11 @@ Tabs.Farm:Toggle({
         if autoSell then
             task.spawn(function()
                 while autoSell do
-                    sellRemote:InvokeServer()
+                    -- invoke server untuk jual semua
+                    pcall(function()
+                        sellRemote:InvokeServer()
+                    end)
+                    -- tunggu sesuai sellDelay terbaru
                     task.wait(sellDelay)
                 end
             end)
