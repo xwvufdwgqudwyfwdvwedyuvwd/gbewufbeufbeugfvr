@@ -1,5 +1,44 @@
--- Load WindUI
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Localization = WindUI:Localization({
+    Enabled = true,
+    Prefix = "loc:",
+    DefaultLanguage = "en",
+    Translations = {
+        ["en"] = {
+            ["WINDUI_EXAMPLE"] = "WindUI Example",
+            ["WELCOME"] = "Welcome to WindUI!",
+            ["LIB_DESC"] = "Beautiful UI library for Roblox",
+            ["SETTINGS"] = "Settings",
+            ["APPEARANCE"] = "Appearance",
+            ["FEATURES"] = "Features",
+            ["UTILITIES"] = "Utilities",
+            ["UI_ELEMENTS"] = "UI Elements",
+            ["CONFIGURATION"] = "Configuration",
+            ["SAVE_CONFIG"] = "Save Configuration",
+            ["LOAD_CONFIG"] = "Load Configuration",
+            ["THEME_SELECT"] = "Select Theme",
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["LOCKED_TAB"] = "Locked Tab"
+        }
+    }
+})
+
+WindUI.TransparencyValue = 0.2
+WindUI:SetTheme("Dark")
+
+local function gradient(text, startColor, endColor)
+    local result = ""
+    for i = 1, #text do
+        local t = (i - 1) / (#text - 1)
+        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
+        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
+        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
+    end
+    return result
+end
+
 
 -- Ambil nama player
 local player = game.Players.LocalPlayer
@@ -39,7 +78,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.1",
+    Title = "v1.2.2",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -77,14 +116,13 @@ end)
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Active = Window:Tab({ Title = "Active", Icon = "info"  }),
-    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
     Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
     Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
     Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
+    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
     Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
     Server = Window:Tab({ Title = "Server", Icon = "server"  }),
-    Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -94,7 +132,11 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Added Aura Boat Quest
+[+] Added Anti Lava
+[/] Improve Auto Fish v2
+[/] Rework Teleport Event & Status Ecent
+[-] Delete Tab Visual
+[/] Move Visual To Player Tab Place
     ]]
 })
 
@@ -299,12 +341,12 @@ local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
 -- Variabel penyimpanan
-local oldCFrame
+local savePosition -- posisi awal sebelum teleport
 local freezeBV, freezeBG
-local selectedTarget = nil
+local selectedTargets = {} -- multi pilih
 local isActive = false
 
--- Offset per event (biar ga nabrak Part/Color)
+-- Offset per event
 local offsets = {
     ["Shark Hunt"] = Vector3.new(0, 4, 0),
     ["Worm Hunt"] = Vector3.new(0, 10, 0),
@@ -317,27 +359,27 @@ local offsets = {
 local targets = {
     ["Shark Hunt"] = function()
         local props = workspace:FindFirstChild("Props 1")
-        return props and props:FindFirstChild("Shark Hunt") and props["Shark Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Shark Hunt")
     end,
     ["Worm Hunt"] = function()
         local props = workspace:FindFirstChild("Props 2")
-        return props and props:FindFirstChild("Model") and props.Model:FindFirstChild("Part")
+        return props and props:FindFirstChild("Model")
     end,
     ["Megalodon Hunt"] = function()
         local props = workspace:FindFirstChild("Props 3")
-        return props and props:FindFirstChild("Megalodon Hunt") and props["Megalodon Hunt"]:FindFirstChild("Color")
+        return props and props:FindFirstChild("Megalodon Hunt")
     end,
     ["Ghost Shark Hunt"] = function()
         local props = workspace:FindFirstChild("Props 4")
-        return props and props:FindFirstChild("Ghost Shark Hunt") and props["Ghost Shark Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Ghost Shark Hunt")
     end,
     ["Fishing Hunt"] = function()
         local props = workspace:FindFirstChild("Props 5")
-        return props and props:FindFirstChild("Fishing Hunt") and props["Fishing Hunt"]:FindFirstChild("Part")
+        return props and props:FindFirstChild("Fishing Hunt")
     end,
 }
 
--- Freeze player di tempat
+-- Freeze player
 local function ApplyFreeze()
     if freezeBV then freezeBV:Destroy() end
     if freezeBG then freezeBG:Destroy() end
@@ -359,48 +401,58 @@ local function RemoveFreeze()
     if freezeBG then freezeBG:Destroy() freezeBG = nil end
 end
 
--- Fungsi teleport
-local function TeleportToTarget()
-    if not selectedTarget then return end
-    local getTarget = targets[selectedTarget]
-    if not getTarget then return end
-
-    -- Tunggu sampai Props muncul
-    local targetPart
-    while isActive and not targetPart do
-        targetPart = getTarget()
-        if not targetPart then
-            task.wait(1)
+-- Cari target aktif pertama dari selectedTargets
+local function FindActiveTarget()
+    for _, name in ipairs(selectedTargets) do
+        local getTarget = targets[name]
+        if getTarget then
+            local model = getTarget()
+            if model then
+                return name, model
+            end
         end
     end
-
-    if targetPart and isActive then
-        oldCFrame = hrp.CFrame
-        local offset = offsets[selectedTarget] or Vector3.new(0, 10, 0)
-        hrp.CFrame = targetPart.CFrame + offset
-        ApplyFreeze()
-
-        -- Auto cek kalau Props hilang
-        task.spawn(function()
-            while isActive and task.wait(1) do
-                if not getTarget() then
-                    break
-                end
-            end
-            if isActive then
-                RemoveFreeze()
-                if oldCFrame then
-                    hrp.CFrame = oldCFrame
-                end
-                isActive = false
-            end
-        end)
-    end
+    return nil, nil
 end
 
--- Dropdown pilihan event
+-- Fungsi teleport loop
+local function TeleportLoop()
+    task.spawn(function()
+        while isActive do
+            local eventName, targetModel = FindActiveTarget()
+            if eventName and targetModel then
+                local offset = offsets[eventName] or Vector3.new(0, 10, 0)
+                hrp.CFrame = targetModel:GetPivot() + offset
+                ApplyFreeze()
+
+                -- Tunggu sampai model hilang
+                repeat
+                    task.wait(1)
+                until not isActive or not targets[eventName]() -- model hilang
+
+                RemoveFreeze()
+                if isActive and savePosition then
+                    hrp.CFrame = savePosition -- kembali ke posisi awal
+                end
+            else
+                task.wait(1) -- tunggu lagi sampai ada hunt aktif
+            end
+        end
+    end)
+end
+
+-- Update ulang saat respawn
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    hrp = character:WaitForChild("HumanoidRootPart")
+    if isActive then
+        task.delay(1, TeleportLoop)
+    end
+end)
+
+-- Dropdown multi pilihan event
 Tabs.Active:Dropdown({
-    Title = "Select Event",
+    Title = "Select Events",
     Values = {
         "Shark Hunt",
         "Worm Hunt",
@@ -408,99 +460,40 @@ Tabs.Active:Dropdown({
         "Ghost Shark Hunt",
         "Fishing Hunt",
     },
-    Value = "Shark Hunt", -- string, bukan table
-    Multi = false,
-    AllowNone = false,
-    Callback = function(option)
-        selectedTarget = option -- langsung string
+    Multi = true,
+    AllowNone = true,
+    Callback = function(options)
+        selectedTargets = options
     end
 })
 
 -- Toggle Teleport
 Tabs.Active:Toggle({
-    Title = "Teleport To Event",
+    Title = "Teleport To Events",
     Value = false,
     Callback = function(state)
         isActive = state
         if state then
-            TeleportToTarget()
+            savePosition = hrp.CFrame -- simpan posisi awal saat toggle ON
+            TeleportLoop()
         else
             RemoveFreeze()
-            if oldCFrame then
-                hrp.CFrame = oldCFrame
+            if savePosition then
+                hrp.CFrame = savePosition
             end
         end
     end
 })
 
-Tabs.Player:Section({ Title = "Settings" })
-
-Tabs.Player:Toggle({
-    Title = "Bypass Oxygen Tank",
-    Desc = "This toggle will equip an oxygen tank even though you don't have an oxygen tank. This is free. No coins needed",
-    Default = false,
-    Callback = function(state)
-        local RepStorage = game:GetService("ReplicatedStorage")
-        local Net = RepStorage:WaitForChild("Packages")
-                        :WaitForChild("_Index")
-                        :WaitForChild("sleitnick_net@0.2.0")
-                        :WaitForChild("net")
-        
-        if state then
-            -- Equip
-            local args = {105} -- ID tank
-            Net:WaitForChild("RF/EquipOxygenTank"):InvokeServer(unpack(args))
-        else
-            -- Unequip
-            Net:WaitForChild("RF/UnequipOxygenTank"):InvokeServer()
-        end
-    end
-})
-
-Tabs.Player:Toggle({
-    Title = "Bypass Radar",
-    Value = false,
-    Callback = function(state)
-        -- Update nilai di Window
-        Window.AlwayShowTab = state
-
-        -- Panggil RemoteFunction untuk UpdateFishingRadar
-        local args = { state }  -- true jika toggle ON, false jika OFF
-        local remoteFunc = game:GetService("ReplicatedStorage")
-            :WaitForChild("Packages")
-            :WaitForChild("_Index")
-            :WaitForChild("sleitnick_net@0.2.0")
-            :WaitForChild("net")
-            :WaitForChild("RF/UpdateFishingRadar")
-        remoteFunc:InvokeServer(unpack(args))
-    end
-})
-
-Tabs.Player:Section({ Title = "Codes" })
-
-local allCodes = {
-    "SHARKSSS",
-    "100M",
-    "MUTATE"
-}
-
-Tabs.Player:Button({
-    Title = "Redeem All Codes",
+-- Button manual untuk Save Position
+Tabs.Active:Button({
+    Title = "Save Position",
+    Desc = "If you want to teleport to an event, you have to save your position first so you can return to your starting position.",
     Callback = function()
-        for _, code in ipairs(allCodes) do
-            local args = { code }
-            pcall(function()
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("Packages")
-                    :WaitForChild("_Index")
-                    :WaitForChild("sleitnick_net@0.2.0")
-                    :WaitForChild("net")
-                    :WaitForChild("RF/RedeemCode")
-                    :InvokeServer(unpack(args))
-            end)
-        end
+        savePosition = hrp.CFrame
     end
 })
+
 
 Tabs.Farm:Section({ Title = "Info Fish!!" })
 
@@ -569,8 +562,8 @@ end)
 Tabs.Farm:Section({ Title = "Fishing" })
 
 Tabs.Farm:Paragraph({
-    Title = "Pesan Developer",
-    Desc = "Semisal ada bug di auto Fish v2 pakai auto Fish v1 aja uda di fixed bug tapi masi sama aja"
+    Title = "loc:Pesan Developer",
+    Desc = "loc:Kalau ada bug di Auto Fish v2, pakai Auto Fish v1 saja. Sudah di-fix bug tapi masih sama saja."
 })
 
 -- Services
@@ -699,7 +692,7 @@ local function Step4()
     Net:WaitForChild("RE/UnequipToolFromHotbar"):FireServer()
     task.wait(0.01)
     Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-    task.wait(0.03)
+    task.wait(0.01)
 end
 
 -- Step 3 → Tunggu container berubah atau timeout
@@ -715,7 +708,7 @@ local function Step3(callback)
         end
     end)
 
-    -- Timeout 10 detik
+    -- Timeout 7 detik
     task.delay(7, function()
         if not finished then
             finished = true
@@ -729,7 +722,7 @@ local function Step3(callback)
     end)
 end
 
--- Jalankan siklus Auto Fish
+-- Jalankan siklus Auto Fish (serial)
 function RunCycle()
     if runningCycle then return end
     runningCycle = true
@@ -738,7 +731,7 @@ function RunCycle()
         while AutoFish do
             -- Step1
             Step1()
-            task.wait(0.18)
+            task.wait(0.001)
 
             -- Step2
             Step2()
@@ -752,6 +745,9 @@ function RunCycle()
 
             -- Tunggu Step3+Step4 selesai sebelum ulang loop
             repeat task.wait() until step3Finished
+
+            -- Delay kecil agar tidak spam server
+            task.wait(0.001)
         end
         runningCycle = false
     end)
@@ -778,6 +774,29 @@ Tabs.Farm:Toggle({
         end
     end
 })
+
+Tabs.Farm:Button({
+    Title = "Cancel Fishing",
+    Desc = "If there is a bug or stuck, click this to cancel and restart Fishv2 auto.",
+    Callback = function()
+        -- Panggil RemoteFunction CancelFishingInputs
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/CancelFishingInputs")
+            :InvokeServer()
+
+        -- Notifikasi
+        WindUI:Notify({
+            Title = "Fishing Cancelled",
+            Content = "You can now restart Fishv2 Auto.",
+            Duration = 5,
+        })
+    end
+})
+
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
@@ -1201,7 +1220,7 @@ Tabs.Auto:Toggle({
                     if level >= 200 then
                         -- Step 2: aktifkan quest
                         local args = {"AuraQuest"}
-                        local success, err = pcall(function()
+                        pcall(function()
                             game:GetService("ReplicatedStorage")
                                 :WaitForChild("Packages")
                                 :WaitForChild("_Index")
@@ -1210,19 +1229,6 @@ Tabs.Auto:Toggle({
                                 :WaitForChild("RF/ActivateQuestLine")
                                 :InvokeServer(unpack(args))
                         end)
-                        if success then
-                            WindUI:Notify({
-                                Title = "Quest Activated",
-                                Content = "AuraQuest successfully activated!",
-                                Duration = 0,
-                            })
-                        else
-                            WindUI:Notify({
-                                Title = "Error",
-                                Content = "Failed to ActivateQuestLine: "..err,
-                                Duration = 5,
-                            })
-                        end
 
                         -- Step 3: teleport ke target
                         local distance = (hrp.Position - targetCFrame.Position).Magnitude
@@ -1231,13 +1237,6 @@ Tabs.Auto:Toggle({
                         end
                         bv.Velocity = Vector3.new(0,0,0)
                         bg.CFrame = targetCFrame
-                    else
-                        -- Level kurang dari 200
-                        WindUI:Notify({
-                            Title = "Level Kurang",
-                            Content = "Level kamu belum 200, tidak bisa lanjut",
-                            Duration = 5,
-                        })
                     end
                 end
             end)
@@ -1250,14 +1249,10 @@ Tabs.Auto:Toggle({
                     v:Destroy()
                 end
             end
-            WindUI:Notify({
-                Title = "Auto Aura Quest",
-                Content = "Fungsi dimatikan.",
-                Duration = 0,
-            })
         end
     end
 })
+
 
 Tabs.Shop:Section({ Title = "Rod" })
 
@@ -1646,6 +1641,318 @@ Tabs.Boat:Button({
     end
 })
 
+Tabs.Player:Section({ Title = "LocalPlayer" })
+
+Tabs.Player:Toggle({
+    Title = "Bypass Oxygen Tank",
+    Desc = "This toggle will equip an oxygen tank even though you don't have an oxygen tank. This is free. No coins needed",
+    Default = false,
+    Callback = function(state)
+        local RepStorage = game:GetService("ReplicatedStorage")
+        local Net = RepStorage:WaitForChild("Packages")
+                        :WaitForChild("_Index")
+                        :WaitForChild("sleitnick_net@0.2.0")
+                        :WaitForChild("net")
+        
+        if state then
+            -- Equip
+            local args = {105} -- ID tank
+            Net:WaitForChild("RF/EquipOxygenTank"):InvokeServer(unpack(args))
+        else
+            -- Unequip
+            Net:WaitForChild("RF/UnequipOxygenTank"):InvokeServer()
+        end
+    end
+})
+
+Tabs.Player:Toggle({
+    Title = "Bypass Radar",
+    Value = false,
+    Callback = function(state)
+        -- Update nilai di Window
+        Window.AlwayShowTab = state
+
+        -- Panggil RemoteFunction untuk UpdateFishingRadar
+        local args = { state }  -- true jika toggle ON, false jika OFF
+        local remoteFunc = game:GetService("ReplicatedStorage")
+            :WaitForChild("Packages")
+            :WaitForChild("_Index")
+            :WaitForChild("sleitnick_net@0.2.0")
+            :WaitForChild("net")
+            :WaitForChild("RF/UpdateFishingRadar")
+        remoteFunc:InvokeServer(unpack(args))
+    end
+})
+
+
+
+-- Simpan setting lighting & particle untuk dikembalikan saat toggle mati
+local originalLightingSettings = {
+    GlobalShadows = game.Lighting.GlobalShadows,
+    Brightness = game.Lighting.Brightness,
+    FogEnd = game.Lighting.FogEnd,
+    ClockTime = game.Lighting.ClockTime
+}
+
+local originalParticles = {}
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then
+        originalParticles[v] = v.Enabled
+    end
+end
+
+-- WindUI Toggle
+Tabs.Player:Toggle({ 
+    Title = "Black Screen",
+    Value = false,
+    Callback = function(state)
+        local player = game.Players.LocalPlayer
+        local playerGui = player:WaitForChild("PlayerGui")
+        
+        -- Cari ScreenGui DarkScreenGUI
+        local darkGui = playerGui:FindFirstChild("DarkScreenGUI")
+        
+        if state then
+            -- Aktifkan Dark Screen
+            if not darkGui then
+                darkGui = Instance.new("ScreenGui")
+                darkGui.Name = "DarkScreenGUI"
+                darkGui.ResetOnSpawn = false
+                darkGui.IgnoreGuiInset = true
+                darkGui.Parent = playerGui
+
+                local darkFrame = Instance.new("Frame")
+                darkFrame.Name = "DarkFrame"
+                darkFrame.Size = UDim2.new(1, 0, 1, 0)
+                darkFrame.Position = UDim2.new(0, 0, 0, 0)
+                darkFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+                darkFrame.BackgroundTransparency = 0
+                darkFrame.BorderSizePixel = 0
+                darkFrame.Parent = darkGui
+            end
+
+            -- Matikan efek lighting & particle untuk hemat GPU/CPU
+            local lighting = game:GetService("Lighting")
+            lighting.GlobalShadows = false
+            lighting.Brightness = 0
+            lighting.FogEnd = 100000
+            lighting.ClockTime = 12
+
+            for particle, _ in pairs(originalParticles) do
+                particle.Enabled = false
+            end
+
+        else
+            -- Matikan Dark Screen
+            if darkGui then
+                darkGui:Destroy()
+            end
+
+            -- Kembalikan setting lighting
+            local lighting = game:GetService("Lighting")
+            lighting.GlobalShadows = originalLightingSettings.GlobalShadows
+            lighting.Brightness = originalLightingSettings.Brightness
+            lighting.FogEnd = originalLightingSettings.FogEnd
+            lighting.ClockTime = originalLightingSettings.ClockTime
+
+            -- Kembalikan particle
+            for particle, enabled in pairs(originalParticles) do
+                if particle.Parent then
+                    particle.Enabled = enabled
+                end
+            end
+        end
+
+    end
+})
+
+Tabs.Player:Button({ 
+    Title = "Boost FPS",  -- Nama tombol
+    Callback = function() 
+        WindUI:Notify({
+            Title = "Boost FPS",
+            Content = "On!",
+            Duration = 5,
+        })
+
+        -- Script Boost FPS
+        local Lighting = game:GetService("Lighting")
+        local Workspace = game:GetService("Workspace")
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+
+        -- Optimasi grafis
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 1
+        Lighting.ExposureCompensation = 0
+        Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+        Lighting.ShadowSoftness = 0
+
+        pcall(function()
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
+                    obj.Enabled = false
+                elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                    obj.Transparency = 1
+                end
+            end
+        end)
+    end
+})
+
+Tabs.Player:Button({
+    Title = "Reduce Lag", -- Nama tombol
+    Callback = function()
+        -- Notifikasi
+        WindUI:Notify({
+            Title = "Reduce Lag",
+            Content = "On!",
+            Duration = 5,
+        })
+
+        -- Script Reduce Lag
+        local Players = game:GetService("Players")
+        local Workspace = game:GetService("Workspace")
+        local Lighting = game:GetService("Lighting")
+        local LocalPlayer = Players.LocalPlayer
+
+        -- Optimasi Lighting
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 1
+        Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+        Lighting.ExposureCompensation = 0
+        Lighting.ShadowSoftness = 0
+
+        -- Hapus efek particle dan decal
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
+                obj.Enabled = false
+            elseif obj:IsA("Decal") or obj:IsA("Texture") then
+                obj.Transparency = 1
+            end
+        end
+
+        -- Optimasi GUI player
+        for _, gui in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetDescendants()) do
+            if gui:IsA("TextLabel") or gui:IsA("TextButton") then
+                gui.TextScaled = false
+            elseif gui:IsA("ImageLabel") or gui:IsA("ImageButton") then
+                gui.ImageTransparency = 0.5
+            end
+        end
+
+    end
+})
+
+-- WindUI Toggle: Disable Backpack
+Tabs.Player:Toggle({
+    Title = "Disable Backpack",
+    Value = false,
+    Callback = function(state)
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+
+        if LocalPlayer:FindFirstChild("PlayerGui") then
+            local BackpackGui = LocalPlayer.PlayerGui:FindFirstChild("Backpack")
+            if BackpackGui then
+                BackpackGui.Enabled = not state and true or false
+            end
+        end
+    end
+})
+
+local RunService = game:GetService("RunService")
+local volcanoFolder = workspace.Zones["Kohana Volcano"]
+
+-- Variable toggle
+local AutoRemove = false
+local connection
+
+-- Buat Button di Tab Visual
+Tabs.Player:Button({
+    Title = "Anti Lava",
+    Icon = "shield-ban",
+    Callback = function()
+        AutoRemove = not AutoRemove -- toggle on/off
+
+        if AutoRemove then
+            -- Start loop
+            connection = RunService.Heartbeat:Connect(function()
+                for _, obj in ipairs(volcanoFolder:GetDescendants()) do
+                    if obj:IsA("TouchTransmitter") then
+                        obj:Destroy()
+                    end
+                end
+            end)
+
+            WindUI:Notify({
+                Title = "TouchInterest Remover",
+                Content = "Auto Remove is ON",
+                Duration = 5,
+            })
+        else
+            -- Stop loop
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+
+            WindUI:Notify({
+                Title = "TouchInterest Remover",
+                Content = "Auto Remove is OFF",
+                Duration = 5,
+            })
+        end
+    end
+})
+
+Tabs.Player:Section({ Title = "Visual" })
+
+-- Tombol Shop UI: Rod
+local shopUIPrompt = workspace["!!! MENU RINGS"].Ring.ProximityPrompt
+Tabs.Player:Button({
+    Title = "Shop UI: Rod",
+    Callback = function()
+        fireproximityprompt(shopUIPrompt)
+    end
+})
+
+local shopUIPrompt = workspace["!!! MENU RINGS"]["Enchanted Crate"].Prompt.MenuPromptAttachment.ProximityPrompt
+Tabs.Player:Button({
+    Title = "Shop UI: Skin Crates",
+    Callback = function()
+        fireproximityprompt(shopUIPrompt)
+    end
+})
+
+Tabs.Player:Section({ Title = "Codes" })
+
+local allCodes = {
+    "SHARKSSS",
+    "100M",
+    "MUTATE"
+}
+
+Tabs.Player:Button({
+    Title = "Redeem All Codes",
+    Callback = function()
+        for _, code in ipairs(allCodes) do
+            local args = { code }
+            pcall(function()
+                game:GetService("ReplicatedStorage")
+                    :WaitForChild("Packages")
+                    :WaitForChild("_Index")
+                    :WaitForChild("sleitnick_net@0.2.0")
+                    :WaitForChild("net")
+                    :WaitForChild("RF/RedeemCode")
+                    :InvokeServer(unpack(args))
+            end)
+        end
+    end
+})
+
 Tabs.Teleport:Section({ Title = "Island" })
 
 -- Daftar lokasi teleport (isi CFrame sesuai island)
@@ -1765,9 +2072,6 @@ local WebhookActive = false
 -- Variabel filter tier dari dropdown
 local SelectedTiers = {}
 
--- Link Discord
-local DiscordLink = "discord.gg/ECxQFc97F5"
-
 -- Mapping Tier → Nama Rarity
 local TierMap = {
     [1] = "Common",
@@ -1777,6 +2081,17 @@ local TierMap = {
     [5] = "Legendary",
     [6] = "Mythic",
     [7] = "SECRET"
+}
+
+-- Counter berapa kali dapat ikan tiap Tier
+local FishCounter = {
+    Common = 0,
+    Uncommon = 0,
+    Rare = 0,
+    Epic = 0,
+    Legendary = 0,
+    Mythic = 0,
+    SECRET = 0
 }
 
 -- Fungsi format angka k/m/b
@@ -1803,7 +2118,7 @@ end
 local function SendEmbed(data, plainMessage)
     if WebhookURL ~= "" and Request then
         local payload = {
-            ["content"] = plainMessage or "Join Discord Nexa Hub discord.gg/ECxQFc97F5", -- message biasa di atas embed
+            ["content"] = plainMessage or "",
             ["embeds"] = data.embeds
         }
 
@@ -1843,7 +2158,7 @@ Tabs.Server:Toggle({
                     ["color"] = 5763719,
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
-            }, "Join our Discord: " .. DiscordLink)
+            })
         else
             print("Webhook deactivated ❌")
         end
@@ -1919,6 +2234,21 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                 end
             end
 
+            -- Update counter Tier
+            if FishCounter[tierName] ~= nil then
+                FishCounter[tierName] = FishCounter[tierName] + 1
+            end
+
+            -- Buat field counter semua tier
+            local counterFields = {}
+            for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
+                table.insert(counterFields, {
+                    ["name"] = "Fish - " .. name .. " 🎣",
+                    ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
+                    ["inline"] = true
+                })
+            end
+
             -- Buat embed
             local Data = {
                 ["embeds"] = {{
@@ -1930,21 +2260,26 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                         {["name"] = "KG ⚖️", ["value"] = "```" .. fishWeight .. "```", ["inline"] = true},
                         {["name"] = "Tier 🥇", ["value"] = "```" .. tierName .. "```", ["inline"] = true},
                         {["name"] = "Rarity 🚀", ["value"] = "```" .. rarityText .. "```", ["inline"] = true},
-                        {["name"] = "BagSize 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
-                        {["name"] = "SellPrice 💴", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
+                        {["name"] = "Bag Size 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
+                        {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
                         {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
                     },
-                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟"},
+                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟 • discord.gg/ECxQFc97F5"},
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
             }
+
+            -- Tambahin semua counter ke fields
+            for _, f in ipairs(counterFields) do
+                table.insert(Data.embeds[1].fields, f)
+            end
 
             if newLabelText ~= "" then
                 table.insert(Data.embeds[1].fields, {["name"] = "Info", ["value"] = "```" .. newLabelText .. "```", ["inline"] = false})
             end
 
-            -- Kirim webhook + link Discord plain message
-            SendEmbed(Data, "Join our Discord: " .. DiscordLink)
+            -- Kirim webhook tanpa link Discord
+            SendEmbed(Data, "")
         end
     end
 end)
@@ -2151,201 +2486,6 @@ Tabs.Server:Button({
     end
 })
 
-Tabs.Visual:Section({ Title = "Visual" })
-
--- Tombol Shop UI: Rod
-local shopUIPrompt = workspace["!!! MENU RINGS"].Ring.ProximityPrompt
-Tabs.Visual:Button({
-    Title = "Shop UI: Rod",
-    Callback = function()
-        fireproximityprompt(shopUIPrompt)
-    end
-})
-
-local shopUIPrompt = workspace["!!! MENU RINGS"]["Enchanted Crate"].Prompt.MenuPromptAttachment.ProximityPrompt
-Tabs.Visual:Button({
-    Title = "Shop UI: Skin Crates",
-    Callback = function()
-        fireproximityprompt(shopUIPrompt)
-    end
-})
-
--- Simpan setting lighting & particle untuk dikembalikan saat toggle mati
-local originalLightingSettings = {
-    GlobalShadows = game.Lighting.GlobalShadows,
-    Brightness = game.Lighting.Brightness,
-    FogEnd = game.Lighting.FogEnd,
-    ClockTime = game.Lighting.ClockTime
-}
-
-local originalParticles = {}
-for _, v in pairs(workspace:GetDescendants()) do
-    if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") then
-        originalParticles[v] = v.Enabled
-    end
-end
-
--- WindUI Toggle
-Tabs.Visual:Toggle({ 
-    Title = "Black Screen",
-    Value = false,
-    Callback = function(state)
-        local player = game.Players.LocalPlayer
-        local playerGui = player:WaitForChild("PlayerGui")
-        
-        -- Cari ScreenGui DarkScreenGUI
-        local darkGui = playerGui:FindFirstChild("DarkScreenGUI")
-        
-        if state then
-            -- Aktifkan Dark Screen
-            if not darkGui then
-                darkGui = Instance.new("ScreenGui")
-                darkGui.Name = "DarkScreenGUI"
-                darkGui.ResetOnSpawn = false
-                darkGui.IgnoreGuiInset = true
-                darkGui.Parent = playerGui
-
-                local darkFrame = Instance.new("Frame")
-                darkFrame.Name = "DarkFrame"
-                darkFrame.Size = UDim2.new(1, 0, 1, 0)
-                darkFrame.Position = UDim2.new(0, 0, 0, 0)
-                darkFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-                darkFrame.BackgroundTransparency = 0
-                darkFrame.BorderSizePixel = 0
-                darkFrame.Parent = darkGui
-            end
-
-            -- Matikan efek lighting & particle untuk hemat GPU/CPU
-            local lighting = game:GetService("Lighting")
-            lighting.GlobalShadows = false
-            lighting.Brightness = 0
-            lighting.FogEnd = 100000
-            lighting.ClockTime = 12
-
-            for particle, _ in pairs(originalParticles) do
-                particle.Enabled = false
-            end
-
-        else
-            -- Matikan Dark Screen
-            if darkGui then
-                darkGui:Destroy()
-            end
-
-            -- Kembalikan setting lighting
-            local lighting = game:GetService("Lighting")
-            lighting.GlobalShadows = originalLightingSettings.GlobalShadows
-            lighting.Brightness = originalLightingSettings.Brightness
-            lighting.FogEnd = originalLightingSettings.FogEnd
-            lighting.ClockTime = originalLightingSettings.ClockTime
-
-            -- Kembalikan particle
-            for particle, enabled in pairs(originalParticles) do
-                if particle.Parent then
-                    particle.Enabled = enabled
-                end
-            end
-        end
-
-    end
-})
-
-Tabs.Visual:Button({ 
-    Title = "Boost FPS",  -- Nama tombol
-    Callback = function() 
-        WindUI:Notify({
-            Title = "Boost FPS",
-            Content = "On!",
-            Duration = 5,
-        })
-
-        -- Script Boost FPS
-        local Lighting = game:GetService("Lighting")
-        local Workspace = game:GetService("Workspace")
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-
-        -- Optimasi grafis
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.Brightness = 1
-        Lighting.ExposureCompensation = 0
-        Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
-        Lighting.ShadowSoftness = 0
-
-        pcall(function()
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
-                    obj.Enabled = false
-                elseif obj:IsA("Decal") or obj:IsA("Texture") then
-                    obj.Transparency = 1
-                end
-            end
-        end)
-    end
-})
-
-Tabs.Visual:Button({
-    Title = "Reduce Lag", -- Nama tombol
-    Callback = function()
-        -- Notifikasi
-        WindUI:Notify({
-            Title = "Reduce Lag",
-            Content = "On!",
-            Duration = 5,
-        })
-
-        -- Script Reduce Lag
-        local Players = game:GetService("Players")
-        local Workspace = game:GetService("Workspace")
-        local Lighting = game:GetService("Lighting")
-        local LocalPlayer = Players.LocalPlayer
-
-        -- Optimasi Lighting
-        Lighting.GlobalShadows = false
-        Lighting.FogEnd = 9e9
-        Lighting.Brightness = 1
-        Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
-        Lighting.ExposureCompensation = 0
-        Lighting.ShadowSoftness = 0
-
-        -- Hapus efek particle dan decal
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
-                obj.Enabled = false
-            elseif obj:IsA("Decal") or obj:IsA("Texture") then
-                obj.Transparency = 1
-            end
-        end
-
-        -- Optimasi GUI player
-        for _, gui in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetDescendants()) do
-            if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-                gui.TextScaled = false
-            elseif gui:IsA("ImageLabel") or gui:IsA("ImageButton") then
-                gui.ImageTransparency = 0.5
-            end
-        end
-
-    end
-})
-
--- WindUI Toggle: Disable Backpack
-Tabs.Visual:Toggle({
-    Title = "Disable Backpack",
-    Value = false,
-    Callback = function(state)
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-
-        if LocalPlayer:FindFirstChild("PlayerGui") then
-            local BackpackGui = LocalPlayer.PlayerGui:FindFirstChild("Backpack")
-            if BackpackGui then
-                BackpackGui.Enabled = not state and true or false
-            end
-        end
-    end
-})
 
 local TweenService = game:GetService("TweenService")
 
