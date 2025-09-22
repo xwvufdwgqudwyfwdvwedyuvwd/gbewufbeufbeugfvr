@@ -1,0 +1,396 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Localization = WindUI:Localization({
+    Enabled = true,
+    Prefix = "loc:",
+    DefaultLanguage = "en",
+    Translations = {
+        ["en"] = {
+            ["WINDUI_EXAMPLE"] = "WindUI Example",
+            ["WELCOME"] = "Welcome to WindUI!",
+            ["LIB_DESC"] = "Beautiful UI library for Roblox",
+            ["SETTINGS"] = "Settings",
+            ["APPEARANCE"] = "Appearance",
+            ["FEATURES"] = "Features",
+            ["UTILITIES"] = "Utilities",
+            ["UI_ELEMENTS"] = "UI Elements",
+            ["CONFIGURATION"] = "Configuration",
+            ["SAVE_CONFIG"] = "Save Configuration",
+            ["LOAD_CONFIG"] = "Load Configuration",
+            ["THEME_SELECT"] = "Select Theme",
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["LOCKED_TAB"] = "Locked Tab"
+        }
+    }
+})
+
+WindUI.TransparencyValue = 0.2
+WindUI:SetTheme("Dark")
+
+local function gradient(text, startColor, endColor)
+    local result = ""
+    for i = 1, #text do
+        local t = (i - 1) / (#text - 1)
+        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
+        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
+        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
+    end
+    return result
+end
+
+
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - Beta",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Fish IT! Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
+
+Window:Tag({
+    Title = "v1.2.2",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+WindUI:Notify({
+    Title = "Game Supported",
+    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
+    Icon = "gamepad",
+    Duration = 6
+})
+
+task.delay(6.5, function()
+    WindUI:Notify({
+        Title = "Bug Report",
+        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+        Icon = "cloud-alert",
+        Duration = 6
+    })
+end)
+
+task.delay(13, function()
+    WindUI:Notify({
+        Title = "Purchase",
+        Content = "If you want to buy this premium script key, join Discord to buy premium.",
+        Icon = "shopping-cart",
+        Duration = 6
+    })
+end)
+
+-- ✅ Tab dan UI
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
+}
+
+Tabs.Home:Section({ Title = "Update" })
+
+Tabs.Home:Divider()
+
+Tabs.Home:Paragraph({
+    Title = "Here's what's new:",
+    Desc = [[
+
+    ]]
+})
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Farm:Section({ Title = "Dig" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local hrp = player.Character:WaitForChild("HumanoidRootPart")
+
+local args = { 0.75995642952621 }
+local running = false
+local delayTime = 0.5
+
+-- Tempat save posisi
+local savedPos1 = nil
+local savedPos2 = nil
+
+-- Ambil bar UI
+local function getBar()
+    local gui = player:FindFirstChild("PlayerGui")
+    if not gui then return nil end
+    local toolUI = gui:FindFirstChild("ToolUI")
+    if not toolUI then return nil end
+    local fillingPan = toolUI:FindFirstChild("FillingPan")
+    if not fillingPan then return nil end
+    return fillingPan:FindFirstChild("Bar")
+end
+
+-- Cari Pan
+local function getAnyPan()
+    local backpack = player:FindFirstChild("BackpackTwo")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") and string.find(tool.Name, "Pan") then
+                local scriptsFolder = tool:FindFirstChild("Scripts")
+                if scriptsFolder and scriptsFolder:FindFirstChild("Collect") then
+                    return scriptsFolder.Collect
+                end
+            end
+        end
+    end
+    local char = player.Character
+    if char then
+        for _, tool in ipairs(char:GetChildren()) do
+            if tool:IsA("Tool") and string.find(tool.Name, "Pan") then
+                local scriptsFolder = tool:FindFirstChild("Scripts")
+                if scriptsFolder and scriptsFolder:FindFirstChild("Collect") then
+                    return scriptsFolder.Collect
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Invoke sekali
+local function tryCollectOnce()
+    local rf = getAnyPan()
+    if rf then
+        pcall(function()
+            rf:InvokeServer(unpack(args))
+        end)
+    end
+end
+
+-- Loop auto farm
+local function start()
+    if running then return end
+    running = true
+    task.spawn(function()
+        while running do
+            tryCollectOnce()
+            task.wait(delayTime)
+        end
+    end)
+end
+
+local function stop()
+    running = false
+end
+
+-- Monitor Bar stuck (aktif hanya kalau toggle on)
+task.spawn(function()
+    local lastSize = nil
+    local lastChange = tick()
+    while true do
+        if running then
+            local bar = getBar()
+            if bar then
+                if lastSize ~= bar.Size then
+                    lastSize = bar.Size
+                    lastChange = tick()
+                else
+                    if tick() - lastChange >= 2 then
+                        if savedPos1 then
+                            stop()
+                            local oldPos = hrp.CFrame
+                            hrp.CFrame = savedPos1
+                            task.wait(1.5)
+                            hrp.CFrame = oldPos
+                            task.wait(0.5)
+                            start()
+                        end
+                        lastChange = tick()
+                    end
+                end
+            end
+        end
+        task.wait(0.2)
+    end
+end)
+
+-- Auto teleport ke Pos2 kalau notif muncul (aktif hanya saat Auto Farm ON)
+local notifFolder = player.PlayerGui:WaitForChild("MainUI"):WaitForChild("Notifications")
+notifFolder.ChildAdded:Connect(function(child)
+    if running and child:IsA("TextLabel") and child.Text == "Not enough sand!" then
+        task.wait(0.1)
+        if savedPos2 then
+            local oldPos = hrp.CFrame
+            hrp.CFrame = savedPos2
+            task.wait(1.5)
+            hrp.CFrame = oldPos
+        end
+    end
+end)
+
+-- WindUI Toggle Auto Farm
+Tabs.Farm:Toggle({
+    Title = "Auto Farm",
+    Value = false,
+    Callback = function(state)
+        if state then
+            start()
+        else
+            stop()
+        end
+    end
+})
+
+-- WindUI Buttons SavePos
+Tabs.Farm:Button({
+    Title = "Save Posisi Water",
+    Callback = function()
+        savedPos1 = hrp.CFrame
+    end
+})
+
+Tabs.Farm:Button({
+    Title = "Save Posisi Sand)",
+    Callback = function()
+        savedPos2 = hrp.CFrame
+    end
+})
+
+
+
+
+
+local player = game:GetService("Players").LocalPlayer
+local running = false
+
+-- fungsi untuk cari Pan di BackpackTwo atau Character
+local function getPan()
+    for _, tool in ipairs(player:WaitForChild("BackpackTwo"):GetChildren()) do
+        if tool:IsA("Tool") and tool:FindFirstChild("Scripts") and tool.Name:find("Pan") then
+            return tool
+        end
+    end
+    for _, tool in ipairs(player.Character:GetChildren()) do
+        if tool:IsA("Tool") and tool:FindFirstChild("Scripts") and tool.Name:find("Pan") then
+            return tool
+        end
+    end
+    return nil
+end
+
+-- fungsi eksekusi
+local function usePan(pan)
+    local scripts = pan:WaitForChild("Scripts")
+    local panRemote = scripts:WaitForChild("Pan")
+    local shakeRemote = scripts:WaitForChild("Shake")
+    panRemote:InvokeServer()
+    shakeRemote:FireServer()
+end
+
+-- toggle WindUI
+Tabs.Farm:Toggle({
+    Title = "Auto Shake",
+    Value = false,
+    Callback = function(state)
+        running = state
+        if state then
+            task.spawn(function()
+                while running do
+                    local pan = getPan()
+                    if pan then
+                        usePan(pan)
+                    end
+                    task.wait(0.001)
+                end
+            end)
+        end
+    end
+})
+
+Tabs.Farm:Section({ Title = "Sell" })
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local sellRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Shop"):WaitForChild("SellAll")
+
+local autoSell = false
+local sellDelay = 1 -- default
+
+-- Slider untuk atur delay
+Tabs.Farm:Slider({
+    Title = "Sell Delay", 
+    Step = 0.1,
+    Value = {
+        Min = 1, 
+        Max = 100, 
+        Default = 1, 
+    },
+    Callback = function(value)
+        sellDelay = value
+    end
+})
+
+-- Toggle untuk Auto Sell
+Tabs.Farm:Toggle({ 
+    Title = "Auto Sell", 
+    Value = false,
+    Callback = function(state) 
+        autoSell = state
+        if autoSell then
+            task.spawn(function()
+                while autoSell do
+                    sellRemote:InvokeServer()
+                    task.wait(sellDelay)
+                end
+            end)
+        end
+    end
+})
