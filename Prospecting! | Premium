@@ -211,6 +211,7 @@ end
 
 -- Invoke sekali
 local function tryCollectOnce()
+    if not running then return end
     local rf = getAnyPan()
     if rf then
         pcall(function()
@@ -249,13 +250,16 @@ task.spawn(function()
                 else
                     if tick() - lastChange >= 2 then
                         if savedPos1 then
+                            if not running then continue end
                             stop()
                             local oldPos = hrp.CFrame
-                            hrp.CFrame = savedPos1
-                            task.wait(1.5)
-                            hrp.CFrame = oldPos
-                            task.wait(0.5)
-                            start()
+                            if running == false then
+                                hrp.CFrame = savedPos1
+                                task.wait(1.5)
+                                hrp.CFrame = oldPos
+                                task.wait(0.5)
+                            end
+                            if running then start() end
                         end
                         lastChange = tick()
                     end
@@ -269,9 +273,8 @@ end)
 -- Auto teleport ke Pos2 kalau notif muncul (aktif hanya saat Auto Farm ON)
 local notifFolder = player.PlayerGui:WaitForChild("MainUI"):WaitForChild("Notifications")
 notifFolder.ChildAdded:Connect(function(child)
-    if running and child:IsA("TextLabel") and child.Text == "Not enough sand!" then
-        task.wait(0.1)
-        if savedPos2 then
+    if child:IsA("TextLabel") and child.Text == "Not enough sand!" then
+        if running and savedPos2 then
             local oldPos = hrp.CFrame
             hrp.CFrame = savedPos2
             task.wait(1.5)
@@ -302,15 +305,11 @@ Tabs.Farm:Button({
 })
 
 Tabs.Farm:Button({
-    Title = "Save Posisi Sand)",
+    Title = "Save Posisi Sand",
     Callback = function()
         savedPos2 = hrp.CFrame
     end
 })
-
-
-
-
 
 local player = game:GetService("Players").LocalPlayer
 local running = false
