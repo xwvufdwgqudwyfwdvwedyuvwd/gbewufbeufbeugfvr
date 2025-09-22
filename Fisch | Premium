@@ -1,0 +1,298 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Localization = WindUI:Localization({
+    Enabled = true,
+    Prefix = "loc:",
+    DefaultLanguage = "en",
+    Translations = {
+        ["en"] = {
+            ["WINDUI_EXAMPLE"] = "WindUI Example",
+            ["WELCOME"] = "Welcome to WindUI!",
+            ["LIB_DESC"] = "Beautiful UI library for Roblox",
+            ["SETTINGS"] = "Settings",
+            ["APPEARANCE"] = "Appearance",
+            ["FEATURES"] = "Features",
+            ["UTILITIES"] = "Utilities",
+            ["UI_ELEMENTS"] = "UI Elements",
+            ["CONFIGURATION"] = "Configuration",
+            ["SAVE_CONFIG"] = "Save Configuration",
+            ["LOAD_CONFIG"] = "Load Configuration",
+            ["THEME_SELECT"] = "Select Theme",
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["LOCKED_TAB"] = "Locked Tab"
+        }
+    }
+})
+
+WindUI.TransparencyValue = 0.2
+WindUI:SetTheme("Dark")
+
+local function gradient(text, startColor, endColor)
+    local result = ""
+    for i = 1, #text do
+        local t = (i - 1) / (#text - 1)
+        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
+        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
+        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
+    end
+    return result
+end
+
+
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - Premium",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Fisch Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
+
+Window:Tag({
+    Title = "v1.2.2",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+WindUI:Notify({
+    Title = "Game Supported",
+    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
+    Icon = "gamepad",
+    Duration = 6
+})
+
+task.delay(6.5, function()
+    WindUI:Notify({
+        Title = "Bug Report",
+        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+        Icon = "cloud-alert",
+        Duration = 6
+    })
+end)
+
+task.delay(13, function()
+    WindUI:Notify({
+        Title = "Purchase",
+        Content = "If you want to buy this premium script key, join Discord to buy premium.",
+        Icon = "shopping-cart",
+        Duration = 6
+    })
+end)
+
+-- ✅ Tab dan UI
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Active = Window:Tab({ Title = "Active", Icon = "info"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
+    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
+    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
+    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
+    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
+    Server = Window:Tab({ Title = "Server", Icon = "server"  }),
+}
+
+Tabs.Home:Section({ Title = "Update" })
+
+Tabs.Home:Divider()
+
+Tabs.Home:Paragraph({
+    Title = "Here's what's new:",
+    Desc = [[
+[+] Added Anti Lava
+[/] Improve Auto Fish v2
+[/] Rework Teleport Event & Status Ecent
+[-] Delete Tab Visual
+[/] Move Visual To Player Tab Place
+    ]]
+})
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Active:Section({ Title = "Status" })
+
+Tabs.Farm:Section({ Title = "Fishing" })
+
+local player = game:GetService("Players").LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+-- Fungsi untuk mencari tool yang mengandung "Rod"
+local function getRod()
+    for _, tool in pairs(character:GetChildren()) do
+        if tool:IsA("Tool") and string.find(tool.Name, "Rod") then
+            return tool
+        end
+    end
+    return nil
+end
+
+-- Argumen cast
+local castArg1 = 76.59999999999998 -- default Slow
+local castArg2 = 1
+
+-- Variable untuk kontrol loop
+local autoCastEnabled = false
+
+-- Dropdown untuk pilih mode
+Tabs.Farm:Dropdown({ 
+    Title = "Select Mode Bobber", 
+    Values = { "Fast", "Slow" },
+    Value = "Slow",
+    Callback = function(option)
+        if option == "Fast" then
+            castArg1 = 1
+        end
+
+        if option == "Slow" then
+            castArg1 = 76.59999999999998
+        end
+    end
+})
+
+-- Toggle Auto Cast
+Tabs.Farm:Toggle({ 
+    Title = "Auto Cast", 
+    Value = false,
+    Callback = function(state)
+        autoCastEnabled = state
+        
+        spawn(function()
+            while autoCastEnabled do
+                local rod = getRod()
+                if rod then
+                    local castEvent = rod:WaitForChild("events"):WaitForChild("cast")
+                    castEvent:FireServer(castArg1, castArg2)
+                else
+                    autoCastEnabled = false
+                    break
+                end
+                wait(0.01) -- jeda, bisa diubah sesuai kebutuhan
+            end
+        end)
+    end
+})
+
+-- // Variable
+local AutoShake = false
+
+-- // Toggle WindUI
+Tabs.Farm:Toggle({
+    Title = "Auto Shake",
+    Value = false,
+    Callback = function(state)
+        AutoShake = state
+    end
+})
+
+-- // Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- // Shake Function
+local function DoShake()
+    local gui = LocalPlayer:WaitForChild("PlayerGui")
+    local shakeui = gui:FindFirstChild("shakeui")
+    if shakeui then
+        local safezone = shakeui:FindFirstChild("safezone")
+        if safezone then
+            local button = safezone:FindFirstChild("button")
+            if button and button:FindFirstChild("shake") then
+                button.shake:FireServer()
+            end
+        end
+    end
+end
+
+-- // Loop
+task.spawn(function()
+    while true do
+        task.wait(0.01)
+        if AutoShake then
+            pcall(DoShake)
+        end
+    end
+end)
+
+-- // Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+-- // Variables
+local AutoReel = false
+local args = {100, false}
+local reelEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished")
+
+-- // WindUI Toggle
+Tabs.Farm:Toggle({ 
+    Title = "Auto Reel", 
+    Value = false,
+    Callback = function(state)
+        AutoReel = state
+    end
+})
+
+-- // Loop Auto Reel
+spawn(function()
+    while true do
+        if AutoReel then
+            reelEvent:FireServer(unpack(args))
+        end
+        wait(0.01) -- jeda antar cast, bisa diubah sesuai kebutuhan
+    end
+end)
