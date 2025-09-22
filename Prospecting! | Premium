@@ -293,6 +293,7 @@ Tabs.Farm:Toggle({
 -- WindUI Buttons SavePos
 Tabs.Farm:Button({
     Title = "Save Posisi Water",
+    Icon = "waves",
     Callback = function()
         savedPos1 = hrp.CFrame
     end
@@ -300,6 +301,7 @@ Tabs.Farm:Button({
 
 Tabs.Farm:Button({
     Title = "Save Posisi Sand",
+    Icon = "shell",
     Callback = function()
         savedPos2 = hrp.CFrame
     end
