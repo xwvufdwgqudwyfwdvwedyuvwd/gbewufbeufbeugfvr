@@ -47,7 +47,7 @@ local playerDisplayName = player.DisplayName
 
 -- Buat Window versi baru
 local Window = WindUI:CreateWindow({
-    Title = "Nexa - Beta",
+    Title = "Nexa - Premium",
     Icon = "rbxassetid://107488593993096",
     Author = "Prospecting! ! Script | @ Han",
     Folder = "Hanzo",
@@ -78,7 +78,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v0.0.0",
+    Title = "v0.0.2",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -119,9 +119,12 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Added Auto Farm
-[+] Added Auto Shake
-[+] Added Auto Sell & Sell Delay
+[/] Improve Auto Farm
+[+] Added Tab Shop
+ - Dropdwon Pan
+ - Purchase Pan 
+ - Dropdwon Shovel
+ - Purchase Shovel
     ]]
 })
 
