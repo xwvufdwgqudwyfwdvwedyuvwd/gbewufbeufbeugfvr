@@ -327,7 +327,7 @@ Tabs.Farm:Toggle({
                     if pan then
                         usePan(pan)
                     end
-                    task.wait(0.001)
+                    task.wait(0.1)
                 end
             end)
         end
