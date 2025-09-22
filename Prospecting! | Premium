@@ -116,6 +116,7 @@ end)
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "shovel"  }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -394,5 +395,150 @@ Tabs.Farm:Toggle({
                 end
             end)
         end
+    end
+})
+
+Tabs.Shop:Section({ Title = "Pan" })
+
+local HttpService = game:GetService("HttpService")
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Shop"):WaitForChild("BuyItem")
+
+local pans = {
+    "Plastic Pan",
+    "Metal Pan",
+    "Silver Pan",
+    "Golden Pan",
+    "Magnetic Pan",
+    "Meteoric Pan",
+    "Diamond Pan",
+    "Aurora Pan",
+    "Worldshaker Pan",
+    "Dragonflame Pan",
+    "Fossilized Pan"
+}
+
+local panLocations = {
+    ["Plastic Pan"] = "StarterTown",
+    ["Metal Pan"] = "StarterTown",
+    ["Silver Pan"] = "StarterTown",
+    ["Golden Pan"] = "RiverTown",
+    ["Magnetic Pan"] = "RiverTown",
+    ["Meteoric Pan"] = "RiverTown",
+    ["Diamond Pan"] = "RiverTown",
+    ["Aurora Pan"] = "Cavern",
+    ["Worldshaker Pan"] = "Cavern",
+    ["Dragonflame Pan"] = "Volcano",
+    ["Fossilized Pan"] = "Volcano"
+}
+
+
+local selectedPans = {}
+
+-- Dropdown untuk memilih pan
+Tabs.Shop:Dropdown({ 
+    Title = "Select Pan", 
+    Values = pans,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        selectedPans = option
+    end
+})
+
+-- Button untuk membeli pan yang dipilih
+Tabs.Shop:Button({ 
+    Title = "Purchase Pan", 
+    Callback = function() 
+        for _, panName in ipairs(selectedPans) do
+            local town = panLocations[panName]
+            if town and workspace:FindFirstChild("Purchasable") and workspace.Purchasable:FindFirstChild(town) then
+                local panFolder = workspace.Purchasable[town]:FindFirstChild(panName)
+                if panFolder then
+                    local item = panFolder:FindFirstChild("ShopItem")
+                    if item then
+                        remote:InvokeServer(item, 1)
+                    end
+                end
+            end
+        end
+        WindUI:Notify({
+            Title = "Purchase Complete",
+            Content = "Selected pans have been purchased!",
+            Duration = 5,
+        })
+    end
+})
+
+Tabs.Shop:Section({ Title = "Shovel" })
+
+local HttpService = game:GetService("HttpService")
+local remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Shop"):WaitForChild("BuyItem")
+
+local shovels = {
+    "Iron Shovel",
+    "Steel Shovel",
+    "Silver Shovel",
+    "Reinforced Shovel",
+    "The Excavator",
+    "Golden Shovel",
+    "Meteoric Shovel",
+    "Diamond Shovel",
+    "Divine Shovel",
+    "Earthbreaker",
+    "Dragonflame Shovel",
+    "Fossilized Shovel"
+}
+
+local shovelLocations = {
+    ["Iron Shovel"] = "StarterTown",
+    ["Steel Shovel"] = "StarterTown",
+    ["Silver Shovel"] = "StarterTown",
+    ["Reinforced Shovel"] = "StarterTown",
+    ["The Excavator"] = "RiverTown",
+    ["Golden Shovel"] = "RiverTown",
+    ["Meteoric Shovel"] = "RiverTown",
+    ["Diamond Shovel"] = "RiverTown",
+    ["Divine Shovel"] = "Cavern",
+    ["Earthbreaker"] = "Cavern",
+    ["Dragonflame Shovel"] = "Volcano",
+    ["Fossilized Shovel"] = "Volcano"
+}
+
+local selectedShovels = {}
+
+-- Dropdown untuk memilih Shovel
+Tabs.Shop:Dropdown({ 
+    Title = "Select Shovel", 
+    Values = shovels,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        selectedShovels = option
+    end
+})
+
+-- Button untuk membeli Shovel yang dipilih
+Tabs.Shop:Button({ 
+    Title = "Purchase Shovel", 
+    Callback = function() 
+        for _, shovelName in ipairs(selectedShovels) do
+            local town = shovelLocations[shovelName]
+            if town and workspace:FindFirstChild("Purchasable") and workspace.Purchasable:FindFirstChild(town) then
+                local shovelFolder = workspace.Purchasable[town]:FindFirstChild(shovelName)
+                if shovelFolder then
+                    local item = shovelFolder:FindFirstChild("ShopItem")
+                    if item then
+                        remote:InvokeServer(item, 1)
+                    end
+                end
+            end
+        end
+        WindUI:Notify({
+            Title = "Purchase Complete",
+            Content = "Selected shovels have been purchased!",
+            Duration = 5,
+        })
     end
 })
