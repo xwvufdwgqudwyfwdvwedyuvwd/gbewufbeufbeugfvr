@@ -115,7 +115,7 @@ end)
 -- ✅ Tab dan UI
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
-    Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "shovel"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
