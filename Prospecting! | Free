@@ -125,7 +125,9 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-
+[+] Added Auto Farm
+[+] Added Auto Shake
+[+] Added Auto Sell & Sell Delay
     ]]
 })
 
