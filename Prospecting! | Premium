@@ -87,23 +87,16 @@ Window:EditOpenButton({
     Enabled = false
 })
 
+-- Notif Bug Report
 WindUI:Notify({
-    Title = "Game Supported",
-    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
-    Icon = "gamepad",
+    Title = "Bug Report",
+    Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+    Icon = "cloud-alert",
     Duration = 6
 })
 
-task.delay(6.5, function()
-    WindUI:Notify({
-        Title = "Bug Report",
-        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
-        Icon = "cloud-alert",
-        Duration = 6
-    })
-end)
-
-task.delay(13, function()
+-- Notif Purchase muncul setelah Bug Report selesai
+task.delay(6, function()
     WindUI:Notify({
         Title = "Purchase",
         Content = "If you want to buy this premium script key, join Discord to buy premium.",
@@ -165,7 +158,7 @@ local hrp = player.Character:WaitForChild("HumanoidRootPart")
 
 local args = { 0.75995642952621 }
 local running = false
-local delayTime = 0.01 -- spam collect lebih cepat
+local delayTime = 0.1 -- spam collect terus
 
 -- Tempat save posisi
 local savedPos1 = nil
@@ -262,12 +255,38 @@ notifFolder.ChildAdded:Connect(function(child)
     end
 end)
 
+-- Fungsi WindUI Notify
+local function notify(title, content)
+    WindUI:Notify({
+        Title = title,
+        Content = content,
+        Icon = "droplet-off",
+        Duration = 5,
+    })
+end
+
 -- WindUI Toggle Auto Farm
 Tabs.Farm:Toggle({
     Title = "Auto Farm",
     Value = false,
     Callback = function(state)
-        running = state
+        if state then
+            -- check posisi sand
+            if savedPos2 then
+                hrp.CFrame = savedPos2
+            else
+                notify("Warning", "Posisi Sand belum disimpan!")
+            end
+
+            -- check posisi water
+            if not savedPos1 then
+                notify("Warning", "Posisi Water belum disimpan!")
+            end
+
+            running = true
+        else
+            running = false
+        end
     end
 })
 
@@ -285,7 +304,6 @@ Tabs.Farm:Button({
         savedPos2 = hrp.CFrame
     end
 })
-
 
 local player = game:GetService("Players").LocalPlayer
 local running = false
