@@ -117,12 +117,6 @@ local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Active = Window:Tab({ Title = "Active", Icon = "info"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
-    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
-    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
-    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
-    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
-    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
-    Server = Window:Tab({ Title = "Server", Icon = "server"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -294,5 +288,54 @@ spawn(function()
             reelEvent:FireServer(unpack(args))
         end
         wait(0.01) -- jeda antar cast, bisa diubah sesuai kebutuhan
+    end
+end)
+
+Tabs.Shop:Section({ Title = "Crate" })
+
+-- Variable untuk jumlah crate
+local crateAmount = 1 -- default 1 crate
+
+-- Input di Tab Shop
+Tabs.Shop:Input({ 
+    Title = "Jumlah Beli Crate", 
+    Value = tostring(crateAmount),  -- default ditampilkan 1
+    Placeholder = "Masukkan jumlah crate", 
+    Callback = function(input)
+        local number = tonumber(input)
+        if number and number > 0 then
+            crateAmount = number
+        else
+            crateAmount = 1 -- fallback ke 1 jika input invalid
+        end
+    end
+})
+
+-- Toggle Auto Buy
+local AutoBuy = false
+Tabs.Shop:Toggle({
+    Title = "Auto Buy Bait Crate",
+    Value = false,
+    Callback = function(state)
+        AutoBuy = state
+    end
+})
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local purchaseEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("purchase")
+
+-- Loop Auto Buy
+spawn(function()
+    while true do
+        wait(1) -- delay 1 detik
+        if AutoBuy then
+            local args = {
+                "Bait Crate",
+                "Fish",
+                [4] = crateAmount -- jumlah crate sesuai input
+            }
+            purchaseEvent:FireServer(unpack(args))
+        end
     end
 end)
