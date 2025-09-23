@@ -1,3 +1,4 @@
+
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 local Localization = WindUI:Localization({
@@ -78,7 +79,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.2",
+    Title = "v1.2.3",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -233,27 +234,29 @@ local huntMap = {
 
 task.spawn(function()
     while true do
-        local propsFolder = workspace:FindFirstChild("Props")
-            or workspace:FindFirstChild("Props 1")
-            or workspace:FindFirstChild("Props 2")
-            or workspace:FindFirstChild("Props 3")
-            or workspace:FindFirstChild("Props 4")
-            or workspace:FindFirstChild("Props 5")
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
+        if menuRings then
+            local propsFolder = menuRings:FindFirstChild("Props")
+                or menuRings:FindFirstChild("Props 1")
+                or menuRings:FindFirstChild("Props 2")
+                or menuRings:FindFirstChild("Props 3")
+                or menuRings:FindFirstChild("Props 4")
+                or menuRings:FindFirstChild("Props 5")
 
-        if propsFolder then
-            local renamed = false
+            if propsFolder then
+                local renamed = false
 
-            for childName, newName in pairs(huntMap) do
-                if propsFolder:FindFirstChild(childName) then
-                    propsFolder.Name = newName
-                    renamed = true
-                    break -- stop kalau sudah ketemu yang cocok
+                for childName, newName in pairs(huntMap) do
+                    if propsFolder:FindFirstChild(childName) then
+                        propsFolder.Name = newName
+                        renamed = true
+                        break
+                    end
                 end
-            end
 
-            -- kalau nggak ada hunt yang cocok → balik ke Props
-            if not renamed then
-                propsFolder.Name = "Props"
+                if not renamed then
+                    propsFolder.Name = "Props"
+                end
             end
         end
 
@@ -275,14 +278,19 @@ local hunts = {
     ["Props 5"] = "Fishing Hunt",
 }
 
+-- referensi ke menu rings
+local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
+
 -- fungsi update status
 local function updateStatus()
+    if not menuRings then return end
+
     local statusText = ""
 
     for i = 1, 5 do
         local propName = "Props " .. i
         local huntName = hunts[propName]
-        local prop = workspace:FindFirstChild(propName)
+        local prop = menuRings:FindFirstChild(propName)
         local found = false
 
         if prop and huntName then
@@ -311,25 +319,27 @@ end
 -- update awal
 updateStatus()
 
--- auto update kalau ada Props masuk/keluar workspace
-workspace.ChildAdded:Connect(function(child)
-    if string.match(child.Name, "Props") then
-        updateStatus()
-    end
-end)
+-- auto update kalau ada Props masuk/keluar menuRings
+if menuRings then
+    menuRings.ChildAdded:Connect(function(child)
+        if string.match(child.Name, "Props") then
+            updateStatus()
+        end
+    end)
 
-workspace.ChildRemoved:Connect(function(child)
-    if string.match(child.Name, "Props") then
-        updateStatus()
-    end
-end)
+    menuRings.ChildRemoved:Connect(function(child)
+        if string.match(child.Name, "Props") then
+            updateStatus()
+        end
+    end)
 
--- auto update kalau child di dalam Props berubah (misalnya Hunt spawn/despawn)
-for i = 1, 5 do
-    local prop = workspace:FindFirstChild("Props " .. i)
-    if prop then
-        prop.ChildAdded:Connect(updateStatus)
-        prop.ChildRemoved:Connect(updateStatus)
+    -- auto update kalau child di dalam Props berubah (misalnya Hunt spawn/despawn)
+    for i = 1, 5 do
+        local prop = menuRings:FindFirstChild("Props " .. i)
+        if prop then
+            prop.ChildAdded:Connect(updateStatus)
+            prop.ChildRemoved:Connect(updateStatus)
+        end
     end
 end
 
@@ -339,6 +349,9 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Referensi ke menu rings
+local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
 
 -- Variabel penyimpanan
 local savePosition -- posisi awal sebelum teleport
@@ -358,23 +371,23 @@ local offsets = {
 -- Target finder
 local targets = {
     ["Shark Hunt"] = function()
-        local props = workspace:FindFirstChild("Props 1")
+        local props = menuRings and menuRings:FindFirstChild("Props 1")
         return props and props:FindFirstChild("Shark Hunt")
     end,
     ["Worm Hunt"] = function()
-        local props = workspace:FindFirstChild("Props 2")
+        local props = menuRings and menuRings:FindFirstChild("Props 2")
         return props and props:FindFirstChild("Model")
     end,
     ["Megalodon Hunt"] = function()
-        local props = workspace:FindFirstChild("Props 3")
+        local props = menuRings and menuRings:FindFirstChild("Props 3")
         return props and props:FindFirstChild("Megalodon Hunt")
     end,
     ["Ghost Shark Hunt"] = function()
-        local props = workspace:FindFirstChild("Props 4")
+        local props = menuRings and menuRings:FindFirstChild("Props 4")
         return props and props:FindFirstChild("Ghost Shark Hunt")
     end,
     ["Fishing Hunt"] = function()
-        local props = workspace:FindFirstChild("Props 5")
+        local props = menuRings and menuRings:FindFirstChild("Props 5")
         return props and props:FindFirstChild("Fishing Hunt")
     end,
 }
@@ -493,7 +506,6 @@ Tabs.Active:Button({
         savePosition = hrp.CFrame
     end
 })
-
 
 Tabs.Farm:Section({ Title = "Info Fish!!" })
 
@@ -1888,8 +1900,8 @@ Tabs.Player:Button({
             end)
 
             WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is ON",
+                Title = "Nexa Notify",
+                Content = "Anti Lava is ON",
                 Duration = 5,
             })
         else
@@ -1900,8 +1912,8 @@ Tabs.Player:Button({
             end
 
             WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is OFF",
+                Title = "Nexa Notify",
+                Content = "Anti Lava is OFF",
                 Duration = 5,
             })
         end
@@ -2072,6 +2084,9 @@ local WebhookActive = false
 -- Variabel filter tier dari dropdown
 local SelectedTiers = {}
 
+-- Link Discord
+local DiscordLink = "discord.gg/ECxQFc97F5"
+
 -- Mapping Tier → Nama Rarity
 local TierMap = {
     [1] = "Common",
@@ -2118,7 +2133,7 @@ end
 local function SendEmbed(data, plainMessage)
     if WebhookURL ~= "" and Request then
         local payload = {
-            ["content"] = plainMessage or "",
+            ["content"] = plainMessage or "Join Discord Nexa Hub discord.gg/ECxQFc97F5",
             ["embeds"] = data.embeds
         }
 
@@ -2158,7 +2173,7 @@ Tabs.Server:Toggle({
                     ["color"] = 5763719,
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
-            })
+            }, "Join our Discord: " .. DiscordLink)
         else
             print("Webhook deactivated ❌")
         end
@@ -2243,7 +2258,7 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
             local counterFields = {}
             for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
                 table.insert(counterFields, {
-                    ["name"] = "Fish - " .. name .. " 🎣",
+                    ["name"] = "X :  " .. name .. " 🎣",
                     ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
                     ["inline"] = true
                 })
@@ -2264,7 +2279,7 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                         {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
                         {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
                     },
-                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟 • discord.gg/ECxQFc97F5"},
+                    ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟"},
                     ["timestamp"] = DateTime.now():ToIsoDate()
                 }}
             }
@@ -2278,8 +2293,8 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                 table.insert(Data.embeds[1].fields, {["name"] = "Info", ["value"] = "```" .. newLabelText .. "```", ["inline"] = false})
             end
 
-            -- Kirim webhook tanpa link Discord
-            SendEmbed(Data, "")
+            -- Kirim webhook + link Discord plain message
+            SendEmbed(Data, "Join our Discord: " .. DiscordLink)
         end
     end
 end)
