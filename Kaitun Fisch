@@ -47,7 +47,7 @@ local function TeleportTo(posVector)
 end
 
 -- Contoh teleport ke koordinat target
-TeleportTo(Vector3.new(-552.8974, 18.8232574, 186.186676))
+TeleportTo(Vector3.new(592.399414, 40.3759193, 152.134644, -0.810599148, 6.50390746e-08, -0.585601389, 5.38345795e-08, 1, 3.65450106e-08, 0.585601389, -1.90225058e-09, -0.810599148))
 
 -- ==========================================================
 -- AUTO EQUIP ROD
@@ -335,13 +335,23 @@ local old; old = hookfunction(PurchaseRod.InvokeServer, function(self, ...)
     return result
 end)
 
-
--- Target CFrame
-local targetCFrame = CFrame.new(
+-- ==========================================================
+-- AKTIFKAN AUTO AURA BOAT QUEST
+-- ==========================================================
+-- Target CFrame Aura Quest
+local auraCFrame = CFrame.new(
     88.2434769, 9.53157043, 2685.2605,
     0.999735832, -1.020575e-08, 0.0228940968,
     1.1017133e-08, 1, 3.51753293e-08,
     -0.0228940968, 3.54192586e-08, 0.999735832
+)
+
+-- Target CFrame Aura Boat Quest (tujuan akhir setelah selesai)
+local boatCFrame = CFrame.new(
+    592.399414, 40.3759193, 152.134644,
+    -0.810599148, 6.50390746e-08, -0.585601389,
+    5.38345795e-08, 1, 3.65450106e-08,
+    0.585601389, -1.90225058e-09, -0.810599148
 )
 
 local player = game.Players.LocalPlayer
@@ -383,13 +393,13 @@ task.spawn(function()
                     :InvokeServer(unpack(args))
             end)
 
-            -- Step 3: teleport ke target
-            local distance = (hrp.Position - targetCFrame.Position).Magnitude
+            -- Step 3: teleport ke target aura quest
+            local distance = (hrp.Position - auraCFrame.Position).Magnitude
             if distance > 2 then
-                hrp.CFrame = targetCFrame
+                hrp.CFrame = auraCFrame
             end
             bv.Velocity = Vector3.new(0, 0, 0)
-            bg.CFrame = targetCFrame
+            bg.CFrame = auraCFrame
         end
     end
 end)
@@ -401,7 +411,7 @@ task.spawn(function()
         local label2Text = workspace["!!! MENU RINGS"]["Aura Tracker"].Board.Gui.Content.Label2.Text
         local label3Text = workspace["!!! MENU RINGS"]["Aura Tracker"].Board.Gui.Content.Label3.Text
 
-        -- Print ke console
+        -- Print progress
         print(label1Text .. "\n" .. label2Text .. "\n" .. label3Text)
 
         -- Ambil persentase dari tiap label
@@ -409,12 +419,15 @@ task.spawn(function()
         local p2 = tonumber(label2Text:match("(%d+)%%")) or 0
         local p3 = tonumber(label3Text:match("(%d+)%%")) or 0
 
-        -- Kalau semua sudah 100% → stop
+        -- Kalau semua sudah 100% → stop + teleport ke boat
         if p1 >= 100 and p2 >= 100 and p3 >= 100 then
             autoAuraQuest = false
             bv:Destroy()
             bg:Destroy()
-            warn("Aura Quest Selesai ✅ Auto berhenti")
+            warn("Aura Quest Selesai ✅ Teleport ke Boat Quest...")
+
+            -- Teleport ke boat quest
+            hrp.CFrame = boatCFrame
         end
     end
 end)
