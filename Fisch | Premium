@@ -163,6 +163,7 @@ Tabs.Active:Section({ Title = "Status" })
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
+-- AUTO CAST
 local player = game:GetService("Players").LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
@@ -222,6 +223,7 @@ Tabs.Farm:Toggle({
     end
 })
 
+- AUTO SHAKE
 -- // Variable
 local AutoShake = false
 
@@ -263,6 +265,7 @@ task.spawn(function()
     end
 end)
 
+-- AUTO REEL
 -- // Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -288,6 +291,103 @@ spawn(function()
             reelEvent:FireServer(unpack(args))
         end
         wait(0.01) -- jeda antar cast, bisa diubah sesuai kebutuhan
+    end
+end)
+
+-- EQUIP ROD
+Tabs.Farm:Toggle({
+    Title = "Auto Equip Rod",
+    Value = false,
+    Callback = function(state)
+        if state then
+            -- Aktifkan auto equip
+            getgenv().AutoEquipRod = true
+            task.spawn(function()
+                while getgenv().AutoEquipRod and task.wait(1) do
+                    local player = game.Players.LocalPlayer
+                    local backpack = player:WaitForChild("Backpack")
+
+                    -- Cek apakah sudah pegang rod
+                    local hasRodEquipped = false
+                    if player.Character then
+                        for _, tool in ipairs(player.Character:GetChildren()) do
+                            if tool:IsA("Tool") and string.find(tool.Name, "Rod") then
+                                hasRodEquipped = true
+                                break
+                            end
+                        end
+                    end
+
+                    -- Kalau belum pegang, cek Backpack dan equip
+                    if not hasRodEquipped then
+                        for _, tool in ipairs(backpack:GetChildren()) do
+                            if tool:IsA("Tool") and string.find(tool.Name, "Rod") then
+                                player.Character.Humanoid:EquipTool(tool)
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            -- Matikan auto equip
+            getgenv().AutoEquipRod = false
+        end
+    end
+})
+
+Tabs.Farm:Section({ Title = "Sell" })
+
+-- // Variables
+local AutoSell = false
+local SellDelay = 2 -- default 2 seconds
+
+-- // Input WindUI
+Tabs.Farm:Input({
+    Title = "Set Sell Delay",
+    Value = "2", -- default shown as 2
+    Placeholder = "Enter delay in seconds",
+    Callback = function(input)
+        local num = tonumber(input)
+        if num and num > 0 then
+            SellDelay = num
+        else
+            SellDelay = 2 -- fallback if invalid input
+        end
+    end
+})
+
+-- // Toggle WindUI (below input)
+Tabs.Farm:Toggle({
+    Title = "Auto Sell",
+    Value = false,
+    Callback = function(state)
+        AutoSell = state
+    end
+})
+
+-- // Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Events = ReplicatedStorage:WaitForChild("events")
+
+-- // NPC Reference
+local npc = workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant")
+local idle = npc:WaitForChild("description"):WaitForChild("idle")
+
+-- // Auto Sell Loop
+task.spawn(function()
+    while task.wait() do
+        if AutoSell then
+            local args = {
+                {
+                    voice = 12,
+                    npc = npc,
+                    idle = idle
+                }
+            }
+            Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
+            task.wait(SellDelay) -- delay from input
+        end
     end
 end)
 
@@ -339,3 +439,61 @@ spawn(function()
         end
     end
 end)
+
+local purchase = game:GetService("ReplicatedStorage"):WaitForChild("events"):WaitForChild("purchase")
+
+-- full list rod
+local availableRods = {
+    "Flimsy Rod","Fischer's Rod","Training Rod","Plastic Rod","Carbon Rod","Fast Rod","Lucky Rod","Long Rod","Stone Rod","Rose Rend","Scarlet Ravager","Experimental Rod","Magma Rod","Fungal Rod","Steady Rod","Fortune Rod","Rapid Rod","Magnet Rod","Nocturnal Rod","Precision Rod","Wildflower Rod","Reinforced Rod","Arctic Rod","Avalanche Rod",
+    "Phoenix Rod","Scurvy Rod","Midas Rod","Crystalized Rod","Depthseeker Rod","Aurora Rod","Mythical Rod","Kings Rod","Ice Warpers Rod","Brick Rod","Champions Rod","Friendly Rod","Carrot Rod","Wisdom Rod","Trident Rod","Summit Rod","Resourceful Rod","Volcanic Rod","Voyager Rod","Riptide Rod","Seasons Rod","Rainbow Cluster Rod","Great Dreamer Rod","Sunken Rod",
+    "Auric Rod","Rod Of The Depths","Rod Of The Exalted One","Destiny Rod","Abyssal Specter Rod","The Lost Rod","The Boom Ball","Frostbane Rod","Scarlet Spincaster Rod","Heaven's Rod","No-Life Rod","Zeus Rod","Tempest Rod","Kraken Rod","Poseidon Rod","Leviathan's Fang Rod","Challenger's Rod","Great Rod of Oscar","Luminescent Oath","Celestial Rod","Rod Of The Eternal King","Rod Of The Forgotten Fang","Duskwire","Evil Pitchfork",
+    "Cerulean Fang Rod","Wicked Fang Rod","Ethereal Prism Rod","Rod Of The Zenith","Seraphic Rod","Spiritbinder","Onirifalx","Ruinous Oath","Tryhard Rod"
+}
+
+local chosenRods = {}
+
+-- Dropdown: pilih rods (multi)
+Tabs.Shop:Dropdown({
+    Title = "Select Rods",
+    Values = availableRods,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option)
+        chosenRods = option or {}
+    end
+})
+
+-- Button: beli rods yang dipilih
+Tabs.Shop:Button({
+    Title = "Buy Selected Rods",
+    Callback = function()
+        if not chosenRods or #chosenRods == 0 then
+            WindUI:Notify({
+                Title = "Warning",
+                Content = "No rods selected. Choose at least one rod first.",
+                Duration = 4,
+            })
+            return
+        end
+
+        local category = "Rod"
+        local qty = 1
+        local delayBetween = 0.5
+
+        for _, rodName in ipairs(chosenRods) do
+            local args = { rodName, category }
+            args[4] = qty
+            pcall(function()
+                purchase:FireServer(unpack(args))
+            end)
+            task.wait(delayBetween)
+        end
+
+        WindUI:Notify({
+            Title = "Purchase",
+            Content = "Purchase attempts completed for selected rods.",
+            Duration = 4,
+        })
+    end
+})
