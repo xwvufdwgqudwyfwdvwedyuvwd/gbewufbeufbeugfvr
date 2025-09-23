@@ -1888,8 +1888,8 @@ Tabs.Player:Button({
             end)
 
             WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is ON",
+                Title = "Nexa Notify",
+                Content = "Anti lava is ON",
                 Duration = 5,
             })
         else
@@ -1899,33 +1899,7 @@ Tabs.Player:Button({
                 connection = nil
             end
 
-            WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is OFF",
-                Duration = 5,
-            })
-        end
-    end
-})
-
 Tabs.Player:Section({ Title = "Visual" })
-
--- Tombol Shop UI: Rod
-local shopUIPrompt = workspace["!!! MENU RINGS"].Ring.ProximityPrompt
-Tabs.Player:Button({
-    Title = "Shop UI: Rod",
-    Callback = function()
-        fireproximityprompt(shopUIPrompt)
-    end
-})
-
-local shopUIPrompt = workspace["!!! MENU RINGS"]["Enchanted Crate"].Prompt.MenuPromptAttachment.ProximityPrompt
-Tabs.Player:Button({
-    Title = "Shop UI: Skin Crates",
-    Callback = function()
-        fireproximityprompt(shopUIPrompt)
-    end
-})
 
 Tabs.Player:Section({ Title = "Codes" })
 
