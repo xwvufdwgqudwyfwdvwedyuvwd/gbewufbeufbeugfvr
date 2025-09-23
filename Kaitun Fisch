@@ -1,0 +1,197 @@
+-- ==========================================================
+-- Kaitun Auto Fishing Script (Lengkap, Rapi, Fix AutoBuy)
+-- ==========================================================
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local char = workspace:WaitForChild("Characters"):WaitForChild(LocalPlayer.Name)
+
+-- Remote events
+local Net = ReplicatedStorage:WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+
+local EquipRemote        = Net:WaitForChild("RE/EquipToolFromHotbar")
+local UnequipRemote      = Net:WaitForChild("RE/UnequipToolFromHotbar")
+local SellRemote         = Net:WaitForChild("RF/SellAllItems")
+local ChargeRod          = Net:WaitForChild("RF/ChargeFishingRod")
+local RequestMinigame    = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+local CancelFishing      = Net:WaitForChild("RF/CancelFishingInputs")
+local PurchaseRod        = Net:WaitForChild("RF/PurchaseFishingRod")
+local FishingCompleted   = Net:WaitForChild("RE/FishingCompleted")
+
+-- Player GUI references
+local container = LocalPlayer:WaitForChild("PlayerGui")
+    :WaitForChild("Small Notification")
+    :WaitForChild("Display")
+    :WaitForChild("Container")
+local currencyCounter = LocalPlayer.PlayerGui.Events.Frame.CurrencyCounter.Counter
+local initialPos = UDim2.new(0.5, 0, -1.9, 0)
+
+-- Toggle controls
+getgenv().AutoFish   = true
+getgenv().AutoSell   = true
+getgenv().AutoBuyRod = true
+
+-- ==========================================================
+-- FUNGSI TELEPORT
+-- ==========================================================
+local function TeleportTo(posVector)
+    if char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(posVector)
+    end
+end
+
+-- Contoh teleport ke koordinat target
+TeleportTo(Vector3.new(-552.8974, 18.8232574, 186.186676))
+
+-- ==========================================================
+-- AUTO EQUIP ROD
+-- ==========================================================
+task.spawn(function()
+    while task.wait(1) do
+        if char:FindFirstChild("!!!FISHING_VIEW_MODEL!!!") then
+            EquipRemote:FireServer(1) -- slot rod 1
+        end
+    end
+end)
+
+-- ==========================================================
+-- AUTO FISHING
+-- ==========================================================
+local runningCycle = false
+
+local function Step1()
+    ChargeRod:InvokeServer(os.clock())
+end
+
+local function Step2()
+    local args = { -0.75, 0.9949902531063812 }
+    RequestMinigame:InvokeServer(unpack(args))
+end
+
+local function Step4()
+    UnequipRemote:FireServer()
+    task.wait(0.01)
+    EquipRemote:FireServer(1)
+    task.wait(0.01)
+end
+
+local function Step3(callback)
+    local connection
+    local finished = false
+
+    connection = container:GetPropertyChangedSignal("Position"):Connect(function()
+        if container.Position ~= initialPos and not finished then
+            finished = true
+            connection:Disconnect()
+            callback()
+        end
+    end)
+
+    task.delay(7, function()
+        if not finished then
+            finished = true
+            if connection and connection.Connected then
+                connection:Disconnect()
+            end
+            CancelFishing:InvokeServer()
+            callback()
+        end
+    end)
+end
+
+function RunCycle()
+    if runningCycle then return end
+    runningCycle = true
+
+    task.spawn(function()
+        while getgenv().AutoFish do
+            Step1()
+            task.wait(0.001)
+            Step2()
+
+            local step3Finished = false
+            Step3(function()
+                Step4()
+                step3Finished = true
+            end)
+
+            repeat task.wait() until step3Finished
+            task.wait(0.001)
+        end
+        runningCycle = false
+    end)
+end
+
+RunCycle()
+
+-- ==========================================================
+-- AUTO COMPLETE FISHING
+-- ==========================================================
+task.spawn(function()
+    while getgenv().AutoFish do
+        pcall(function()
+            FishingCompleted:FireServer()
+        end)
+        task.wait(0.1)
+    end
+end)
+
+-- ==========================================================
+-- AUTO SELL
+-- ==========================================================
+task.spawn(function()
+    while getgenv().AutoSell do
+        pcall(function()
+            SellRemote:InvokeServer()
+        end)
+        task.wait(2)
+    end
+end)
+
+-- ==========================================================
+-- AUTO BUY ROD (PERBAIKAN: support K / M / B)
+-- ==========================================================
+local function parseMoney(str)
+    str = str:upper()
+    local number = tonumber(str:match("[0-9%.]+")) or 0
+    if str:find("K") then
+        return number * 1000
+    elseif str:find("M") then
+        return number * 1000000
+    elseif str:find("B") then
+        return number * 1000000000
+    else
+        return number
+    end
+end
+
+task.spawn(function()
+    while getgenv().AutoBuyRod do
+        local money = parseMoney(currencyCounter.Text)
+        local args
+
+        if money >= 250 and money <= 2000 then
+            args = {77}
+        elseif money >= 3000 and money <= 214000 then
+            args = {4}
+        elseif money >= 215000 and money <= 436000 then
+            args = {6}
+        elseif money >= 437000 and money <= 999000 then
+            args = {7}
+        elseif money >= 1000000 and money <= 20000000 then
+            args = {5}
+        end
+
+        if args then
+            pcall(function()
+                PurchaseRod:InvokeServer(unpack(args))
+            end)
+        end
+
+        task.wait(1)
+    end
+end)
