@@ -368,7 +368,7 @@ local sellDelay = 1 -- default delay
 -- Slider untuk atur delay
 Tabs.Farm:Slider({
     Title = "Sell Delay", 
-    Step = 1,
+    Step = 0.1,
     Value = {
         Min = 1, 
         Max = 100, 
@@ -385,20 +385,30 @@ Tabs.Farm:Toggle({
     Value = false,
     Callback = function(state) 
         autoSell = state
-        if autoSell then
-            task.spawn(function()
-                while autoSell do
-                    -- invoke server untuk jual semua
-                    pcall(function()
-                        sellRemote:InvokeServer()
-                    end)
-                    -- tunggu sesuai sellDelay terbaru
-                    task.wait(sellDelay)
-                end
-            end)
-        end
     end
 })
+
+-- Button untuk Sell All manual
+Tabs.Farm:Button({
+    Title = "Sell All Now",
+    Callback = function()
+        pcall(function()
+            sellRemote:InvokeServer()
+        end)
+    end
+})
+
+-- Loop utama untuk Auto Sell
+task.spawn(function()
+    while true do
+        if autoSell then
+            pcall(function()
+                sellRemote:InvokeServer()
+            end)
+        end
+        task.wait(sellDelay)
+    end
+end)
 
 Tabs.Shop:Section({ Title = "Pan" })
 
