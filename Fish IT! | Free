@@ -1,4 +1,3 @@
-
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 local Localization = WindUI:Localization({
@@ -350,9 +349,6 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Referensi ke menu rings
-local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
-
 -- Variabel penyimpanan
 local savePosition -- posisi awal sebelum teleport
 local freezeBV, freezeBG
@@ -371,22 +367,27 @@ local offsets = {
 -- Target finder
 local targets = {
     ["Shark Hunt"] = function()
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
         local props = menuRings and menuRings:FindFirstChild("Props 1")
         return props and props:FindFirstChild("Shark Hunt")
     end,
     ["Worm Hunt"] = function()
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
         local props = menuRings and menuRings:FindFirstChild("Props 2")
         return props and props:FindFirstChild("Model")
     end,
     ["Megalodon Hunt"] = function()
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
         local props = menuRings and menuRings:FindFirstChild("Props 3")
         return props and props:FindFirstChild("Megalodon Hunt")
     end,
     ["Ghost Shark Hunt"] = function()
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
         local props = menuRings and menuRings:FindFirstChild("Props 4")
         return props and props:FindFirstChild("Ghost Shark Hunt")
     end,
     ["Fishing Hunt"] = function()
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
         local props = menuRings and menuRings:FindFirstChild("Props 5")
         return props and props:FindFirstChild("Fishing Hunt")
     end,
