@@ -79,7 +79,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.2",
+    Title = "v1.2.3",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -1900,8 +1900,8 @@ Tabs.Player:Button({
             end)
 
             WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is ON",
+                Title = "Nexa Notify",
+                Content = "Anti Lava is ON",
                 Duration = 5,
             })
         else
@@ -1912,8 +1912,8 @@ Tabs.Player:Button({
             end
 
             WindUI:Notify({
-                Title = "TouchInterest Remover",
-                Content = "Auto Remove is OFF",
+                Title = "Nexa Notify",
+                Content = "Anti Lava is OFF",
                 Duration = 5,
             })
         end
