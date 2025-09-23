@@ -1,0 +1,77 @@
+-- LocalScript di StarterGui
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Buat ScreenGui full layar
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FullScreenBlurGUI"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+-- Blur world
+local blur = Instance.new("BlurEffect")
+blur.Size = 15
+blur.Parent = workspace.CurrentCamera
+
+-- Background hitam transparan
+local bg = Instance.new("Frame")
+bg.Parent = screenGui
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.Position = UDim2.new(0, 0, 0, 0)
+bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bg.BackgroundTransparency = 0.3
+
+-- Container tengah
+local container = Instance.new("Frame")
+container.Parent = screenGui
+container.Size = UDim2.new(0, 400, 0, 400)
+container.Position = UDim2.new(0.5, 0, 0.5, 0)
+container.AnchorPoint = Vector2.new(0.5, 0.5)
+container.BackgroundTransparency = 1
+
+-- Layout biar otomatis vertikal + rata tengah
+local layout = Instance.new("UIListLayout")
+layout.Parent = container
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.VerticalAlignment = Enum.VerticalAlignment.Center
+layout.Padding = UDim.new(0, 15)
+
+-- Ambil avatar user
+local content, isReady = Players:GetUserThumbnailAsync(
+    player.UserId,
+    Enum.ThumbnailType.HeadShot,
+    Enum.ThumbnailSize.Size180x180
+)
+
+local profileImage = Instance.new("ImageLabel")
+profileImage.Parent = container
+profileImage.Size = UDim2.new(0, 120, 0, 120)
+profileImage.BackgroundTransparency = 1
+profileImage.Image = content
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Parent = container
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Judul GUI"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 28
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextStrokeTransparency = 0.2
+title.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Description
+local desc = Instance.new("TextLabel")
+desc.Parent = container
+desc.Size = UDim2.new(1, -40, 0, 80)
+desc.BackgroundTransparency = 1
+desc.Text = "Ini adalah deskripsi yang muncul tepat di bawah judul."
+desc.Font = Enum.Font.Gotham
+desc.TextSize = 20
+desc.TextColor3 = Color3.fromRGB(220, 220, 220)
+desc.TextWrapped = true
+desc.TextXAlignment = Enum.TextXAlignment.Center
