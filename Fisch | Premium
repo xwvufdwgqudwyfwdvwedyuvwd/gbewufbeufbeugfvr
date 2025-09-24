@@ -335,7 +335,7 @@ local AutoSell = false
 local SellDelay = 2 -- default 2 seconds
 
 -- // Input WindUI
-Tabs.Shop:Input({
+Tabs.Farm:Input({
     Title = "Sell Delay",
     Value = "2",
     Placeholder = "Enter delay in seconds",
@@ -350,7 +350,7 @@ Tabs.Shop:Input({
 })
 
 -- // Toggle WindUI
-Tabs.Shop:Toggle({
+Tabs.Farm:Toggle({
     Title = "Enable Auto Sell",
     Value = false,
     Callback = function(state)
@@ -363,38 +363,55 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Events = ReplicatedStorage:WaitForChild("events")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
--- // NPC Reference
-local npc = workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant")
-local idle = npc:WaitForChild("description"):WaitForChild("idle")
+-- // Target Position (near merchant)
+local MerchantCFrame = CFrame.new(
+    466.160034, 151.00206, 224.497086, 
+    -0.996853352, 0, -0.0792675018, 
+    0, 1, 0, 
+    0.0792675018, 0, -0.996853352
+)
 
--- // Auto Sell Function
+-- // Auto Sell Loop
 task.spawn(function()
     while task.wait() do
-        if AutoSell then
-            -- Save current position
-            local savePos = HumanoidRootPart.Position
+        if AutoSell and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local HumanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+            local savePos = HumanoidRootPart.CFrame
 
-            -- Teleport to NPC
-            HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0) -- sedikit di atas agar tidak stuck
+            -- Teleport to merchant location
+            HumanoidRootPart.CFrame = MerchantCFrame
+            task.wait(1)
 
-            -- Invoke Sell
-            local args = {
-                {
-                    voice = 12,
-                    npc = npc,
-                    idle = idle
-                }
-            }
-            Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
+            -- Wait until NPC is loaded
+            local npcFolder = workspace:FindFirstChild("world") and workspace.world:FindFirstChild("npcs")
+            if npcFolder then
+                local npc = npcFolder:FindFirstChild("Marc Merchant")
+                if npc then
+                    local idle = npc:FindFirstChild("description") and npc.description:FindFirstChild("idle")
+                    if idle then
+                        -- Sell
+                        local args = {
+                            {
+                                voice = 12,
+                                npc = npc,
+                                idle = idle
+                            }
+                        }
+                        Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
+                    end
+                else
+                    warn("Marc Merchant not found yet, skipping...")
+                end
+            end
 
-            -- Wait for input delay
+            -- Wait for delay
             task.wait(SellDelay)
 
             -- Return to saved position
-            HumanoidRootPart.CFrame = CFrame.new(savePos)
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = savePos
+            end
         end
     end
 end)
