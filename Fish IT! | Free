@@ -1,3 +1,4 @@
+
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 local Localization = WindUI:Localization({
@@ -2377,40 +2378,6 @@ Tabs.Server:Dropdown({
     Callback = function(option)
         getgenv().StaffActions = option
         print("Selected staff actions: " .. game:GetService("HttpService"):JSONEncode(option))
-    end
-})
-
---// Ambil service Roblox
-local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
-local player = Players.LocalPlayer
-
---// Variable status
-local AntiAFKEnabled = false
-local AntiAFKConnection
-
---// Toggle di WindUI
-Tabs.Server:Toggle({
-    Title = "Anti Afk",
-    Value = true,
-    Callback = function(state)
-        AntiAFKEnabled = state
-
-        if state then
-            -- aktifkan listener
-            AntiAFKConnection = player.Idled:Connect(function()
-                if AntiAFKEnabled then
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton2(Vector2.new())
-                end
-            end)
-        else
-            -- matikan listener
-            if AntiAFKConnection then
-                AntiAFKConnection:Disconnect()
-                AntiAFKConnection = nil
-            end
-        end
     end
 })
 
