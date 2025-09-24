@@ -34,3 +34,45 @@ if scriptUrl then
 else
     warn("Unsupported game. PlaceId:", placeId)
 end
+
+-- AntiAFK Safe Auto-ON
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
+
+local AntiAFKEnabled = true
+local AntiAFKConnection
+local loopThread
+
+local function doVirtualAction()
+    -- simulasi klik ringan, aman untuk mencegah kick AFK
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(math.random(0,800), math.random(0,600)))
+    wait(0.05)
+    VirtualUser:ClickButton2(Vector2.new(math.random(0,800), math.random(0,600)))
+end
+
+local function startLoop()
+    loopThread = coroutine.create(function()
+        while AntiAFKEnabled do
+            pcall(doVirtualAction)
+            local waitTime = math.random(60, 300) -- interval acak 1-5 menit
+            local elapsed = 0
+            while elapsed < waitTime and AntiAFKEnabled do
+                wait(1)
+                elapsed = elapsed + 1
+            end
+        end
+    end)
+    coroutine.resume(loopThread)
+end
+
+-- pasang listener Idled untuk respon cepat event AFK
+AntiAFKConnection = player.Idled:Connect(function()
+    if AntiAFKEnabled then
+        pcall(doVirtualAction)
+    end
+end)
+
+-- jalankan loop berkala
+startLoop()
