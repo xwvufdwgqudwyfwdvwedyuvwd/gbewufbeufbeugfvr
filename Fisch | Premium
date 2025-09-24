@@ -39,7 +39,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v0.0.0",
+    Title = "v0.0.1",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -78,22 +78,7 @@ Tabs.Home:Section({ Title = "Update" })
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Added Tab Farm:
- - Auto Cast
- - Auto Shake
- - Auto Reel
- - Equip Rod
- - Select Equip Rod Backpack
- - Botton Equip Rod Backpack
- - Auto Sell
-[+] Added Tab Shop:
- - Dropdwon Select Crate
- - Botton Purchase Crate
- - Dropdwon Select Rod
- - Botton Purchase Rod
-[+] Added Tab Teleport:
- - Dropdwon Select Location
- - Botton Teleport Select Location
+[/] Fixed Auto Sell
     ]]
 })
 
@@ -350,23 +335,23 @@ local AutoSell = false
 local SellDelay = 2 -- default 2 seconds
 
 -- // Input WindUI
-Tabs.Farm:Input({
-    Title = "Set Sell Delay",
-    Value = "2", -- default shown as 2
+Tabs.Shop:Input({
+    Title = "Sell Delay",
+    Value = "2",
     Placeholder = "Enter delay in seconds",
     Callback = function(input)
         local num = tonumber(input)
         if num and num > 0 then
             SellDelay = num
         else
-            SellDelay = 2 -- fallback if invalid input
+            SellDelay = 2
         end
     end
 })
 
--- // Toggle WindUI (below input)
-Tabs.Farm:Toggle({
-    Title = "Auto Sell",
+-- // Toggle WindUI
+Tabs.Shop:Toggle({
+    Title = "Enable Auto Sell",
     Value = false,
     Callback = function(state)
         AutoSell = state
@@ -376,15 +361,26 @@ Tabs.Farm:Toggle({
 -- // Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Events = ReplicatedStorage:WaitForChild("events")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
 -- // NPC Reference
 local npc = workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant")
 local idle = npc:WaitForChild("description"):WaitForChild("idle")
 
--- // Auto Sell Loop
+-- // Auto Sell Function
 task.spawn(function()
     while task.wait() do
         if AutoSell then
+            -- Save current position
+            local savePos = HumanoidRootPart.Position
+
+            -- Teleport to NPC
+            HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0) -- sedikit di atas agar tidak stuck
+
+            -- Invoke Sell
             local args = {
                 {
                     voice = 12,
@@ -393,7 +389,12 @@ task.spawn(function()
                 }
             }
             Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
-            task.wait(SellDelay) -- delay from input
+
+            -- Wait for input delay
+            task.wait(SellDelay)
+
+            -- Return to saved position
+            HumanoidRootPart.CFrame = CFrame.new(savePos)
         end
     end
 end)
