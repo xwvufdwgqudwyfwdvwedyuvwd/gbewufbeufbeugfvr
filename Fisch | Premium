@@ -78,7 +78,22 @@ Tabs.Home:Section({ Title = "Update" })
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-
+[+] Added Tab Farm:
+ - Auto Cast
+ - Auto Shake
+ - Auto Reel
+ - Equip Rod
+ - Select Equip Rod Backpack
+ - Botton Equip Rod Backpack
+ - Auto Sell
+[+] Added Tab Shop:
+ - Dropdwon Select Crate
+ - Botton Purchase Crate
+ - Dropdwon Select Rod
+ - Botton Purchase Rod
+[+] Added Tab Teleport:
+ - Dropdwon Select Location
+ - Botton Teleport Select Location
     ]]
 })
 
