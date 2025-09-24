@@ -117,7 +117,8 @@ local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Active = Window:Tab({ Title = "Active", Icon = "info"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
-    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  })
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
+    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -589,6 +590,7 @@ Tabs.Shop:Button({
     end
 })
 
+Tabs.Teleport:Section({ Title = "Island" })
 
 -- List lokasi teleport
 local teleportLocations = {
@@ -632,6 +634,7 @@ end
 Tabs.Teleport:Dropdown({
     Title = "Select Location",
     Values = locationNames,
+    SearchBarEnabled = true,
     Value = locationNames[1],
     Callback = function(option)
         selectedLocation = option
