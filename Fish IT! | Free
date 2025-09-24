@@ -2380,39 +2380,39 @@ Tabs.Server:Dropdown({
     end
 })
 
+--// Ambil service Roblox
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
 
-local antiAFKConnection = nil
+--// Variable status
+local AntiAFKEnabled = false
+local AntiAFKConnection
 
--- Function to enable or disable Anti-AFK
-local function setAntiAFK(state)
-    if state then
-        if not antiAFKConnection then
-            antiAFKConnection = Players.LocalPlayer.Idled:Connect(function()
-                VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-                task.wait(1)
-                VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-                print("✅ Anti-AFK triggered")
+--// Toggle di WindUI
+Tabs.Server:Toggle({
+    Title = "Anti Afk",
+    Value = true,
+    Callback = function(state)
+        AntiAFKEnabled = state
+
+        if state then
+            -- aktifkan listener
+            AntiAFKConnection = player.Idled:Connect(function()
+                if AntiAFKEnabled then
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                end
             end)
-        end
-    else
-        if antiAFKConnection then
-            antiAFKConnection:Disconnect()
-            antiAFKConnection = nil
-            print("❌ Anti-AFK disabled")
+        else
+            -- matikan listener
+            if AntiAFKConnection then
+                AntiAFKConnection:Disconnect()
+                AntiAFKConnection = nil
+            end
         end
     end
-end
-
--- WindUI Toggle
-Tabs.Server:Toggle({
-    Title = "Anti AFK",
-    Value = true,
-    Callback = setAntiAFK
 })
-
-
 
 Tabs.Server:Section({ Title = "Server" })
 
