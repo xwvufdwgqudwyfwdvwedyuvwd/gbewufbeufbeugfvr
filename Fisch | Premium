@@ -68,20 +68,12 @@ end)
 -- ✅ Tab dan UI
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
-    Active = Window:Tab({ Title = "Active", Icon = "info"  }),
-    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
-    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
     Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
-    Boat = Window:Tab({ Title = "Boat", Icon = "sailboat"  }),
     Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
-    Server = Window:Tab({ Title = "Server", Icon = "server"  }),
-    Visual = Window:Tab({ Title = "Visual", Icon = "eye"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
-
-Tabs.Home:Divider()
 
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
@@ -114,8 +106,6 @@ Tabs.Home:Paragraph({
         }
     }
 })
-
-Tabs.Active:Section({ Title = "Status" })
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
