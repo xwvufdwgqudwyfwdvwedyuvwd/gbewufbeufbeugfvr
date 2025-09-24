@@ -20,6 +20,7 @@ local placeId = game.PlaceId
 local games = {
     [121864768012064] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Premium', -- Fish It
     [129827112113663] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Prospecting!%20%7C%20Premium', -- Prospecting!
+    [16732694052] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fisch%20%7C%20Premium', -- Fisch
 }
 
 local scriptUrl = games[placeId]
