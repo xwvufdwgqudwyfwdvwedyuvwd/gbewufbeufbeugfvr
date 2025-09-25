@@ -117,6 +117,7 @@ local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "swords"  }),
     Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
+    Inventory = Window:Tab({ Title = "Inventory", Icon = "backpack"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -155,6 +156,7 @@ Tabs.Home:Paragraph({
 
 Tabs.Farm:Section({ Title = "Brainrot Farm" })
 
+-- Telepeort
 -- Services
 local Players = game:GetService("Players")
 
@@ -170,7 +172,8 @@ local teleportEnabled = false -- status toggle
 local function teleportToBrainrot(brainrot)
     if brainrot and brainrot:IsA("Model") then
         local pivotCFrame = brainrot:GetPivot()
-        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, 0, 0)
+        -- posisi turun 1 stud supaya tidak nempel di atas model
+        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, -1, 0)
     end
 end
 
@@ -196,6 +199,7 @@ Tabs.Farm:Toggle({
 
 
 
+-- Attack
 -- Toggle WindUI
 local autoAttackEnabled = false
 
@@ -322,109 +326,7 @@ Tabs.Farm:Toggle({
 
 Tabs.Shop:Section({ Title = "Seed" })
 
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-
-local selectedSeeds = {} -- Menyimpan seed yang dipilih
-local autoBuyEnabled = false -- Status toggle
-
--- Dropdown untuk memilih seed
-Tabs.Shop:Dropdown({ 
-    Title = "Select Seed", 
-    Values = {
-        "Cactus Seed",
-        "Strawberry Seed",
-        "Pumpkin Seed",
-        "Sunflower Seed",
-        "Dragon Fruit Seed",
-        "Eggplant Seed",
-        "Watermelon Seed",
-        "Cocotank Seed",
-        "Carnivorous Plant Seed",
-        "Mr Carrot Seed",
-        "Tomatrio Seed",
-    }, 
-    Value = {}, 
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option) 
-        selectedSeeds = option
-    end
-})
-
--- Toggle untuk auto-buy
-Tabs.Shop:Toggle({ 
-    Title = "Auto Buy Seed", 
-    Value = false,
-    Callback = function(state) 
-        autoBuyEnabled = state
-        
-        -- Jika toggle diaktifkan, mulai auto buy
-        if autoBuyEnabled then
-            spawn(function()
-                while autoBuyEnabled do
-                    for _, seedName in ipairs(selectedSeeds) do
-                        local args = {seedName, "\a"} -- "\a" bisa diganti sesuai kebutuhan server
-                        dataRemoteEvent:FireServer(unpack(args))
-                        wait(0.001) -- delay untuk menghindari anti-spam server
-                    end
-                    wait(0.1) -- delay antar loop
-                end
-            end)
-        end
-    end
-})
-
 Tabs.Shop:Section({ Title = "Gear" })
-
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-
-local selectedGear = {} -- Gear yang dipilih lewat dropdown
-local autoUseEnabled = false -- Status toggle
-
--- Dropdown untuk memilih gear
-Tabs.Shop:Dropdown({ 
-    Title = "Select Gear", 
-    Values = {
-        "Water Bucket",
-        "Frost Grenade",
-        "Banana Gun",
-        "Frost Blower",
-        "Carrot Launcher",
-    }, 
-    Value = {}, 
-    Multi = true,
-    AllowNone = true,
-    Callback = function(option) 
-        selectedGear = option
-        print("Gear selected: " .. HttpService:JSONEncode(option))
-    end
-})
-
--- Toggle untuk auto use/buy gear
-Tabs.Shop:Toggle({ 
-    Title = "Auto Buy Gear", 
-    Value = false,
-    Callback = function(state) 
-        autoUseEnabled = state
-        
-        if autoUseEnabled then
-            spawn(function()
-                while autoUseEnabled do
-                    for _, gearName in ipairs(selectedGear) do
-                        local args = {gearName, " "} -- ganti " " sesuai kebutuhan server
-                        dataRemoteEvent:FireServer(unpack(args))
-                        wait(0.001) -- delay antar gear supaya aman dari anti-spam
-                    end
-                    wait(0.1) -- delay antar loop
-                end
-            end)
-        end
-    end
-})
 
 Tabs.Shop:Section({ Title = "Platfoem" })
 
@@ -460,6 +362,119 @@ Tabs.Shop:Toggle({
                 local args = { { itemId, "4" } } -- "4" bisa disesuaikan server action
                 Remote:FireServer(unpack(args))
                 wait(0.1)
+            end
+        end
+    end
+})
+
+Tabs.Inventory:Section({ Title = "Sell" })
+
+-- Slider untuk mengatur delay auto sell
+Tabs.Inventory:Slider({
+    Title = "Auto Sell Delay", 
+    Step = 1, 
+    Value = {
+        Min = 1, 
+        Max = 100,  -- bisa kamu ubah sesuai kebutuhan
+        Default = 1, 
+    },
+    Callback = function(value)
+        -- value akan dipakai sebagai delay
+        AutoSellDelay = value
+    end
+})
+
+-- Toggle untuk mengaktifkan / menonaktifkan Auto Sell
+Tabs.Inventory:Toggle({ 
+    Title = "Auto Sell", 
+    Value = false,
+    Callback = function(state)
+        AutoSellEnabled = state
+        if state then
+            -- jalankan auto sell loop
+            spawn(function()
+                while AutoSellEnabled do
+                    -- fire server ItemSell
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ItemSell"):FireServer()
+                    wait(AutoSellDelay)  -- delay sesuai slider
+                end
+            end)
+        end
+    end
+})
+
+Tabs.Inventory:Section({ Title = "Favorite" })
+
+-- daftar brainrot
+local brainrots = {
+    "Boneca Ambalabu",
+    "Fluri Flura",
+    "Lirili Larila",
+    "Noobini Bananini",
+    "Orangutani Ananassini",
+    "Baleia Brasileira",
+    "Batata Patata",
+    "Burrataleta Massarela",
+    "Cadareco do Batman",
+    "Gato Galactico",
+    "Hiena do Jack",
+    "Lava Jato",
+    "Mano do Ceu",
+    "Burbaloni Lulliloli",
+    "Elefanto Cocofanto",
+    "Gangster Footera",
+    "Madung",
+    "Bombardiro Crocodilo",
+    "Bombini Gussini",
+    "Frigo Camelo",
+    "Giraffa Celeste",
+    "Matteo",
+    "Odin Din Din Dun",
+    "Tralalelo Tralala",
+    "Garamararam",
+    "Los Tralaleritos",
+    "Vacca Saturno Saturnita",
+}
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
+
+-- simpan pilihan dropdown
+local selectedBrainrot = ""
+
+Tabs.Inventory:Dropdown({ 
+    Title = "Select Brainrot", 
+    Values = brainrots,
+    Value = brainrots[1], 
+    Callback = function(option) 
+        selectedBrainrot = option
+    end
+})
+
+-- Tombol Auto Favorite (rename tambah titik)
+Tabs.Inventory:Button({ 
+    Title = "Auto Favorite", 
+    Callback = function() 
+        if selectedBrainrot == "" then return end
+        
+        for _, item in ipairs(backpack:GetChildren()) do
+            if string.find(item.Name, selectedBrainrot) and not string.find(item.Name, "^%.") then
+                item.Name = "." .. item.Name
+            end
+        end
+    end
+})
+
+-- Tombol Reset Favorite (khusus item yang dipilih di dropdown)
+Tabs.Inventory:Button({ 
+    Title = "Reset Favorite", 
+    Callback = function() 
+        if selectedBrainrot == "" then return end
+
+        for _, item in ipairs(backpack:GetChildren()) do
+            if string.find(item.Name, "^%." .. selectedBrainrot) then
+                item.Name = string.sub(item.Name, 2) -- hapus titik depan
             end
         end
     end
