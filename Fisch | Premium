@@ -271,6 +271,8 @@ Tabs.Farm:Toggle({
     end
 })
 
+Tabs.Farm:Section({ Title = "Equipment Rod" })
+
 local equipRods = {
     "Flimsy Rod","Fischer's Rod","Training Rod","Plastic Rod","Carbon Rod","Fast Rod","Lucky Rod","Long Rod","Stone Rod",
     "Rose Rend","Scarlet Ravager","Experimental Rod","Magma Rod","Fungal Rod","Steady Rod","Fortune Rod","Rapid Rod","Magnet Rod","Nocturnal Rod",
@@ -328,24 +330,96 @@ Tabs.Farm:Button({
     end
 })
 
+Tabs.Farm:Section({ Title = "Equipment Bait" })
+
+local equipBait = {
+    "Bagel","Flakes","Gale Grub","Garbage","Insect","Lushrooms","Worm","Maggot","Shrimp","Coral","Ember Berries",
+    "Magnet","Minnow","Seaweed","Squid","Coal","Crystal Bananas","Lagoon Leech","Rapid Catcher","Super Flakes","Deep Coral",
+    "Fish Head","Instant Catcher","Mist Worms","Night Shrimp","Truffle Worm","Weird Algae","Whale Bait","Golden Shrimp Bait","Sapphire Krill",
+    "Shark Head","Luminous Larva","Kraken Tentacle","Golden Tentacle","Hangman's Hook","Colossal Ink Bait","Hourglass Bait","Snare","Moonhaze",
+    "Phantom Leech","Glass Beetle","Neuro Slug","Toxic Jelly Core","Nightmare Larva","Golden Worm","Peppermint Worm","Holly Berry","Stud Bait",
+    "Aurora Bait","Chocolate Fish","Lucky"
+}
+
+local selectedBait = equipBait[1] -- default ke "Bagel"
+
+Tabs.Farm:Dropdown({
+    Title = "Select Bait",
+    Values = equipBait,
+    SearchBarEnabled = true,
+    Value = selectedBait,
+    Callback = function(option)
+        selectedBait = option
+    end
+})
+
+Tabs.Farm:Button({
+    Title = "Equip Bait",
+    Callback = function()
+        local args = { selectedBait }
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("packages")
+            :WaitForChild("Net")
+            :WaitForChild("RE/Bait/Equip")
+            :FireServer(unpack(args))
+    end
+})
+
+Tabs.Farm:Section({ Title = "Equipment Bobber" })
+
+local equipBobber = {
+    "Frozen","Anchor","Cliff Peak","Coral Reef","Fake Pufferfish","Frozen Rubber Ducky","Infested","Mini Terrapin","Mushroom","Pirate Wheel",
+    "Skeleton","Ancient Book","Baby Anglerfish","Blue Moon","Chilled Spikes","Cryogenic Icicle","Frigid Crystal","Lava","Lava Spout","Quiet Crystal",
+    "Rubber Ducky","Sun","Tornado","Treasure Chest","Vertigo Rock","Bloxy Cola","Amber","Atlantis Guardian","Brine","Carrot Friend","Crystal Cluster",
+    "Harpoon","Nautilis Shell","Aurora","Ghostly Conch","Prismatic Gem","Founders Rainbow","Tryhard Bobber","Dusk Bobber","Spirit Bobber","Stock",
+    "Gem","Compass","Gold Coin","Whaley","Meteor Stone","Drifter's Tale","Sunken Ship","The Moby Bobber","Bloop Bobber","Lobster Pal","Fishing Net",
+    "Azure Flower","Cannon","Ember Cluster","Lighthouse","Lush Tree","Pine Tree","Spiritual Gem","Oceanic Tunnel","Treasure Whale","Cursed Dreamer",
+    "Skull","Crystallized Ball","Party Popper","Sunken Relic","Carbon","Blue Wiggly Worm","Green Wiggly Worm","Purple Wiggly Worm","Leaf","Heart",
+    "Cat","Cube","Huge","Wireframe","Star","Translucent","Income","LED","Lightning","Evil Ducky","Cheezburger","Chocolate Milk","Bloxiade",
+    "Glowfish Bobber","Roslit Bay Bobber","Diamond","Shaped","Eye","Coal"
+}
+
+local selectedBobber = equipBobber[1] -- default ke "Frozen"
+
+Tabs.Farm:Dropdown({
+    Title = "Select Bobber",
+    Values = equipBobber,
+    SearchBarEnabled = true,
+    Value = selectedBobber,
+    Callback = function(option)
+        selectedBobber = option
+    end
+})
+
+Tabs.Farm:Button({
+    Title = "Equip Bobber",
+    Callback = function()
+        local args = { selectedBobber }
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("packages")
+            :WaitForChild("Net")
+            :WaitForChild("RE/Bobber/Equip") -- biasanya path-nya ini, cek kalau beda
+            :FireServer(unpack(args))
+    end
+})
+
 Tabs.Farm:Section({ Title = "Sell" })
 
 -- // Variables
 local AutoSell = false
-local SellDelay = 2 -- default 2 seconds
+local SellDelay = 5 -- default 5 seconds
 
--- // Input WindUI
-Tabs.Farm:Input({
+-- // Slider WindUI (delay)
+Tabs.Farm:Slider({
     Title = "Sell Delay",
-    Value = "2",
-    Placeholder = "Enter delay in seconds",
-    Callback = function(input)
-        local num = tonumber(input)
-        if num and num > 0 then
-            SellDelay = num
-        else
-            SellDelay = 2
-        end
+    Step = 1,
+    Value = {
+        Min = 1,
+        Max = 100,
+        Default = 5,
+    },
+    Callback = function(value)
+        SellDelay = value
     end
 })
 
@@ -361,57 +435,45 @@ Tabs.Farm:Toggle({
 -- // Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Events = ReplicatedStorage:WaitForChild("events")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local npcFolder = workspace:WaitForChild("world"):WaitForChild("npcs")
 
--- // Target Position (near merchant)
-local MerchantCFrame = CFrame.new(
-    466.160034, 151.00206, 224.497086, 
-    -0.996853352, 0, -0.0792675018, 
-    0, 1, 0, 
-    0.0792675018, 0, -0.996853352
-)
+-- // Helper: Wait until a Merchant NPC exists
+local function waitForMerchant()
+    local npc = nil
+    while not npc do
+        for _, v in ipairs(npcFolder:GetChildren()) do
+            if v:IsA("Model") and string.match(v.Name, "Merchant$") then
+                npc = v
+                break
+            end
+        end
+        if not npc then
+            npcFolder.ChildAdded:Wait() -- wait until merchant spawn
+        end
+    end
+    return npc
+end
 
 -- // Auto Sell Loop
 task.spawn(function()
     while task.wait() do
-        if AutoSell and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local HumanoidRootPart = LocalPlayer.Character.HumanoidRootPart
-            local savePos = HumanoidRootPart.CFrame
+        if AutoSell then
+            -- Wait until merchant is available
+            local npc = waitForMerchant()
+            local idle = npc:FindFirstChild("description") and npc.description:FindFirstChild("idle")
 
-            -- Teleport to merchant location
-            HumanoidRootPart.CFrame = MerchantCFrame
-            task.wait(1)
-
-            -- Wait until NPC is loaded
-            local npcFolder = workspace:FindFirstChild("world") and workspace.world:FindFirstChild("npcs")
-            if npcFolder then
-                local npc = npcFolder:FindFirstChild("Marc Merchant")
-                if npc then
-                    local idle = npc:FindFirstChild("description") and npc.description:FindFirstChild("idle")
-                    if idle then
-                        -- Sell
-                        local args = {
-                            {
-                                voice = 12,
-                                npc = npc,
-                                idle = idle
-                            }
-                        }
-                        Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
-                    end
-                else
-                    warn("Marc Merchant not found yet, skipping...")
-                end
+            if npc and idle then
+                local args = {
+                    {
+                        voice = 12,
+                        npc = npc,
+                        idle = idle
+                    }
+                }
+                Events:WaitForChild("SellAll"):InvokeServer(unpack(args))
             end
 
-            -- Wait for delay
             task.wait(SellDelay)
-
-            -- Return to saved position
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = savePos
-            end
         end
     end
 end)
