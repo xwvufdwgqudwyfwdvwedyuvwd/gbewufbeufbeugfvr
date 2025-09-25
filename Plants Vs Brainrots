@@ -1,0 +1,312 @@
+
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Localization = WindUI:Localization({
+    Enabled = true,
+    Prefix = "loc:",
+    DefaultLanguage = "en",
+    Translations = {
+        ["en"] = {
+            ["WINDUI_EXAMPLE"] = "WindUI Example",
+            ["WELCOME"] = "Welcome to WindUI!",
+            ["LIB_DESC"] = "Beautiful UI library for Roblox",
+            ["SETTINGS"] = "Settings",
+            ["APPEARANCE"] = "Appearance",
+            ["FEATURES"] = "Features",
+            ["UTILITIES"] = "Utilities",
+            ["UI_ELEMENTS"] = "UI Elements",
+            ["CONFIGURATION"] = "Configuration",
+            ["SAVE_CONFIG"] = "Save Configuration",
+            ["LOAD_CONFIG"] = "Load Configuration",
+            ["THEME_SELECT"] = "Select Theme",
+            ["TRANSPARENCY"] = "Window Transparency",
+            ["LOCKED_TAB"] = "Locked Tab"
+        }
+    }
+})
+
+WindUI.TransparencyValue = 0.2
+WindUI:SetTheme("Dark")
+
+local function gradient(text, startColor, endColor)
+    local result = ""
+    for i = 1, #text do
+        local t = (i - 1) / (#text - 1)
+        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
+        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
+        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
+    end
+    return result
+end
+
+
+-- Ambil nama player
+local player = game.Players.LocalPlayer
+local playerName = player.Name
+local playerDisplayName = player.DisplayName
+
+-- Buat Window versi baru
+local Window = WindUI:CreateWindow({
+    Title = "Nexa - Premium",
+    Icon = "rbxassetid://107488593993096",
+    Author = "Plants Vs Brainrots Script | @ Han",
+    Folder = "Hanzo",
+    Size = UDim2.fromOffset(540, 420),
+    Transparent = true,
+    Theme = "Dark",
+    
+    HidePanelBackground = true,
+    NewElements = false,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,           -- false biar muncul nama asli
+        Name = playerDisplayName,    -- Nama tampilan
+        UserName = "@" .. playerName, -- Username Roblox
+        Callback = function()
+            WindUI:Notify({
+                Title = "User Profile",
+                Content = "User profile clicked!",
+                Duration = 3
+            })
+        end
+    },
+    
+    Acrylic = false,
+    HideSearchBar = false,
+    SideBarWidth = 200,
+})
+
+Window:Tag({
+    Title = "v1.2.3",
+    Color = Color3.fromHex("#30ff6a")
+})
+
+
+Window:EditOpenButton({
+    Enabled = false
+})
+
+WindUI:Notify({
+    Title = "Game Supported",
+    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
+    Icon = "gamepad",
+    Duration = 6
+})
+
+task.delay(6.5, function()
+    WindUI:Notify({
+        Title = "Bug Report",
+        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
+        Icon = "cloud-alert",
+        Duration = 6
+    })
+end)
+
+task.delay(13, function()
+    WindUI:Notify({
+        Title = "Purchase",
+        Content = "If you want to buy this premium script key, join Discord to buy premium.",
+        Icon = "shopping-cart",
+        Duration = 6
+    })
+end)
+
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "house"  }),
+    Farm = Window:Tab({ Title = "Farm", Icon = "swords"  }),
+}
+
+Tabs.Home:Section({ Title = "Update" })
+
+Tabs.Home:Paragraph({
+    Title = "Here's what's new:",
+    Desc = [[
+
+    ]]
+})
+
+Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Discord - Nexa | COMMUNITY",
+    Desc = "Indonesia 🇮🇩",
+    Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
+    ImageSize = 20,
+    Color = "Grey",
+    Buttons = {
+        {
+            Title = "Copy Link",
+            Icon = "copy",
+            Variant = "Tertiary",
+            Callback = function()
+                setclipboard("discord.gg/ECxQFc97F5")
+                WindUI:Notify({
+                    Title = "Copied!",
+                    Content = "Discord link copied to clipboard",
+                    Duration = 2
+                })
+            end
+        }
+    }
+})
+
+Tabs.Farm:Section({ Title = "Brainrot Farm" })
+
+-- Services
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local Brainrots = workspace:WaitForChild("ScriptedMap"):WaitForChild("Brainrots")
+
+local teleportEnabled = false -- status toggle
+
+-- Fungsi Teleport ke Brainrot (langsung model)
+local function teleportToBrainrot(brainrot)
+    if brainrot and brainrot:IsA("Model") then
+        local pivotCFrame = brainrot:GetPivot()
+        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, 1, 0)
+    end
+end
+
+-- Loop teleport (jalan terus tapi dicek toggle)
+task.spawn(function()
+    while task.wait(0.001) do
+        if teleportEnabled then
+            for _, brainrot in ipairs(Brainrots:GetChildren()) do
+                teleportToBrainrot(brainrot)
+            end
+        end
+    end
+end)
+
+-- WindUI Toggle
+Tabs.Farm:Toggle({ 
+    Title = "Teleport to Brainrot", 
+    Value = false,
+    Callback = function(state) 
+        teleportEnabled = state
+    end
+})
+
+
+
+-- Toggle WindUI
+local autoAttackEnabled = false
+
+Tabs.Farm:Toggle({ 
+    Title = "Auto Attack Brainrot", 
+    Value = false,
+    Callback = function(state)
+        autoAttackEnabled = state
+    end
+})
+
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local WeaponAttack = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AttacksServer"):WaitForChild("WeaponAttack")
+local Brainrots = workspace:WaitForChild("ScriptedMap"):WaitForChild("Brainrots")
+
+-- Fungsi buat nyerang Brainrot
+local function attackBrainrot(brainrot)
+    if brainrot and brainrot:IsA("Model") then
+        WeaponAttack:FireServer({ brainrot.Name })
+    end
+end
+
+-- Loop serang terus saat toggle aktif
+task.spawn(function()
+    while task.wait(0.0001) do
+        if autoAttackEnabled then
+            for _, brainrot in ipairs(Brainrots:GetChildren()) do
+                attackBrainrot(brainrot)
+            end
+        end
+    end
+end)
+
+local TweenService = game:GetService("TweenService")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+
+local ImgBtn = Instance.new("ImageButton")
+ImgBtn.Parent = ScreenGui
+ImgBtn.Size = UDim2.new(0, 60, 0, 60)
+ImgBtn.Position = UDim2.new( 0, 100, 1, -300)
+ImgBtn.BackgroundTransparency = 1
+ImgBtn.Image = "rbxassetid://137184014634632" -- ganti dengan gambar planet
+
+-- Biar ujung tombol bulat/halus
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 15)
+UICorner.Parent = ImgBtn
+
+-- Toggle GUI dengan ImageButton
+local isOpen = false
+ImgBtn.MouseButton1Click:Connect(function()
+    -- ANIMASI KLIK (scale kecil dulu baru balik normal)
+    local shrink = TweenService:Create(ImgBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 50, 0, 50)
+    })
+    local grow = TweenService:Create(ImgBtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 60, 0, 60)
+    })
+
+    shrink:Play()
+    shrink.Completed:Wait()
+    grow:Play()
+
+    -- Toggle Window
+    if isOpen then
+        Window:Close()
+    else
+        Window:Open()
+    end
+    isOpen = not isOpen
+end)
+
+local UserInputService = game:GetService("UserInputService")
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    ImgBtn.Position = UDim2.new(
+        startPos.X.Scale, startPos.X.Offset + delta.X,
+        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+    )
+end
+
+ImgBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ImgBtn.Position
+
+        -- biar bisa lepas drag kalau jari/mouse diangkat
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+ImgBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
