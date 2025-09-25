@@ -116,6 +116,7 @@ end)
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Farm = Window:Tab({ Title = "Farm", Icon = "swords"  }),
+    Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -169,7 +170,7 @@ local teleportEnabled = false -- status toggle
 local function teleportToBrainrot(brainrot)
     if brainrot and brainrot:IsA("Model") then
         local pivotCFrame = brainrot:GetPivot()
-        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, 1, 0)
+        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, 0, 0)
     end
 end
 
@@ -228,6 +229,241 @@ task.spawn(function()
         end
     end
 end)
+
+Tabs.Farm:Section({ Title = "Collect" })
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- cari plot kita
+local myDisplayName = player.DisplayName
+local plots = workspace:WaitForChild("Plots")
+
+local myPlot = nil
+for _, plot in pairs(plots:GetChildren()) do
+    local sign = plot:FindFirstChild("PlayerSign")
+    if sign then
+        local billboard = sign:FindFirstChild("BillboardGui")
+        if billboard then
+            local label = billboard:FindFirstChild("TextLabel")
+            if label and label:IsA("TextLabel") then
+                if label.Text == myDisplayName then
+                    myPlot = plot
+                    break
+                end
+            end
+        end
+    end
+end
+if not myPlot then return end
+
+local brainrots = myPlot:WaitForChild("Brainrots")
+
+-- Atur speed jalan
+humanoid.WalkSpeed = 50
+
+-- Variabel kontrol
+local autoCollect = false
+local collectDelay = 1
+
+-- Fungsi untuk jalan ke model
+local function walkTo(model)
+    if not model then return end
+    local part = model:FindFirstChildWhichIsA("BasePart", true)
+    if part then
+        humanoid:MoveTo(part.Position + Vector3.new(0, 3, 0))
+        humanoid.MoveToFinished:Wait()
+    end
+end
+
+-- Fungsi utama auto jalan
+task.spawn(function()
+    while task.wait() do
+        if autoCollect then
+            -- loop selama toggle aktif
+            for i = 1, 17 do
+                if not autoCollect then break end
+                local model = brainrots:FindFirstChild(tostring(i))
+                if model then
+                    walkTo(model)
+                end
+            end
+            -- selesai 1 → 17, tunggu sesuai slider
+            if autoCollect then
+                task.wait(collectDelay)
+            end
+        end
+    end
+end)
+
+-- UI
+Tabs.Farm:Slider({
+    Title = "Collect Delay",
+    Step = 1,
+    Value = {
+        Min = 1,
+        Max = 100,
+        Default = 1,
+    },
+    Callback = function(value)
+        collectDelay = value
+    end
+})
+
+Tabs.Farm:Toggle({
+    Title = "Auto Collect",
+    Value = false,
+    Callback = function(state)
+        autoCollect = state
+    end
+})
+
+Tabs.Shop:Section({ Title = "Seed" })
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+local selectedSeeds = {} -- Menyimpan seed yang dipilih
+local autoBuyEnabled = false -- Status toggle
+
+-- Dropdown untuk memilih seed
+Tabs.Shop:Dropdown({ 
+    Title = "Select Seed", 
+    Values = {
+        "Cactus Seed",
+        "Strawberry Seed",
+        "Pumpkin Seed",
+        "Sunflower Seed",
+        "Dragon Fruit Seed",
+        "Eggplant Seed",
+        "Watermelon Seed",
+        "Cocotank Seed",
+        "Carnivorous Plant Seed",
+        "Mr Carrot Seed",
+        "Tomatrio Seed",
+    }, 
+    Value = {}, 
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        selectedSeeds = option
+    end
+})
+
+-- Toggle untuk auto-buy
+Tabs.Shop:Toggle({ 
+    Title = "Auto Buy Seed", 
+    Value = false,
+    Callback = function(state) 
+        autoBuyEnabled = state
+        
+        -- Jika toggle diaktifkan, mulai auto buy
+        if autoBuyEnabled then
+            spawn(function()
+                while autoBuyEnabled do
+                    for _, seedName in ipairs(selectedSeeds) do
+                        local args = {seedName, "\a"} -- "\a" bisa diganti sesuai kebutuhan server
+                        dataRemoteEvent:FireServer(unpack(args))
+                        wait(0.001) -- delay untuk menghindari anti-spam server
+                    end
+                    wait(0.1) -- delay antar loop
+                end
+            end)
+        end
+    end
+})
+
+Tabs.Shop:Section({ Title = "Gear" })
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+local selectedGear = {} -- Gear yang dipilih lewat dropdown
+local autoUseEnabled = false -- Status toggle
+
+-- Dropdown untuk memilih gear
+Tabs.Shop:Dropdown({ 
+    Title = "Select Gear", 
+    Values = {
+        "Water Bucket",
+        "Frost Grenade",
+        "Banana Gun",
+        "Frost Blower",
+        "Carrot Launcher",
+    }, 
+    Value = {}, 
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        selectedGear = option
+        print("Gear selected: " .. HttpService:JSONEncode(option))
+    end
+})
+
+-- Toggle untuk auto use/buy gear
+Tabs.Shop:Toggle({ 
+    Title = "Auto Buy Gear", 
+    Value = false,
+    Callback = function(state) 
+        autoUseEnabled = state
+        
+        if autoUseEnabled then
+            spawn(function()
+                while autoUseEnabled do
+                    for _, gearName in ipairs(selectedGear) do
+                        local args = {gearName, " "} -- ganti " " sesuai kebutuhan server
+                        dataRemoteEvent:FireServer(unpack(args))
+                        wait(0.001) -- delay antar gear supaya aman dari anti-spam
+                    end
+                    wait(0.1) -- delay antar loop
+                end
+            end)
+        end
+    end
+})
+
+Tabs.Shop:Section({ Title = "Platfoem" })
+
+local HttpService = game:GetService("HttpService")
+local Remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+-- Dropdown untuk pilih item
+local selectedItems = {} -- nyimpen item yang dipilih
+
+Tabs.Shop:Dropdown({ 
+    Title = "Select Platform To Buy",  
+    Values = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17" }, 
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        selectedItems = option -- update item yang dipilih
+    end
+})
+
+-- Toggle untuk Auto Buy
+local autoBuy = false
+
+Tabs.Shop:Toggle({ 
+    Title = "Auto Buy Platform",  
+    Value = false,
+    Callback = function(state) 
+        autoBuy = state
+        print("Mode activated: " .. tostring(state))
+        if autoBuy and #selectedItems > 0 then
+            -- Loop beli semua item yang dipilih
+            for _, itemId in ipairs(selectedItems) do
+                local args = { { itemId, "4" } } -- "4" bisa disesuaikan server action
+                Remote:FireServer(unpack(args))
+                wait(0.1)
+            end
+        end
+    end
+})
 
 local TweenService = game:GetService("TweenService")
 
