@@ -328,7 +328,7 @@ Tabs.Shop:Section({ Title = "Seed" })
 
 Tabs.Shop:Section({ Title = "Gear" })
 
-Tabs.Shop:Section({ Title = "Platfoem" })
+Tabs.Shop:Section({ Title = "Platform" })
 
 local HttpService = game:GetService("HttpService")
 local Remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
