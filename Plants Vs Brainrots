@@ -172,7 +172,7 @@ local function teleportToBrainrot(brainrot)
     if brainrot and brainrot:IsA("Model") then
         local pivotCFrame = brainrot:GetPivot()
         -- posisi turun 1 stud supaya tidak nempel di atas model
-        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, -1, 0)
+        humanoidRootPart.CFrame = pivotCFrame + Vector3.new(0, -2, 0)
     end
 end
 
@@ -364,7 +364,7 @@ end
 
 -- Dropdown multi pilih seed
 Tabs.Shop:Dropdown({
-    Title = "Select Seeds (Multi)",
+    Title = "Select Seeds",
     Values = seedList,
     Value = {}, -- default kosong
     Multi = true,
