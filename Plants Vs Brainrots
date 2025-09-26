@@ -117,6 +117,7 @@ local Tabs = {
     Farm = Window:Tab({ Title = "Farm", Icon = "swords"  }),
     Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
     Inventory = Window:Tab({ Title = "Inventory", Icon = "backpack"  }),
+    Auto = Window:Tab({ Title = "Automaticaly", Icon = "repeat-2"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -389,6 +390,64 @@ Tabs.Shop:Toggle({
 
 Tabs.Shop:Section({ Title = "Gear" })
 
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+-- Daftar gear/items
+local gearList = {
+    "Water Bucket",
+    "Frost Grenade",
+    "Banana Gun",
+    "Frost Blower",
+    "Carrot Launcher"
+}
+
+-- Status toggle & pilihan gear
+local autoBuyEnabled = false
+local selectedGear = {}
+
+-- Fungsi loop auto buy gear
+local function startAutoBuy()
+    spawn(function()
+        while autoBuyEnabled do
+            for _, gearName in ipairs(selectedGear) do
+                local args = {
+                    { gearName, " " } -- bedanya di sini pakai " " bukan "\a"
+                }
+                dataRemoteEvent:FireServer(unpack(args))
+                task.wait(0.5) -- delay antar pembelian
+            end
+            task.wait(1) -- delay per cycle
+        end
+    end)
+end
+
+-- Dropdown multi pilih gear
+Tabs.Shop:Dropdown({
+    Title = "Select Gear (Multi)",
+    Values = gearList,
+    Value = {}, -- default kosong
+    Multi = true,
+    AllowNone = true,
+    Callback = function(options)
+        selectedGear = options
+        print("Gear selected: " .. HttpService:JSONEncode(options))
+    end
+})
+
+-- Toggle auto buy gear
+Tabs.Shop:Toggle({
+    Title = "Auto Buy Selected Gear",
+    Value = false,
+    Callback = function(state)
+        autoBuyEnabled = state
+        if state then
+            startAutoBuy()
+        end
+    end
+})
+
 Tabs.Shop:Section({ Title = "Platform" })
 
 local HttpService = game:GetService("HttpService")
@@ -464,79 +523,147 @@ Tabs.Inventory:Toggle({
     end
 })
 
-Tabs.Inventory:Section({ Title = "Favorite" })
+Tabs.Auto:Section({ Title = "Plant" })
 
--- daftar brainrot
-local brainrots = {
-    "Boneca Ambalabu",
-    "Fluri Flura",
-    "Lirili Larila",
-    "Noobini Bananini",
-    "Orangutani Ananassini",
-    "Baleia Brasileira",
-    "Batata Patata",
-    "Burrataleta Massarela",
-    "Cadareco do Batman",
-    "Gato Galactico",
-    "Hiena do Jack",
-    "Lava Jato",
-    "Mano do Ceu",
-    "Burbaloni Lulliloli",
-    "Elefanto Cocofanto",
-    "Gangster Footera",
-    "Madung",
-    "Bombardiro Crocodilo",
-    "Bombini Gussini",
-    "Frigo Camelo",
-    "Giraffa Celeste",
-    "Matteo",
-    "Odin Din Din Dun",
-    "Tralalelo Tralala",
-    "Garamararam",
-    "Los Tralaleritos",
-    "Vacca Saturno Saturnita",
-}
+local player = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local event = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local backpack = player:WaitForChild("Backpack")
+local selectedSeed = nil
+local selectedRow = nil
+local autoMode = false
+local myPlot = nil -- disimpan setelah ketemu
 
--- simpan pilihan dropdown
-local selectedBrainrot = ""
-
-Tabs.Inventory:Dropdown({ 
-    Title = "Select Brainrot", 
-    Values = brainrots,
-    Value = brainrots[1], 
-    Callback = function(option) 
-        selectedBrainrot = option
-    end
-})
-
--- Tombol Auto Favorite (rename tambah titik)
-Tabs.Inventory:Button({ 
-    Title = "Auto Favorite", 
-    Callback = function() 
-        if selectedBrainrot == "" then return end
-        
-        for _, item in ipairs(backpack:GetChildren()) do
-            if string.find(item.Name, selectedBrainrot) and not string.find(item.Name, "^%.") then
-                item.Name = "." .. item.Name
+-- cari plot player (pakai loop index)
+local function findMyPlot()
+    for i = 1, #workspace.Plots:GetChildren() do
+        local plot = workspace.Plots:FindFirstChild(tostring(i))
+        if plot then
+            local sign = plot:FindFirstChild("PlayerSign")
+            if sign and sign:FindFirstChild("BillboardGui") and sign.BillboardGui:FindFirstChild("TextLabel") then
+                local textLabel = sign.BillboardGui.TextLabel
+                if textLabel.Text == player.DisplayName then
+                    print("Ini plot kita: " .. i)
+                    myPlot = plot
+                    return plot
+                end
             end
         end
     end
+    return nil
+end
+
+-- ambil info seed dari backpack (support nama tanpa [x...])
+local function getSeedData(seedName)
+    local backpack = player:WaitForChild("Backpack")
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") and string.find(tool.Name, seedName) then
+            return {
+                ID = tool:GetAttribute("ID"),
+                Plant = tool:GetAttribute("Plant"),
+                Tool = tool,
+                Name = tool.Name
+            }
+        end
+    end
+end
+
+-- tanam semua di plot (atau hanya row tertentu kalau dipilih)
+local function plantAll(seedName, rowFilter)
+    local seedData = getSeedData(seedName)
+    if not seedData then
+        warn(seedName .. " tidak ditemukan di backpack")
+        return
+    end
+
+    if not myPlot then
+        myPlot = findMyPlot()
+        if not myPlot then
+            warn("Plot tidak ditemukan untuk player: " .. player.DisplayName)
+            return
+        end
+    end
+
+    for _, row in ipairs(myPlot.Rows:GetChildren()) do
+        -- cek row filter (misalnya hanya row "3")
+        if not rowFilter or row.Name == tostring(rowFilter) then
+            if row:FindFirstChild("Grass") then
+                for _, grass in ipairs(row.Grass:GetChildren()) do
+                    local args = {
+                        {
+                            {
+                                ID = seedData.ID,
+                                -- tanam + naik 2 stud
+                                CFrame = grass.CFrame * CFrame.new(0, 2, 0),
+                                Item = seedData.Plant,
+                                Floor = grass
+                            },
+                            "\005"
+                        }
+                    }
+                    event:FireServer(unpack(args))
+                    print("Nanam " .. seedData.Plant .. " (" .. seedData.Name .. ") di atas Grass " .. grass.Name .. " (Row " .. row.Name .. ") +2 stud")
+                    task.wait(0.2)
+                end
+            end
+        end
+    end
+end
+
+-- Dropdown untuk pilih seed
+Tabs.Auto:Dropdown({ 
+    Title = "Select Seed",  
+    Values = { 
+        "Cactus Seed",
+        "Strawberry Seed",
+        "Pumpkin Seed",
+        "Sunflower Seed",
+        "Dragon Fruit Seed",
+        "Eggplant Seed",
+        "Watermelon Seed",
+        "Cocotank Seed",
+        "Carnivorous Plant Seed",
+        "Mr Carrot Seed", 
+        "Tomatrio Seed"
+    },
+    Value = "",
+    Callback = function(option) 
+        selectedSeed = option
+        print("Selected Seed: " .. option) 
+    end
 })
 
--- Tombol Reset Favorite (khusus item yang dipilih di dropdown)
-Tabs.Inventory:Button({ 
-    Title = "Reset Favorite", 
-    Callback = function() 
-        if selectedBrainrot == "" then return end
+-- Dropdown untuk pilih row (1-7)
+Tabs.Auto:Dropdown({ 
+    Title = "Select Row", 
+    Values = { "1","2","3","4","5","6","7" },
+    Value = "",
+    Callback = function(option) 
+        selectedRow = tonumber(option)
+        print("Row terpilih: " .. option) 
+    end
+})
 
-        for _, item in ipairs(backpack:GetChildren()) do
-            if string.find(item.Name, "^%." .. selectedBrainrot) then
-                item.Name = string.sub(item.Name, 2) -- hapus titik depan
+-- Toggle untuk aktifkan auto plant
+Tabs.Auto:Toggle({ 
+    Title = "Auto Plant", 
+    Value = false,
+    Callback = function(state) 
+        autoMode = state
+        print("Auto Plant: " .. tostring(state))
+
+        if autoMode then
+            if not selectedSeed then
+                warn("Pilih dulu seed dari dropdown!")
+                return
             end
+
+            task.spawn(function()
+                while autoMode do
+                    plantAll(selectedSeed, selectedRow)
+                    task.wait(5) -- jeda supaya tidak spam
+                end
+            end)
         end
     end
 })
