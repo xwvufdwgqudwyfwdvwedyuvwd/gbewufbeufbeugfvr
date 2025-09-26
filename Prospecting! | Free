@@ -119,12 +119,7 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[/] Improve Auto Farm
-[+] Added Tab Shop
- - Dropdwon Pan
- - Purchase Pan 
- - Dropdwon Shovel
- - Purchase Shovel
+[/] Fixed Auto Sell
     ]]
 })
 
@@ -360,10 +355,18 @@ Tabs.Farm:Toggle({
 Tabs.Farm:Section({ Title = "Sell" })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local sellRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Shop"):WaitForChild("SellAll")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
 
 local autoSell = false
 local sellDelay = 1 -- default delay
+
+-- Posisi tujuan untuk jual
+local sellPositionCFrame = CFrame.new(-4.61482239, 22.1267681, 61.1646004)
 
 -- Slider untuk atur delay
 Tabs.Farm:Slider({
@@ -387,14 +390,21 @@ Tabs.Farm:Toggle({
         autoSell = state
         if autoSell then
             task.spawn(function()
+                -- simpan posisi saat ini
+                local saveCFrame = rootPart.CFrame
+
+                -- teleport ke posisi jual
+                rootPart.CFrame = sellPositionCFrame
+
                 while autoSell do
-                    -- invoke server untuk jual semua
                     pcall(function()
                         sellRemote:InvokeServer()
                     end)
-                    -- tunggu sesuai sellDelay terbaru
                     task.wait(sellDelay)
                 end
+
+                -- kembali ke posisi semula setelah toggle off
+                rootPart.CFrame = saveCFrame
             end)
         end
     end
