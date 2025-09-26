@@ -88,13 +88,6 @@ Window:EditOpenButton({
     Enabled = false
 })
 
-WindUI:Notify({
-    Title = "Game Supported",
-    Content = "Dig 🔴, 99 Nights in the Forest 🔴, Fish It 🟢, Grow A Garden 🔴",
-    Icon = "gamepad",
-    Duration = 6
-})
-
 task.delay(6.5, function()
     WindUI:Notify({
         Title = "Bug Report",
