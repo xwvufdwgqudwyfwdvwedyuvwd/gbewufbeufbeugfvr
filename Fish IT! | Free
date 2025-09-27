@@ -676,7 +676,7 @@ end
 
 -- Fungsi Step 2
 local function step2()
-	local args = {-1.233184814453125, 0.08751149696158361}
+	local args = {-1.2331849336624146, 0.9660855341529426}
 	requestMinigame:InvokeServer(unpack(args))
 end
 
