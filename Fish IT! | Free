@@ -79,7 +79,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.3",
+    Title = "v1.2.4",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -126,11 +126,8 @@ Tabs.Home:Divider()
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Added Anti Lava
-[/] Improve Auto Fish v2
-[/] Rework Teleport Event & Status Ecent
-[-] Delete Tab Visual
-[/] Move Visual To Player Tab Place
+[/] Delete Dropdwon Charge Mode
+[/] Improve Auto FishV2
     ]]
 })
 
@@ -351,11 +348,11 @@ local isActive = false
 
 -- Offset per event
 local offsets = {
-    ["Shark Hunt"] = Vector3.new(0, 4, 0),
-    ["Worm Hunt"] = Vector3.new(0, 10, 0),
+    ["Shark Hunt"] = Vector3.new(0, 10, 0),
+    ["Worm Hunt"] = Vector3.new(0, 30, 0),
     ["Megalodon Hunt"] = Vector3.new(0, 4, 0),
-    ["Ghost Shark Hunt"] = Vector3.new(0, 4, 0),
-    ["Fishing Hunt"] = Vector3.new(0, 4, 0),
+    ["Ghost Shark Hunt"] = Vector3.new(0, 10, 0),
+    ["Fishing Hunt"] = Vector3.new(0, 10, 0),
 }
 
 -- Target finder
