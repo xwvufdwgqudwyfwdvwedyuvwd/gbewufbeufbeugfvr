@@ -691,12 +691,12 @@ Tabs.Farm:Toggle({
                 while autoFish do
                     -- Step 1 & 2
                     step1()
-                    task.wait(0.01)
+                    task.wait(0.1)
                     step2()
 
                     -- Tunggu sampai container sesuai
                     repeat
-                        task.wait(0.01)
+                        task.wait(0.1)
                     until not autoFish or container.Position == UDim2.new(0.5, 0, 0.1, 0)
                 end
             end)
