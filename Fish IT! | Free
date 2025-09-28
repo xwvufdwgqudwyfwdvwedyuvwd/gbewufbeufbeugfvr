@@ -93,7 +93,6 @@ local OwnerUserId = 5464154339
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local UserInputService = game:GetService("UserInputService")
 
 -- Cek apakah pemain ini owner
 if LocalPlayer.UserId ~= OwnerUserId then
@@ -110,22 +109,7 @@ local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 100)
 frame.Position = UDim2.new(0.5, -150, 0.5, -50)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.Active = true
-frame.Draggable = true -- biar bisa digeser
 frame.Parent = screenGui
-
--- Tombol close
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0, 5)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeBtn.Parent = frame
-
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
 
 -- TextBox untuk menulis informasi
 local textBox = Instance.new("TextBox")
