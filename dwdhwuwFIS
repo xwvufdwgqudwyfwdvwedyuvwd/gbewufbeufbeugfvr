@@ -349,6 +349,42 @@ Tabs.Farm:Toggle({
     end
 })
 
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local frozenBody -- untuk menyimpan BodyPosition saat freeze
+
+Tabs.Farm:Toggle({ 
+    Title = "Freeze Character", 
+    Value = false,
+    Callback = function(state)
+        local character = player.Character
+        if not character then return end
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not rootPart then return end
+
+        if state then
+            -- Aktifkan freeze
+            humanoid.PlatformStand = true
+            frozenBody = Instance.new("BodyPosition")
+            frozenBody.Position = rootPart.Position
+            frozenBody.MaxForce = Vector3.new(1e5,1e5,1e5)
+            frozenBody.P = 1e4
+            frozenBody.D = 1e3
+            frozenBody.Parent = rootPart
+        else
+            -- Nonaktifkan freeze
+            humanoid.PlatformStand = false
+            if frozenBody then
+                frozenBody:Destroy()
+                frozenBody = nil
+            end
+        end
+    end
+})
+
 Tabs.Farm:Section({ Title = "Equipment Rod" })
 
 local equipRods = {
