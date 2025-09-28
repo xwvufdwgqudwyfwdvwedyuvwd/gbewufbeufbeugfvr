@@ -674,34 +674,35 @@ local Net = ReplicatedStorage:WaitForChild("Packages")
     :WaitForChild("sleitnick_net@0.2.0")
     :WaitForChild("net")
 
-local chargeRod = Net:WaitForChild("RF/ChargeFishingRod")
-local requestMinigame = Net:WaitForChild("RF/RequestFishingMinigameStarted")
+-- Step 1: Equip Tool
+local function step1()
+    local args = {1} -- sesuai args yang kamu kasih
+    Net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(unpack(args))
+end
 
+-- Step 2: Charge Rod
+local function step2()
+    local args = {1758953489.104789} -- args sebelumnya
+    Net:WaitForChild("RF/ChargeFishingRod"):InvokeServer(unpack(args))
+end
+
+-- Step 3: Request Minigame
+local function step3()
+    local args = {-1.2331849336624146, 0.9660855341529426} -- args sebelumnya
+    Net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(unpack(args))
+end
+
+-- Step 4: Tunggu Minigame selesai
 local notificationGui = LocalPlayer.PlayerGui:WaitForChild("Small Notification")
 local container = notificationGui.Display.Container
 
-local autoFish = false
-
--- Fungsi Step 1
-local function step1()
-    local args = {1758953489.104789}
-    chargeRod:InvokeServer(unpack(args))
-end
-
--- Fungsi Step 2
-local function step2()
-    local args = {-1.2331849336624146, 0.9660855341529426}
-    requestMinigame:InvokeServer(unpack(args))
-end
-
--- Fungsi menunggu minigame selesai
-local function waitForMinigame()
+local function step4()
     repeat
         task.wait(0.05)
-    until container.Position == UDim2.new(0.5, 0, 0.1, 0) or not autoFish
+    until container.Visible or not autoFish
 end
 
--- Toggle WindUI
+-- Toggle Auto Fish di WindUI
 Tabs.Farm:Toggle({ 
     Title = "Auto Fish V2", 
     Value = false,
@@ -711,17 +712,15 @@ Tabs.Farm:Toggle({
         if state then
             task.spawn(function()
                 while autoFish do
-                    -- Jalankan step1 sekali
-                    step1()
-                    task.wait(0.2) -- beri jeda supaya server tidak reject
+                    step1() -- Equip Tool
+                    task.wait(0.2)
 
-                    -- Jalankan step2 sekali
-                    step2()
+                    step2() -- Charge Rod
+                    task.wait(0.2)
 
-                    -- Tunggu sampai minigame/GUI selesai
-                    waitForMinigame()
+                    step3() -- Request Minigame
+                    step4() -- Tunggu GUI minigame selesai
 
-                    -- Setelah selesai, loop berikutnya baru jalan
                     task.wait(0.1)
                 end
             end)
