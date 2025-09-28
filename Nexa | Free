@@ -7,6 +7,7 @@
 |_| \_|______| /_/ \_/_/     \_\
 ]]
 
+-- Tunggu player siap
 repeat task.wait() until game.Players.LocalPlayer and game.Players.LocalPlayer.Character
 if not game:IsLoaded() then
     game.Loaded:Wait()
@@ -16,15 +17,36 @@ print("Supported loader system running...")
 
 local placeId = game.PlaceId
 
+-- Table games dengan multiple PlaceId
 local games = {
-    [121864768012064] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free', -- Fishing It
-    [129827112113663] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Prospecting!%20%7C%20Free', -- Prospecting!
-    [127742093697776] = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/efehvffvedjPLANT', -- Plant Vs Brainrot
-    [16732694052] = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dwdhwuwFIS', -- Fisch
+    ["Fish IT"] = {
+        placeIds = {121864768012064}, -- bisa tambah PlaceId lain
+        url = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free'
+    },
+    ["Prospecting"] = {
+        placeIds = {129827112113663},
+        url = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Prospecting!%20%7C%20Free'
+    },
+    ["Fisch"] = {
+        placeIds = {16732694052, 131716211654599},
+        url = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dwdhwuwFIS'
+    },
+    ["PlantVsBrainrot"] = {
+        placeIds = {127742093697776},
+        url = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/efehvffvedjPLANT'
+    }
 }
 
-local scriptUrl = games[placeId]
+-- Cari skrip sesuai PlaceId
+local scriptUrl
+for _, gameInfo in pairs(games) do
+    if table.find(gameInfo.placeIds, placeId) then
+        scriptUrl = gameInfo.url
+        break
+    end
+end
 
+-- Jalankan skrip game jika ditemukan
 if scriptUrl then
     local success, err = pcall(function()
         loadstring(game:HttpGet(scriptUrl))()
@@ -36,7 +58,9 @@ else
     warn("Unsupported game. PlaceId:", placeId)
 end
 
+-- =======================
 -- AntiAFK Safe Auto-ON
+-- =======================
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
