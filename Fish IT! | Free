@@ -96,7 +96,7 @@ game.Players.PlayerAdded:Connect(function(player)
         -- Notifikasi WindUI
         WindUI:Notify({
             Title = "Nexa Notify",
-            Content = player.Name .. " Developer Script has joined the game!",
+            Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
             Duration = 5,
         })
     end
