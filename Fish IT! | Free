@@ -679,8 +679,8 @@ local function step2()
     requestMinigame:InvokeServer(unpack(args))
 end
 
--- Fungsi menunggu container siap
-local function waitForContainer()
+-- Fungsi menunggu minigame selesai
+local function waitForMinigame()
     repeat
         task.wait(0.05)
     until container.Position == UDim2.new(0.5, 0, 0.1, 0) or not autoFish
@@ -696,15 +696,18 @@ Tabs.Farm:Toggle({
         if state then
             task.spawn(function()
                 while autoFish do
-                    -- Step 1
+                    -- Jalankan step1 sekali
                     step1()
-                    task.wait(0.1)
+                    task.wait(0.2) -- beri jeda supaya server tidak reject
 
-                    -- Step 2
+                    -- Jalankan step2 sekali
                     step2()
 
-                    -- Tunggu container muncul (step selesai)
-                    waitForContainer()
+                    -- Tunggu sampai minigame/GUI selesai
+                    waitForMinigame()
+
+                    -- Setelah selesai, loop berikutnya baru jalan
+                    task.wait(0.1)
                 end
             end)
         end
