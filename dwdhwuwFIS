@@ -126,6 +126,7 @@ local Tabs = {
     Farm = Window:Tab({ Title = "Farm", Icon = "fish"  }),
     Shop = Window:Tab({ Title = "Shop", Icon = "shopping-cart"  }),
     Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin"  }),
+    Player = Window:Tab({ Title = "Player", Icon = "user"  }),
 }
 
 Tabs.Home:Section({ Title = "Update" })
@@ -741,7 +742,7 @@ Tabs.Shop:Button({
 
 Tabs.Teleport:Section({ Title = "Island" })
 
--- List lokasi teleport (gunakan CFrame)
+-- List lokasi teleport (CFrame dikosongkan)
 local teleportLocations = {
     ["Ancient Archives"] = CFrame.new(-3156.37451, -745.713989, 1683.13574, -0.860117316, 1.84150082e-08, -0.510096252, 2.10384705e-08, 1, 6.26265706e-10, 0.510096252, -1.01929825e-08, -0.860117316),
     ["Ancient Isle"] = CFrame.new(6057.07422, 195.280151, 277.14859, 0.18684645, 2.1313635e-08, 0.982389152, -6.77808432e-08, 1, -8.78668072e-09, -0.982389152, -6.50338237e-08, 0.18684645),
@@ -773,23 +774,35 @@ local teleportLocations = {
 }
 
 local selectedLocation = nil
-
--- Ambil keys dari teleportLocations sebagai values
-local locationNames = {}
+local allLocations = {}
 for name, _ in pairs(teleportLocations) do
-    table.insert(locationNames, name)
+    table.insert(allLocations, name)
 end
 
-Tabs.Teleport:Dropdown({
+-- Dropdown lokasi teleport
+local dropdown = Tabs.Teleport:Dropdown({
     Title = "Select Location",
-    Values = locationNames,
+    Values = allLocations,
     SearchBarEnabled = true,
-    Value = locationNames[1],
+    Value = allLocations[1],
     Callback = function(option)
         selectedLocation = option
     end
 })
 
+-- Filter search bar
+dropdown.OnSearchChanged:Connect(function(text)
+    local filtered = {}
+    text = text:lower()
+    for _, name in ipairs(allLocations) do
+        if name:lower():find(text) then
+            table.insert(filtered, name)
+        end
+    end
+    dropdown:UpdateValues(filtered)
+end)
+
+-- Tombol teleport
 Tabs.Teleport:Button({
     Title = "Teleport",
     Callback = function()
@@ -811,6 +824,32 @@ Tabs.Teleport:Button({
         end
     end
 })
+
+Tabs.Player:Section({ Title = "LocalPlayer" }
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+Tabs.Player:Toggle({
+    Title = "Disabled Oxygen",
+    Value = false,
+    Callback = function(state)
+        local charFolder = workspace:FindFirstChild(LocalPlayer.Name)
+        if charFolder and charFolder:FindFirstChild("Resources") then
+            local oxygen = charFolder.Resources:FindFirstChild("oxygen")
+            if oxygen then
+                if oxygen:IsA("BoolValue") then
+                    oxygen.Value = not state
+                else
+                    pcall(function()
+                        oxygen.Enabled = not state
+                    end)
+                end
+            end
+        end
+    end
+})
+
 
 local TweenService = game:GetService("TweenService")
 
