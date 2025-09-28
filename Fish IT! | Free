@@ -168,7 +168,7 @@ game.Players.PlayerAdded:Connect(function(player)
     if player.UserId == TargetUserId then
         -- Notifikasi WindUI
         WindUI:Notify({
-            Title = "Notification Example 1",
+            Title = "Nexa Notify",
             Content = player.Name .. " Developer Script has joined the game!",
             Duration = 5,
         })
