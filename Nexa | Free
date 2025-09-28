@@ -20,6 +20,7 @@ local games = {
     [121864768012064] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free', -- Fishing It
     [129827112113663] = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Prospecting!%20%7C%20Free', -- Prospecting!
     [127742093697776] = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/efehvffvedjPLANT', -- Plant Vs Brainrot
+    [16732694052] = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dwdhwuwFIS', -- Fisch
 }
 
 local scriptUrl = games[placeId]
