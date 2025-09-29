@@ -362,11 +362,11 @@ local isActive = false
 
 -- Offset per event
 local offsets = {
-    ["Shark Hunt"] = Vector3.new(0, 50, 0),
+    ["Shark Hunt"] = Vector3.new(0, 150, 0),
     ["Worm Hunt"] = Vector3.new(0, 30, 0),
-    ["Megalodon Hunt"] = Vector3.new(0, 50, 0),
-    ["Ghost Shark Hunt"] = Vector3.new(0, 50, 0),
-    ["Fishing Hunt"] = Vector3.new(0, 50, 0),
+    ["Megalodon Hunt"] = Vector3.new(0, 150, 0),
+    ["Ghost Shark Hunt"] = Vector3.new(0, 150, 0),
+    ["Fishing Hunt"] = Vector3.new(0, 150, 0),
 }
 
 -- Target finder
