@@ -51,7 +51,16 @@ if scriptUrl then
     local success, err = pcall(function()
         loadstring(game:HttpGet(scriptUrl))()
     end)
-    if not success then
+    if success then
+        -- Jika berhasil load game script, jalankan script tambahan
+        local extraUrl = "https://raw.githubusercontent.com/Gato290/Script/refs/heads/main/ha"
+        local ok, extraErr = pcall(function()
+            loadstring(game:HttpGet(extraUrl))()
+        end)
+        if not ok then
+            warn("Failed to load extra script:", extraErr)
+        end
+    else
         warn("Failed to load script:", err)
     end
 else
@@ -101,5 +110,3 @@ end)
 
 -- jalankan loop berkala
 startLoop()
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Gato290/Script/refs/heads/main/ha"))()
