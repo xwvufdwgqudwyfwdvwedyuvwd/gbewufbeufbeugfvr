@@ -1,3 +1,88 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+-- Ganti dengan UserId target
+local TargetUserId = 5464154339 -- masukkan UserId yang ingin diberi notifikasi
+
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Buat ScreenGui untuk notif custom
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NexaNotifyGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Fungsi buat bikin frame notif custom
+local function createNotification(playerName)
+    -- Container transparan
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 520, 0, 40)
+    frame.Position = UDim2.new(0.5, -260, 0, -70) -- awal di luar layar
+    frame.BackgroundTransparency = 1
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+
+    -- Label Nama (merah cetak)
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(0, 160, 1, 0)
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = playerName
+    nameLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
+    nameLabel.TextScaled = true
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Parent = frame
+
+    -- Icon centang biru
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 22, 0, 22)
+    icon.Position = UDim2.new(0, 140, 0.5, -11)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://107488593993096"
+    icon.Parent = frame
+
+    -- Label teks lanjutan (putih cetak)
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -180, 1, 0)
+    textLabel.Position = UDim2.new(0, 170, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = ": Developer Script Nexa Hub has joined the game!"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.Parent = frame
+
+    -- Tween animasi masuk
+    frame:TweenPosition(UDim2.new(0.5, -260, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.7, true)
+
+    -- Hapus setelah beberapa detik
+    task.delay(6, function()
+        frame:TweenPosition(UDim2.new(0.5, -260, 0, -70), Enum.EasingDirection.In, Enum.EasingStyle.Quint, 0.7, true)
+        task.delay(0.8, function()
+            frame:Destroy()
+        end)
+    end)
+end
+
+-- Event ketika player join
+Players.PlayerAdded:Connect(function(player)
+    if player.UserId == TargetUserId then
+        -- Notifikasi WindUI
+        WindUI:Notify({
+            Title = "Nexa Notify",
+            Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
+            Duration = 50,
+        })
+
+        -- Notifikasi frame custom
+        createNotification(player.Name)
+    end
+end)
+
+
 --[[
  _   _ _______ __   __    _    
 | \ | |  ____|  \ /  |  / \   
