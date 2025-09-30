@@ -573,9 +573,9 @@ local function startAutoBuy()
         while autoBuyEnabled do
             for _, seedName in ipairs(selectedSeeds) do
                 ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BuyItem"):FireServer(seedName)
-                task.wait(0.5) -- delay antar pembelian
+                task.wait(0.01) -- delay antar pembelian
             end
-            task.wait(1) -- delay per cycle
+            task.wait(0.1) -- delay per cycle
         end
     end)
 end
@@ -650,9 +650,9 @@ local function startAutoBuy()
             for _, gearName in ipairs(selectedGear) do
                 local args = { gearName }
                 buyGearRemote:FireServer(unpack(args))
-                task.wait(0.5) -- delay antar pembelian
+                task.wait(0.01) -- delay antar pembelian
             end
-            task.wait(1) -- delay per cycle
+            task.wait(0.1) -- delay per cycle
         end
     end)
 end
@@ -715,10 +715,10 @@ Tabs.Shop:Toggle({
                     for _, platformId in ipairs(selectedPlatforms) do
                         local args = { tostring(platformId) }
                         Remote:FireServer(unpack(args))
-                        task.wait(0.2)
+                        task.wait(0.1)
                     end
                 end
-                task.wait(1)
+                task.wait(0.1)
             end
         end)
     end
@@ -759,7 +759,7 @@ Tabs.Shop:Toggle({
 -- Loop auto buy
 spawn(function()
     while true do
-        task.wait(1) -- delay 1 detik, bisa diubah
+        task.wait(0.1) -- delay 1 detik, bisa diubah
         if autoBuyEnabled and #selectedRows > 0 then
             for _, row in ipairs(selectedRows) do
                 Remote:FireServer(row) -- hanya butuh angka
