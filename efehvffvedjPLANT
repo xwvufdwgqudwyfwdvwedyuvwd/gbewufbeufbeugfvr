@@ -1633,19 +1633,6 @@ Tabs.Server:Button({
 
 Tabs.Player:Section({ Title = "LocalPlayer" })
 
-Tabs.Player:Toggle({
-    Title = "Disabled Backpack",
-    Value = false,
-    Callback = function(state)
-        local player = game:GetService("Players").LocalPlayer
-        local backpackGui = player:WaitForChild("PlayerGui"):WaitForChild("BackpackGui")
-        
-        -- kalau toggle aktif, matikan BackpackGui
-        backpackGui.Enabled = not state
-        
-    end
-})
-
 -- WindUI Toggle
 Tabs.Player:Toggle({ 
     Title = "Black Screen",
