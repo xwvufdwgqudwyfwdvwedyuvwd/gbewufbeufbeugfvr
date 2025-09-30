@@ -348,8 +348,8 @@ local isActive = false
 -- Offset per event
 local offsets = {
     ["Shark Hunt"] = Vector3.new(0, 150, 0),
-    ["Worm Hunt"] = Vector3.new(0, 30, 0),
-    ["Megalodon Hunt"] = Vector3.new(0, 150, 0),
+    ["Worm Hunt"] = Vector3.new(0, 150, 0),
+    ["Megalodon Hunt"] = Vector3.new(0, 5, 0),
     ["Ghost Shark Hunt"] = Vector3.new(0, 150, 0),
     ["Fishing Hunt"] = Vector3.new(0, 150, 0),
 }
@@ -489,14 +489,6 @@ Tabs.Active:Toggle({
     end
 })
 
--- Button manual untuk Save Position
-Tabs.Active:Button({
-    Title = "Save Position",
-    Desc = "If you want to teleport to an event, you have to save your position first so you can return to your starting position.",
-    Callback = function()
-        savePosition = hrp.CFrame
-    end
-})
 
 Tabs.Farm:Section({ Title = "Info Fish!!" })
 
