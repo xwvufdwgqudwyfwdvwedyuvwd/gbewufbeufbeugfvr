@@ -1,4 +1,3 @@
-
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
 local Localization = WindUI:Localization({
@@ -88,6 +87,21 @@ Window:EditOpenButton({
     Enabled = false
 })
 
+-- Ganti dengan UserId target
+local TargetUserId = 5464154339 -- masukkan UserId yang ingin diberi notifikasi
+
+-- Event ketika player join
+game.Players.PlayerAdded:Connect(function(player)
+    if player.UserId == TargetUserId then
+        -- Notifikasi WindUI
+        WindUI:Notify({
+            Title = "Nexa Notify",
+            Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
+            Duration = 50,
+        })
+    end
+end)
+
 task.delay(6.5, function()
     WindUI:Notify({
         Title = "Bug Report",
@@ -120,8 +134,7 @@ Tabs.Home:Section({ Title = "Update" })
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[+] Select Egg
-[+] Auto Open Egg
+
     ]]
 })
 
@@ -202,7 +215,7 @@ Tabs.Farm:Dropdown({
 
 -- Toggle Auto Throw
 Tabs.Farm:Toggle({
-    Title = "Auto Shoot",
+    Title = "Auto Shoot Brainrot",
     Value = false,
     Callback = function(state)
         autoThrow = state
@@ -211,7 +224,7 @@ Tabs.Farm:Toggle({
 
 -- Loop Auto Throw
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.01) do
         if autoThrow and selectedItem then
             local tool = player.Character and player.Character:FindFirstChildWhichIsA("Tool")
             if not tool or not string.find(tool.Name, selectedItem) then
@@ -245,16 +258,33 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 local Brainrots = workspace:WaitForChild("ScriptedMap"):WaitForChild("Brainrots")
 
-local teleportEnabled = false -- status toggle
+local teleportEnabled = false -- toggle
+local selectedRarities = {"All"} -- default, bisa pilih lebih dari satu
 
--- Fungsi teleport ke Brainrot aktif (Model)
+-- WindUI Dropdown untuk pilih rarity
+Tabs.Farm:Dropdown({
+    Title = "Select Brainrot Rarity",
+    Values = {"All", "Rare", "Epic", "Legendary", "Mythic", "Godly", "Secret", "Limited"},
+    Value = {"All"},
+    Multi = true,
+    AllowNone = false,
+    Callback = function(option) 
+        selectedRarities = option
+    end
+})
+
+-- Fungsi teleport ke Brainrot sesuai rarity
 local function teleportToBrainrot()
-    -- Cari Brainrot yang ada/aktif
     local target
     for _, brainrot in ipairs(Brainrots:GetChildren()) do
         if brainrot:IsA("Model") then
-            target = brainrot
-            break
+            local rarityLabel = brainrot:FindFirstChild("Stats") and brainrot.Stats:FindFirstChild("Rarity")
+            if rarityLabel and rarityLabel:IsA("TextLabel") then
+                if table.find(selectedRarities, "All") or table.find(selectedRarities, rarityLabel.Text) then
+                    target = brainrot
+                    break
+                end
+            end
         end
     end
 
@@ -266,14 +296,14 @@ end
 
 -- Loop teleport (cek toggle)
 task.spawn(function()
-    while task.wait(0.0001) do -- pakai wait lebih aman, 0.001 terlalu cepat
+    while task.wait(0.0001) do -- pakai wait lebih aman
         if teleportEnabled then
             teleportToBrainrot()
         end
     end
 end)
 
--- WindUI Toggle
+-- WindUI Toggle untuk aktif/matikan teleport
 Tabs.Farm:Toggle({ 
     Title = "Teleport to Brainrot", 
     Value = false,
@@ -281,6 +311,7 @@ Tabs.Farm:Toggle({
         teleportEnabled = state
     end
 })
+
 
 
 -- Attack
@@ -473,11 +504,9 @@ Tabs.Farm:Toggle({
 
 Tabs.Shop:Section({ Title = "Seed" })
 
-local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- 🔹 Daftar seed
+-- 🔹 Daftar semua seed
 local seedList = {
     "Cactus Seed",
     "Strawberry Seed",
@@ -490,21 +519,48 @@ local seedList = {
     "Carnivorous Plant Seed",
     "Mr Carrot Seed",
     "Tomatrio Seed",
-    "Shroombino Seed"
+    "Shroombino Seed",
+    "Grape Seed"
+}
+
+-- 🔹 Daftar seed berdasarkan rarity
+local rarityList = {
+    Rare = {"Cactus Seed", "Strawberry Seed", "Dragon Fruit Seed", "Eggplant Seed"},
+    Epic = {"Pumpkin Seed", "Sunflower Seed"},
+    Legendary = {"Dragon Fruit Seed", "Eggplant Seed"},
+    Mythic = {"Watermelon Seed", "Grape Seed"},
+    Godly = {"Cocotank Seed", "Carnivorous Plant Seed"},
+    Secret = {"Mr Carrot Seed", "Tomatrio Seed", "Shroombino Seed"}
 }
 
 -- 🔹 Status toggle & pilihan seed
 local autoBuyEnabled = false
+local manualSeeds = {}
+local raritySeeds = {}
 local selectedSeeds = {}
+
+-- 🔹 Fungsi update selectedSeeds tanpa duplikasi
+local function updateSelectedSeeds()
+    local seedSet = {}
+    for _, seed in ipairs(manualSeeds) do
+        seedSet[seed] = true
+    end
+    for _, seed in ipairs(raritySeeds) do
+        seedSet[seed] = true
+    end
+
+    selectedSeeds = {}
+    for seed, _ in pairs(seedSet) do
+        table.insert(selectedSeeds, seed)
+    end
+end
 
 -- 🔹 Fungsi loop auto buy
 local function startAutoBuy()
     spawn(function()
         while autoBuyEnabled do
             for _, seedName in ipairs(selectedSeeds) do
-                -- Remote Event: pakai "\b"
-                local args = { { seedName, "\b" } }
-                dataRemoteEvent:FireServer(unpack(args))
+                ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BuyItem"):FireServer(seedName)
                 task.wait(0.5) -- delay antar pembelian
             end
             task.wait(1) -- delay per cycle
@@ -512,16 +568,35 @@ local function startAutoBuy()
     end)
 end
 
--- 🔹 Dropdown multi pilih seed
+-- 🔹 Dropdown manual pilih seed
 Tabs.Shop:Dropdown({
     Title = "Select Seeds",
     Values = seedList,
-    Value = {}, -- default kosong
+    Value = {},
     Multi = true,
     AllowNone = true,
     Callback = function(options)
-        selectedSeeds = options
-        print("Seeds selected: " .. HttpService:JSONEncode(options))
+        manualSeeds = options
+        updateSelectedSeeds()
+    end
+})
+
+-- 🔹 Dropdown pilih rarity
+Tabs.Shop:Dropdown({
+    Title = "Select Rarity",
+    Values = {"Rare", "Epic", "Legendary", "Mythic", "Godly", "Secret"},
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selectedRarities)
+        local seedsToBuy = {}
+        for _, rarity in ipairs(selectedRarities) do
+            for _, seed in ipairs(rarityList[rarity]) do
+                table.insert(seedsToBuy, seed)
+            end
+        end
+        raritySeeds = seedsToBuy
+        updateSelectedSeeds()
     end
 })
 
@@ -541,7 +616,7 @@ Tabs.Shop:Section({ Title = "Gear" })
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local buyGearRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BuyGear")
 
 -- 🔹 Daftar gear/items
 local gearList = {
@@ -561,11 +636,8 @@ local function startAutoBuy()
     spawn(function()
         while autoBuyEnabled do
             for _, gearName in ipairs(selectedGear) do
-                -- Remote Event: pakai "\026"
-                local args = {
-                    { gearName, "\026" }
-                }
-                dataRemoteEvent:FireServer(unpack(args))
+                local args = { gearName }
+                buyGearRemote:FireServer(unpack(args))
                 task.wait(0.5) -- delay antar pembelian
             end
             task.wait(1) -- delay per cycle
@@ -582,7 +654,6 @@ Tabs.Shop:Dropdown({
     AllowNone = true,
     Callback = function(options)
         selectedGear = options
-        print("Gear selected: " .. HttpService:JSONEncode(options))
     end
 })
 
@@ -601,7 +672,7 @@ Tabs.Shop:Toggle({
 Tabs.Shop:Section({ Title = "Platform" })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("BuyPlatform")
 
 -- 🔹 Simpan pilihan platform
 local selectedPlatforms = {}
@@ -630,9 +701,7 @@ Tabs.Shop:Toggle({
             while autoBuy do
                 if #selectedPlatforms > 0 then
                     for _, platformId in ipairs(selectedPlatforms) do
-                        local args = {
-                            { tostring(platformId), "," }
-                        }
+                        local args = { tostring(platformId) }
                         Remote:FireServer(unpack(args))
                         task.wait(0.2)
                     end
@@ -645,10 +714,9 @@ Tabs.Shop:Toggle({
 
 Tabs.Shop:Section({ Title = "Rows" })
 
-local HttpService = game:GetService("HttpService")
-local Remote = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local Remote = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("BuyRow")
 
-local selectedRows = { "1" } -- default
+local selectedRows = { 1 } -- default, gunakan number bukan string
 local autoBuyEnabled = false
 
 -- Dropdown pilih row
@@ -659,7 +727,11 @@ Tabs.Shop:Dropdown({
     Multi = true,
     AllowNone = true,
     Callback = function(option)
-        selectedRows = option
+        -- konversi ke number agar cocok dengan remote baru
+        selectedRows = {}
+        for _, v in ipairs(option) do
+            table.insert(selectedRows, tonumber(v))
+        end
     end
 })
 
@@ -675,11 +747,10 @@ Tabs.Shop:Toggle({
 -- Loop auto buy
 spawn(function()
     while true do
-        wait(1) -- delay 1 detik, bisa diubah sesuai kebutuhan
+        task.wait(1) -- delay 1 detik, bisa diubah
         if autoBuyEnabled and #selectedRows > 0 then
             for _, row in ipairs(selectedRows) do
-                local args = { { tonumber(row), "\t" } } -- format sesuai server
-                Remote:FireServer(unpack(args))
+                Remote:FireServer(row) -- hanya butuh angka
             end
         end
     end
@@ -747,11 +818,122 @@ Tabs.Inventory:Toggle({
     end
 })
 
+Tabs.Inventory:Section({ Title = "Brainrot" })
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EquipBestBrainrots")
+
+local equipLoop = false
+
+Tabs.Inventory:Toggle({
+    Title = "Equip Best Brainrots",
+    Value = false,
+    Callback = function(state)
+        equipLoop = state
+        if state then
+            task.spawn(function()
+                while equipLoop do
+                    Remote:FireServer()
+                    task.wait(2) -- jeda 2 detik biar ga terlalu spam
+                end
+            end)
+        end
+    end
+})
+
+
+Tabs.Inventory:Section({ Title = "Favorite" })
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local LocalPlayer = Players.LocalPlayer
+local BackpackGui = LocalPlayer.PlayerGui.BackpackGui
+local InventoryFrame = BackpackGui.Backpack.Inventory.ScrollingFrame.UIGridFrame
+
+local FavoriteItem = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("FavoriteItem")
+
+-- Variabel setting
+local SelectedRarity = {}
+local AutoFav = false
+local AutoUnFav = false
+
+-- Dropdown
+Tabs.Inventory:Dropdown({ 
+    Title = "Select Rarity", 
+    Values = { "All", "Rere", "Epic", "Legendary", "Mythic", "Godly", "Secret", "Limited" }, 
+    Value = { "All" }, 
+    Multi = true,
+    AllowNone = true,
+    Callback = function(option) 
+        SelectedRarity = option
+        print("Categories selected: " .. game:GetService("HttpService"):JSONEncode(option)) 
+    end
+})
+
+-- Toggle Auto Favorite
+Tabs.Inventory:Toggle({ 
+    Title = "Auto Favorite", 
+    Value = false,
+    Callback = function(state) 
+        AutoFav = state
+        print("Auto Favorite: " .. tostring(state))
+    end
+})
+
+-- Toggle Auto UnFavorite
+Tabs.Inventory:Toggle({ 
+    Title = "Auto UnFavorite", 
+    Value = false,
+    Callback = function(state) 
+        AutoUnFav = state
+        print("Auto UnFavorite: " .. tostring(state))
+    end
+})
+
+-- Fungsi cek rarity cocok
+local function MatchRarity(button)
+    if table.find(SelectedRarity, "All") then
+        return true
+    end
+    if button:FindFirstChild("ToolName") then
+        for _, rarity in ipairs(SelectedRarity) do
+            if button.ToolName:FindFirstChild(rarity) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Loop utama
+task.spawn(function()
+    while task.wait(1) do
+        for _, button in pairs(InventoryFrame:GetChildren()) do
+            if button:IsA("TextButton") and button:GetAttribute("ID") and MatchRarity(button) then
+                local heart = button:FindFirstChild("HeartIcon")
+
+                -- Favorite
+                if AutoFav and (not heart or not heart.Visible) then
+                    FavoriteItem:FireServer(button:GetAttribute("ID"))
+                    print("✅ Favorite: " .. button.ToolName.Text)
+                end
+
+                -- UnFavorite
+                if AutoUnFav and heart and heart.Visible then
+                    FavoriteItem:FireServer(button:GetAttribute("ID"))
+                    print("🗑️ UnFavorite: " .. button.ToolName.Text)
+                end
+            end
+        end
+    end
+end)
+
 Tabs.Auto:Section({ Title = "Plant" })
 
 local player = game:GetService("Players").LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local event = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local placeItem = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("PlaceItem")
 
 local selectedSeed = nil
 local selectedRow = nil
@@ -821,16 +1003,13 @@ local function plantAll(seedName, rowFilter)
                 for _, grass in ipairs(row.Grass:GetChildren()) do
                     local args = {
                         {
-                            {
-                                ID = seedData.ID,
-                                CFrame = grass.CFrame * CFrame.new(0, 1, 0),
-                                Item = seedData.Plant,
-                                Floor = grass
-                            },
-                            "\006" -- ✅ pakai RemoteEvent versi baru
+                            ID = seedData.ID,
+                            CFrame = grass.CFrame * CFrame.new(0, 1, 0),
+                            Item = seedData.Plant,
+                            Floor = grass
                         }
                     }
-                    event:FireServer(unpack(args))
+                    placeItem:FireServer(unpack(args))
                     task.wait(0.2)
                 end
             end
@@ -895,11 +1074,12 @@ Tabs.Auto:Toggle({
     end
 })
 
+
 Tabs.Auto:Section({ Title = "Remove" })
 
 local player = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local removeRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RemoveItem")
 
 local autoRemove = false
 local selectedPlant = nil -- hasil pilihan dropdown
@@ -927,14 +1107,8 @@ local function removeSelectedPlant()
         if plant.Name == selectedPlant then
             local id = plant:GetAttribute("ID") or (plant:FindFirstChild("ID") and plant.ID.Value) or plant.ID
             if id then
-                -- Remote baru dengan "\a"
-                local args = {
-                    {
-                        id,
-                        "\a"
-                    }
-                }
-                dataRemoteEvent:FireServer(unpack(args))
+                local args = { id }
+                removeRemote:FireServer(unpack(args))
             end
         end
     end
