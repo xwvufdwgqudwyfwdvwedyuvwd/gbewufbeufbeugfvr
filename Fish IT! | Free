@@ -308,29 +308,13 @@ end
 -- update awal
 updateStatus()
 
--- auto update kalau ada Props masuk/keluar menuRings
-if menuRings then
-    menuRings.ChildAdded:Connect(function(child)
-        if string.match(child.Name, "Props") then
-            updateStatus()
-        end
-    end)
-
-    menuRings.ChildRemoved:Connect(function(child)
-        if string.match(child.Name, "Props") then
-            updateStatus()
-        end
-    end)
-
-    -- auto update kalau child di dalam Props berubah (misalnya Hunt spawn/despawn)
-    for i = 1, 5 do
-        local prop = menuRings:FindFirstChild("Props " .. i)
-        if prop then
-            prop.ChildAdded:Connect(updateStatus)
-            prop.ChildRemoved:Connect(updateStatus)
-        end
+-- auto update loop setiap 1 detik
+task.spawn(function()
+    while task.wait(1) do
+        updateStatus()
     end
-end
+end)
+
 
 Tabs.Active:Section({ Title = "Event Hunt" })
 
