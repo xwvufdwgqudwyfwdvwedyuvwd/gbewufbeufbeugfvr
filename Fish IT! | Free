@@ -302,13 +302,17 @@ local function updateStatus()
     -- hapus newline terakhir
     statusText = statusText:sub(1, #statusText - 1)
 
+    -- waktu update (jam:menit:detik)
+    local timeNow = os.date("%H:%M:%S")
+    statusText = statusText .. "\n[Updated: " .. timeNow .. "]"
+
     huntStatus:SetDesc(statusText)
 end
 
 -- update awal
 updateStatus()
 
--- auto update setiap ada perubahan di menuRings
+-- auto update kalau ada perubahan di menuRings
 if menuRings then
     menuRings.ChildAdded:Connect(function(child)
         if string.match(child.Name, "Props") then
@@ -337,6 +341,7 @@ task.spawn(function()
         updateStatus()
     end
 end)
+
 
 Tabs.Active:Section({ Title = "Event Hunt" })
 
