@@ -78,7 +78,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v0.1.0",
+    Title = "v0.1.1",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -120,7 +120,7 @@ Tabs.Home:Section({ Title = "Update" })
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[/] Fixed Auto Collect
+[+] Added New Seed
     ]]
 })
 
@@ -519,12 +519,13 @@ local seedList = {
     "Dragon Fruit Seed",
     "Eggplant Seed",
     "Watermelon Seed",
+    "Grape Seed",
     "Cocotank Seed",
     "Carnivorous Plant Seed",
     "Mr Carrot Seed",
     "Tomatrio Seed",
     "Shroombino Seed",
-    "Grape Seed"
+    "Mango Seed"
 }
 
 -- 🔹 Daftar seed berdasarkan rarity
@@ -1027,11 +1028,13 @@ Tabs.Auto:Dropdown({
         "Dragon Fruit Seed",
         "Eggplant Seed",
         "Watermelon Seed",
+        "Grape Seed",
         "Cocotank Seed",
         "Carnivorous Plant Seed",
-        "Mr Carrot Seed", 
+        "Mr Carrot Seed",
         "Tomatrio Seed",
-        "Shroombino Seed"
+        "Shroombino Seed",
+        "Mango Seed"
     },
     Value = "",
     Callback = function(option) 
@@ -1128,7 +1131,8 @@ Tabs.Auto:Dropdown({
         "Carnivorous Plant",
         "Mr Carrot",
         "Tomatrio",
-        "Shroombino"
+        "Shroombino",
+        "Mango"
     },
     Value = "",
     Callback = function(option) 
@@ -1260,7 +1264,9 @@ Tabs.Auto:Dropdown({
         "Cocotank",
         "Carnivorous Plant",
         "Mr Carrot",
-        "Tomatrio"
+        "Tomatrio",
+        "Shroombino",
+        "Mango"
     },
     Value = "Cactus",
     Callback = function(option)
