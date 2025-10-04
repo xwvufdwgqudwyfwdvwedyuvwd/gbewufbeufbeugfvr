@@ -1,0 +1,44 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local merchant = LocalPlayer.PlayerGui.Merchant.Main.Background.Items.ScrollingFrame
+
+-- 🧩 Notif pertama kali script dijalankan
+WindUI:Notify({
+    Title = "Nexa Notify Merchant",
+    Content = "Stock Merchant aktif — memantau perubahan ItemName...",
+    Duration = 5,
+})
+
+-- Fungsi untuk memantau setiap ItemName
+local function monitorItemName(itemLabel)
+	if not itemLabel then return end
+	local oldText = itemLabel.Text
+
+	itemLabel:GetPropertyChangedSignal("Text"):Connect(function()
+		if itemLabel.Text ~= oldText then
+			oldText = itemLabel.Text
+			WindUI:Notify({
+				Title = "Nexa Notify Merchant",
+				Content = "ItemName berubah menjadi: " .. itemLabel.Text,
+				Duration = 5,
+			})
+		end
+	end)
+end
+
+-- Pasang listener ke semua Template yang sudah ada
+for _, child in ipairs(merchant:GetChildren()) do
+	if child:FindFirstChild("Frame") and child.Frame:FindFirstChild("ItemName") then
+		monitorItemName(child.Frame.ItemName)
+	end
+end
+
+-- Jika ada Template baru ditambahkan (misalnya setelah refresh)
+merchant.ChildAdded:Connect(function(child)
+	task.wait(0.5) -- delay kecil agar Frame dan ItemName sempat muncul
+	if child:FindFirstChild("Frame") and child.Frame:FindFirstChild("ItemName") then
+		monitorItemName(child.Frame.ItemName)
+	end
+end)
