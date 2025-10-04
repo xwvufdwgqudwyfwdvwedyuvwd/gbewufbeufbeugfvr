@@ -4,14 +4,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local merchant = LocalPlayer.PlayerGui.Merchant.Main.Background.Items.ScrollingFrame
 
--- 🧩 Notif pertama kali script dijalankan
-WindUI:Notify({
-    Title = "Nexa Notify Merchant",
-    Content = "Stock Merchant aktif — memantau perubahan ItemName...",
-    Duration = 5,
-})
-
--- Fungsi untuk memantau setiap ItemName
+-- Fungsi buat pasang listener ke tiap ItemName
 local function monitorItemName(itemLabel)
 	if not itemLabel then return end
 	local oldText = itemLabel.Text
@@ -28,16 +21,28 @@ local function monitorItemName(itemLabel)
 	end)
 end
 
--- Pasang listener ke semua Template yang sudah ada
+-- Ambil semua ItemName Text saat pertama kali
+local allNames = {}
 for _, child in ipairs(merchant:GetChildren()) do
 	if child:FindFirstChild("Frame") and child.Frame:FindFirstChild("ItemName") then
+		table.insert(allNames, child.Frame.ItemName.Text)
 		monitorItemName(child.Frame.ItemName)
 	end
 end
 
--- Jika ada Template baru ditambahkan (misalnya setelah refresh)
+-- Gabungkan dan tampilkan di notif awal
+if #allNames > 0 then
+	local combined = table.concat(allNames, " | ")
+	WindUI:Notify({
+		Title = "Nexa Notify Merchant",
+		Content = "Stock Merchant: " .. combined,
+		Duration = 8,
+	})
+end
+
+-- Pantau jika Template baru muncul (misal setelah refresh)
 merchant.ChildAdded:Connect(function(child)
-	task.wait(0.5) -- delay kecil agar Frame dan ItemName sempat muncul
+	task.wait(0.5)
 	if child:FindFirstChild("Frame") and child.Frame:FindFirstChild("ItemName") then
 		monitorItemName(child.Frame.ItemName)
 	end
