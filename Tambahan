@@ -1,3 +1,6 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+
 task.delay(6.5, function()
     WindUI:Notify({
         Title = "Bug Report",
