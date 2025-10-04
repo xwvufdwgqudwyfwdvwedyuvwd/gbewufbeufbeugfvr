@@ -87,24 +87,6 @@ Window:EditOpenButton({
     Enabled = false
 })
 
-task.delay(6.5, function()
-    WindUI:Notify({
-        Title = "Bug Report",
-        Content = "If there are any errors, please let the developer know. Join Discord to report bugs.",
-        Icon = "cloud-alert",
-        Duration = 6
-    })
-end)
-
-task.delay(13, function()
-    WindUI:Notify({
-        Title = "Purchase",
-        Content = "If you want to buy this premium script key, join Discord to buy premium.",
-        Icon = "shopping-cart",
-        Duration = 6
-    })
-end)
-
 -- ✅ Tab dan UI
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
@@ -120,13 +102,10 @@ local Tabs = {
 
 Tabs.Home:Section({ Title = "Update" })
 
-Tabs.Home:Divider()
-
 Tabs.Home:Paragraph({
     Title = "Here's what's new:",
     Desc = [[
-[-] Delete Dropdwon Charge Mode
-[/] Improve Auto FishV2
+
     ]]
 })
 
