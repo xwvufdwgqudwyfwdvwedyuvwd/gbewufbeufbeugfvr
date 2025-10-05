@@ -23,14 +23,15 @@ local function createNotification(playerName)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
-    -- Label Nama (merah cetak)
+    -- Label Nama (merah cetak, pixel style)
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Size = UDim2.new(0, 160, 1, 0)
     nameLabel.Position = UDim2.new(0, 0, 0, 0)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Text = playerName
     nameLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-    nameLabel.TextScaled = true
+    nameLabel.TextScaled = false
+    nameLabel.TextSize = 18
     nameLabel.Font = Enum.Font.SourceSansBold
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.Parent = frame
@@ -43,14 +44,15 @@ local function createNotification(playerName)
     icon.Image = "rbxassetid://107488593993096"
     icon.Parent = frame
 
-    -- Label teks lanjutan (putih cetak)
+    -- Label teks lanjutan (putih, pixel style)
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, -180, 1, 0)
     textLabel.Position = UDim2.new(0, 170, 0, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = ": Developer Script Nexa Hub has joined the game!"
     textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextScaled = true
+    textLabel.TextScaled = false
+    textLabel.TextSize = 16
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.Parent = frame
@@ -70,14 +72,16 @@ end
 -- Event ketika player join
 Players.PlayerAdded:Connect(function(player)
     if player.UserId == TargetUserId then
-        -- Notifikasi WindUI
-        WindUI:Notify({
-            Title = "Nexa Notify",
-            Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
-            Duration = 50,
-        })
+        -- Notifikasi WindUI (jika ada WindUI)
+        if typeof(WindUI) == "table" and WindUI.Notify then
+            WindUI:Notify({
+                Title = "Nexa Notify",
+                Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
+                Duration = 5,
+            })
+        end
 
-        -- Notifikasi frame custom
+        -- Notifikasi frame custom pixel-perfect
         createNotification(player.Name)
     end
 end)
