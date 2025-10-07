@@ -3,46 +3,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedy
 
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
 
-local Localization = WindUI:Localization({
-    Enabled = true,
-    Prefix = "loc:",
-    DefaultLanguage = "en",
-    Translations = {
-        ["en"] = {
-            ["WINDUI_EXAMPLE"] = "WindUI Example",
-            ["WELCOME"] = "Welcome to WindUI!",
-            ["LIB_DESC"] = "Beautiful UI library for Roblox",
-            ["SETTINGS"] = "Settings",
-            ["APPEARANCE"] = "Appearance",
-            ["FEATURES"] = "Features",
-            ["UTILITIES"] = "Utilities",
-            ["UI_ELEMENTS"] = "UI Elements",
-            ["CONFIGURATION"] = "Configuration",
-            ["SAVE_CONFIG"] = "Save Configuration",
-            ["LOAD_CONFIG"] = "Load Configuration",
-            ["THEME_SELECT"] = "Select Theme",
-            ["TRANSPARENCY"] = "Window Transparency",
-            ["LOCKED_TAB"] = "Locked Tab"
-        }
-    }
-})
-
-WindUI.TransparencyValue = 0.2
-WindUI:SetTheme("Dark")
-
-local function gradient(text, startColor, endColor)
-    local result = ""
-    for i = 1, #text do
-        local t = (i - 1) / (#text - 1)
-        local r = math.floor((startColor.R + (endColor.R - startColor.R) * t) * 255)
-        local g = math.floor((startColor.G + (endColor.G - startColor.G) * t) * 255)
-        local b = math.floor((startColor.B + (endColor.B - startColor.B) * t) * 255)
-        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', r, g, b, text:sub(i, i))
-    end
-    return result
-end
-
-
 -- Ambil nama player
 local player = game.Players.LocalPlayer
 local playerName = player.Name
@@ -579,14 +539,39 @@ Tabs.Farm:Toggle({
 })
 
 -- Listener Step4
+local lastPosition = Container.Position
+local lastChangeTime = tick()
+
 Container:GetPropertyChangedSignal("Position"):Connect(function()
-    if AutoFishV2 and Container.Position == UDim2.new(0.5, 0, 0.100000001, 0) then
-        task.wait(0.01)
-        Step2()
-        task.wait(0.01)
-        Step3()
+    if AutoFishV2 then
+        lastPosition = Container.Position
+        lastChangeTime = tick()
+
+        if Container.Position == UDim2.new(0.5, 0, 0.100000001, 0) then
+            task.wait(0.01)
+            Step2()
+            task.wait(0.01)
+            Step3()
+        end
     end
 end)
+
+-- Watchdog untuk restart jika position tidak berubah 8 detik
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if AutoFishV2 and tick() - lastChangeTime >= 8 then
+            -- ulangi Step1 → Step2 → Step3
+            Step1()
+            task.wait(0.01)
+            Step2()
+            task.wait(0.01)
+            Step3()
+            lastChangeTime = tick() -- reset timer
+        end
+    end
+end)
+
 
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
@@ -1241,7 +1226,6 @@ Tabs.Shop:Button({
 Tabs.Shop:Section({ Title = "Weather" })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HttpService = game:GetService("HttpService")
 
 local PurchaseWeather = ReplicatedStorage
     :WaitForChild("Packages")
@@ -1262,46 +1246,36 @@ Tabs.Shop:Dropdown({
     AllowNone = true,
     Callback = function(option)
         selectedWeathers = option -- ini table berisi semua pilihan
-        if #selectedWeathers > 0 then
-            WindUI:Notify({
-                Title = "Weather Selected",
-                Content = "You chose: " .. table.concat(selectedWeathers, ", "),
-                Duration = 1,
-            })
-        else
-            WindUI:Notify({
-                Title = "Weather Cleared",
-                Content = "No weather selected",
-                Duration = 1,
-            })
+    end
+})
+
+-- Toggle untuk purchase weather
+local purchasing = false
+Tabs.Shop:Toggle({ 
+    Title = "Purchase Weather", 
+    Value = false,
+    Callback = function(state)
+        purchasing = state
+        if purchasing then
+            if #selectedWeathers == 0 then
+                purchasing = false
+                return
+            end
+
+            task.spawn(function()
+                while purchasing do
+                    for _, weather in ipairs(selectedWeathers) do
+                        PurchaseWeather:InvokeServer(weather)
+                        task.wait(0.3)
+                        if not purchasing then break end
+                    end
+                    task.wait(0.5) -- jeda sebelum loop ulang
+                end
+            end)
         end
     end
 })
 
--- Button buat confirm purchase
-Tabs.Shop:Button({
-    Title = "Purchase Weather",
-    Callback = function()
-        if #selectedWeathers > 0 then
-            for _, weather in ipairs(selectedWeathers) do
-                local args = { weather }
-                PurchaseWeather:InvokeServer(unpack(args))
-                WindUI:Notify({
-                    Title = "Purchase Success",
-                    Content = "You bought weather: " .. weather,
-                    Duration = 1,
-                })
-                task.wait(0.3) -- kasih jeda biar ga terlalu spam
-            end
-        else
-            WindUI:Notify({
-                Title = "Error",
-                Content = "Please select at least one weather first!",
-                Duration = 2,
-            })
-        end
-    end
-})
 
 Tabs.Boat:Section({ Title = "Purchase" })
 
