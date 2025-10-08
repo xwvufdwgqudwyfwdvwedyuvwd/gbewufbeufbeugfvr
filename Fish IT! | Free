@@ -1049,7 +1049,6 @@ Tabs.Auto:Toggle({
     end
 })
 
-
 Tabs.Shop:Section({ Title = "Rod" })
 
 -- Table mapping nama rod ke ID
@@ -1064,7 +1063,11 @@ local rodMap = {
 	["Midnight Rod"] = 80,
 	["Steampunk Rod"] = 6,
 	["Chrome Rod"] = 7,
+	["Fluorescent Rod"] = 255,
 	["Astral Rod"] = 5,
+	["Angler Rod"] = 168,
+	["Ares Rod"] = 126,
+	["Bamboo Rod"] = 258,
 }
 
 local selectedRods = {}
@@ -1110,24 +1113,6 @@ Tabs.Shop:Button({
     end
 })
 
--- Tombol Buy Angler Rod
-local anglerPrompt = workspace["!!! MENU RINGS"]["Ares Rod Stand"].Part.ShopPurchasePrompt.ProximityPrompt
-Tabs.Shop:Button({
-    Title = "Purchase Angler Rod",
-    Callback = function()
-        fireproximityprompt(anglerPrompt)
-    end
-})
-
--- Tombol Buy Ares Rod
-local aresPrompt = workspace["!!! MENU RINGS"]["Ares Rod Stand"].Part.ShopPurchasePrompt.ProximityPrompt
-Tabs.Shop:Button({
-    Title = "Purchase Ares Rod",
-    Callback = function()
-        fireproximityprompt(aresPrompt)
-    end
-})
-
 Tabs.Shop:Section({ Title = "Baits" })
 
 -- Table mapping nama bait ke ID
@@ -1140,6 +1125,7 @@ local BaitID = {
     ["Dark Matter Bait"] = 8,
     ["Corrupt Bait"] = 15,
     ["Aether Bait"] = 16,
+    ["Floral Bait"] = 20,
 }
 
 local selectedBaits = {}
@@ -1192,34 +1178,6 @@ Tabs.Shop:Button({
                 warn("Failed to purchase bait ID", id, "Error:", err)
             end
         end
-    end
-})
-
-Tabs.Shop:Section({ Title = "Items" })
-
--- Tombol Buy Diving Gear (menggunakan ProximityPrompt)
-local divingPrompt = workspace["!!! MENU RINGS"]["Diving Gear Display"].Top.ShopPurchasePrompt.ProximityPrompt
-Tabs.Shop:Button({
-    Title = "Purchase Diving Gear",
-    Callback = function()
-        fireproximityprompt(divingPrompt)
-    end
-})
-
--- Tombol Buy Fishing Radar (menggunakan RemoteEvent)
-Tabs.Shop:Button({
-    Title = "Purchase Fishing Radar",
-    Callback = function()
-        local args = {81} -- ganti 81 sesuai ID gear
-        local remote = game:GetService("ReplicatedStorage")
-            :WaitForChild("Packages")
-            :WaitForChild("_Index")
-            :WaitForChild("sleitnick_net@0.2.0")
-            :WaitForChild("net")
-            :WaitForChild("RF/PurchaseGear")
-        pcall(function()
-            remote:InvokeServer(unpack(args))
-        end)
     end
 })
 
@@ -1276,8 +1234,7 @@ Tabs.Shop:Toggle({
     end
 })
 
-
-Tabs.Boat:Section({ Title = "Purchase" })
+Tabs.Shop:Section({ Title = "Boat" })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PurchaseBoat = ReplicatedStorage
@@ -1311,7 +1268,7 @@ table.sort(BoatNames) -- biar rapi alfabet
 local selectedBoatID = BoatList[BoatNames[1]]
 
 -- Dropdown Pilih Boat
-Tabs.Boat:Dropdown({ 
+Tabs.Shop:Dropdown({ 
     Title = "Select Boat",
     Values = BoatNames,
     Value = BoatNames[1],
@@ -1324,7 +1281,7 @@ Tabs.Boat:Dropdown({
 })
 
 -- Button Beli Boat
-Tabs.Boat:Button({ 
+Tabs.Shop:Button({ 
     Title = "Purchase Boat",
     Callback = function() 
         local args = {selectedBoatID}
