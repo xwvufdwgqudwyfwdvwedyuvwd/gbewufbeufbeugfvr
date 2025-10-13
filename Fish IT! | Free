@@ -223,7 +223,7 @@ local playerDisplayName = player.DisplayName
 
 -- Buat Window versi baru
 local Window = WindUI:CreateWindow({
-    Title = "Nexa - Premium",
+    Title = "Nexa - Free",
     Icon = "rbxassetid://131269662643486",
     Author = "Fish IT! Script | @ Han",
     Folder = "Hanzo",
@@ -285,6 +285,18 @@ Tabs.Home:Section({
 
 Tabs.Home:Section({
         Title = [[
+[+] Added Teleport to Sacred Temple
+[+] Added Buy Bamboo Rod
+[+] Added Teleport to Underground Cellar
+[+] Teleport to Ancient Jungle
+[+] Added New Bait Floral Bait
+[+] Added Super Speed Boat
+[+] Added Teleport To Temple Lever 1 - 4
+[+] Added Auto Fish v1
+[+] Fishing Completed Auto On
+[-] Improve Fishing Counter Gui
+[+] Select Charge Power Is Back
+[+] Added Auto Element (Auto Element Won't Auto Craft transcendent stone)
 [+] Added Auto Claim All Reward Jungle Event
 [+] Added Auto Purchase All Merchant
 		]],
