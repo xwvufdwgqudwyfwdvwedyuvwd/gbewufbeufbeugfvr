@@ -1,7 +1,220 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Notify%20Nexa"))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Notify%20Fish%20It"))()
 
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+-- ================ Fishing Counter Gui ================
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- UI Notif
+local smallNotif = playerGui:WaitForChild("Small Notification")
+local display = smallNotif:WaitForChild("Display")
+local container = display:WaitForChild("Container")
+
+local notifications = playerGui:WaitForChild("Text Notifications")
+local notifFrame = notifications:WaitForChild("Frame")
+
+local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
+
+-- Counter
+local successCount = 0
+local failCount = 0
+
+-- Fungsi update label
+local function updateLabel(successLabel, failLabel)
+	successLabel.Text = "Success: " .. successCount
+	failLabel.Text = "Failed: " .. failCount
+end
+
+-- Fungsi buat ScreenGui yang keren
+local function createFishingGui()
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "FishingCounterGui"
+	screenGui.Parent = playerGui
+	screenGui.ResetOnSpawn = false
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 170, 0, 70)
+	frame.Position = UDim2.new(0, 15, 0, 15)
+	frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	frame.BackgroundTransparency = 0.15
+	frame.BorderSizePixel = 0
+	frame.Parent = screenGui
+
+	-- Rounded corner
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 12)
+	corner.Parent = frame
+
+	-- Gradient background
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 60)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 20))
+	})
+	gradient.Rotation = 45
+	gradient.Parent = frame
+
+	-- UIStroke outline
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1.5
+	stroke.Color = Color3.fromRGB(120, 120, 255)
+	stroke.Transparency = 0.3
+	stroke.Parent = frame
+
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 22)
+	title.Position = UDim2.new(0, 0, 0, 0)
+	title.BackgroundTransparency = 1
+	title.Text = "🎣 Fishing Counter"
+	title.Font = Enum.Font.GothamBold
+	title.TextColor3 = Color3.fromRGB(200, 200, 255)
+	title.TextSize = 15
+	title.TextXAlignment = Enum.TextXAlignment.Center
+	title.Parent = frame
+
+	-- Success label
+	local successLabel = Instance.new("TextLabel")
+	successLabel.Size = UDim2.new(1, -10, 0, 20)
+	successLabel.Position = UDim2.new(0, 5, 0, 28)
+	successLabel.BackgroundTransparency = 1
+	successLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+	successLabel.Font = Enum.Font.GothamMedium
+	successLabel.TextSize = 14
+	successLabel.Text = "Success: 0"
+	successLabel.TextXAlignment = Enum.TextXAlignment.Left
+	successLabel.Parent = frame
+
+	-- Failed label
+	local failLabel = Instance.new("TextLabel")
+	failLabel.Size = UDim2.new(1, -10, 0, 20)
+	failLabel.Position = UDim2.new(0, 5, 0, 48)
+	failLabel.BackgroundTransparency = 1
+	failLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+	failLabel.Font = Enum.Font.GothamMedium
+	failLabel.TextSize = 14
+	failLabel.Text = "Failed: 0"
+	failLabel.TextXAlignment = Enum.TextXAlignment.Left
+	failLabel.Parent = frame
+
+	-- Success detection
+	container:GetPropertyChangedSignal("Position"):Connect(function()
+		if container.Position == successPos then
+			successCount += 1
+			updateLabel(successLabel, failLabel)
+		end
+	end)
+
+	-- Fail detection
+	notifFrame.ChildAdded:Connect(function(child)
+		if child.Name == "TextTile" then
+			local header = child:WaitForChild("Header", 5)
+			if header and header:IsA("TextLabel") then
+				if header.Text == "The fish got away!" then
+					failCount += 1
+					updateLabel(successLabel, failLabel)
+				end
+				header:GetPropertyChangedSignal("Text"):Connect(function()
+					if header.Text == "The fish got away!" then
+						failCount += 1
+						updateLabel(successLabel, failLabel)
+					end
+				end)
+			end
+		end
+	end)
+
+	return screenGui
+end
+
+-- ================ Auto Fish V1 ================
+
+-- ===== Auto Fish Setup (Fixed by Walvy) =====
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local animTracks = nil
+local autoFishEnabled = false
+local isRunning = false
+
+-- ===== Global delay settings =====
+local delayTime = 3
+local minSafeDelay = 1.6
+local delayInputValue = nil
+
+-- Animation IDs
+local animations = {
+    idle = "rbxassetid://96586569072385",
+    cast = "rbxassetid://180435571",
+    wait = "rbxassetid://92624107165273",
+    reel = "rbxassetid://134965425664034"
+}
+
+-- Helper function to get the Animator
+local function getAnimator()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid", 5)
+    if not humanoid then return nil end
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+    return animator
+end
+
+-- Load animations into tracks
+local function loadAnimations()
+    local animator = getAnimator()
+    if not animator then return nil end
+    local newTracks = {}
+    for name, id in pairs(animations) do
+        local success, anim = pcall(function()
+            local animation = Instance.new("Animation")
+            animation.AnimationId = id
+            return animator:LoadAnimation(animation)
+        end)
+        if success and anim then
+            newTracks[name] = anim
+        end
+    end
+    return newTracks
+end
+
+-- Initialize animations when character spawns
+player.CharacterAdded:Connect(function()
+    animTracks = loadAnimations()
+end)
+
+if player.Character then
+    animTracks = loadAnimations()
+end
+
+-- Function to safely stop all animations
+local function stopAllAnimations()
+    if animTracks then
+        for _, track in pairs(animTracks) do
+            if track then
+                track.Looped = false
+                track:Stop(0)
+            end
+        end
+        animTracks = nil
+    end
+end
+
+-- Load Wind Ui
+local WindUI
+
+do
+    local ok, result = pcall(function()
+        return require("./src/init")
+    end)
+    
+    if ok then
+        WindUI = result
+    else 
+        WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    end
+end
 
 -- Ambil nama player
 local player = game.Players.LocalPlayer
@@ -10,11 +223,11 @@ local playerDisplayName = player.DisplayName
 
 -- Buat Window versi baru
 local Window = WindUI:CreateWindow({
-    Title = "Nexa - Free",
+    Title = "Nexa - Premium",
     Icon = "rbxassetid://131269662643486",
     Author = "Fish IT! Script | @ Han",
     Folder = "Hanzo",
-    Size = UDim2.fromOffset(540, 420),
+    Size = UDim2.fromOffset(650, 510),
     Transparent = true,
     Theme = "Plant",
     
@@ -40,7 +253,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:Tag({
-    Title = "v1.2.4",
+    Title = "v1.2.9",
     Color = Color3.fromHex("#30ff6a")
 })
 
@@ -62,22 +275,39 @@ local Tabs = {
     Server = Window:Tab({ Title = "Server", Icon = "server"  }),
 }
 
-Tabs.Home:Section({ Title = "Update" })
+Tabs.Home:Section({ Title = "Update", Icon = "logs" })
 
-Tabs.Home:Paragraph({
-    Title = "Here's what's new:",
-    Desc = [[
+Tabs.Home:Section({
+        Title = "Here's what's new:",
+        TextSize = 24,
+        FontWeight = Enum.FontWeight.SemiBold,
+    })
 
-    ]]
-})
+Tabs.Home:Section({
+        Title = [[
+[+] Added Auto Claim All Reward Jungle Event
+[+] Added Auto Purchase All Merchant
+		]],
+        TextSize = 18,
+        TextTransparency = .35,
+        FontWeight = Enum.FontWeight.Medium,
+    })
 
 Tabs.Home:Section({ Title = "Server" })
+
+Tabs.Home:Paragraph({
+    Title = "Nexa Hub",
+    Image = "https://i.imgur.com/vl0g8IK.png",
+    ImageSize = 42, -- default 30
+    Thumbnail = "https://i.imgur.com/3m8FV2y.jpeg",
+    ThumbnailSize = 120 -- Thumbnail height
+})
 
 Tabs.Home:Paragraph({
     Title = "Discord - Nexa | COMMUNITY",
     Desc = "Indonesia 🇮🇩",
     Image = "https://images-eds-ssl.xboxlive.com/image?url=4rt9.lXDC4H_93laV1_eHHFT949fUipzkiFOBH3fAiZZUCdYojwUyX2aTonS1aIwMrx6NUIsHfUHSLzjGJFxxsG72wAo9EWJR4yQWyJJaDaK1XdUso6cUMpI9hAdPUU_FNs11cY1X284vsHrnWtRw7oqRpN1m9YAg21d_aNKnIo-&format=source",
-    ImageSize = 20,
+    ImageSize = 40,
     Color = "Grey",
     Buttons = {
         {
@@ -388,106 +618,125 @@ Tabs.Active:Toggle({
 
 Tabs.Farm:Section({ Title = "Fishing" })
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- UI Notif
-local smallNotif = playerGui:WaitForChild("Small Notification")
-local display = smallNotif:WaitForChild("Display")
-local container = display:WaitForChild("Container")
-
-local notifications = playerGui:WaitForChild("Text Notifications")
-local notifFrame = notifications:WaitForChild("Frame")
-
-local successPos = UDim2.new(0.5, 0, 0.100000001, 0)
-
--- counter
-local successCount = 0
-local failCount = 0
-
--- Fungsi update label
-local function updateLabel(label)
-    label.Text = "Success: " .. successCount .. "\nFailed: " .. failCount
-end
-
--- Fungsi buat ScreenGui
-local function createFishingGui()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "FishingCounterGui"
-    screenGui.Parent = playerGui
-    screenGui.ResetOnSpawn = false
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 100, 0, 35)
-    frame.Position = UDim2.new(0, 10, 0, 10)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.5
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.SourceSansBold
-    label.TextSize = 14
-    label.Text = "Success: 0\nFailed: 0"
-    label.TextWrapped = true
-    label.Parent = frame
-
-    -- Success detection
-    container:GetPropertyChangedSignal("Position"):Connect(function()
-        if container.Position == successPos then
-            successCount += 1
-            updateLabel(label)
-        end
-    end)
-
-    -- Fail detection
-    notifFrame.ChildAdded:Connect(function(child)
-        if child.Name == "TextTile" then
-            local header = child:WaitForChild("Header", 5)
-            if header and header:IsA("TextLabel") then
-                if header.Text == "The fish got away!" then
-                    failCount += 1
-                    updateLabel(label)
+-- Auto-fish toggle
+Tabs.Farm:Toggle({
+    Title = "Auto Fish V1",
+    Desc = "Automatically fish and auto perfect fishing",
+    Value = false,
+    Callback = function(state)
+        autoFishEnabled = state
+        if state then
+            if not player.Character or not animTracks then
+                animTracks = loadAnimations()
+                if not animTracks then
+                    autoFishEnabled = false
+                    return
                 end
+            end
 
-                header:GetPropertyChangedSignal("Text"):Connect(function()
-                    if header.Text == "The fish got away!" then
-                        failCount += 1
-                        updateLabel(label)
+            local netFolder = ReplicatedStorage:FindFirstChild("Packages")
+                and ReplicatedStorage.Packages:FindFirstChild("_Index")
+                and ReplicatedStorage.Packages._Index:FindFirstChild("sleitnick_net@0.2.0")
+                and ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"]:FindFirstChild("net")
+            if not netFolder then
+                autoFishEnabled = false
+                return
+            end
+
+            local EquipRod = netFolder:FindFirstChild("RE/EquipToolFromHotbar")
+            local StartMinigame = netFolder:FindFirstChild("RF/RequestFishingMinigameStarted")
+            local ChargeRod = netFolder:FindFirstChild("RF/ChargeFishingRod")
+
+            if not (EquipRod and StartMinigame and ChargeRod) then
+                autoFishEnabled = false
+                return
+            end
+
+            pcall(function()
+                EquipRod:FireServer(1)
+            end)
+
+            if animTracks.idle then
+                animTracks.idle.Looped = true
+                animTracks.idle:Play()
+            end
+
+            if not isRunning then
+                isRunning = true
+                task.spawn(function()
+                    while autoFishEnabled do
+                        pcall(function()
+                            if not player.Character or not player.Character:FindFirstChild("Humanoid") then
+                                animTracks = loadAnimations()
+                                if not animTracks then return end
+                            end
+
+                            if animTracks.cast then animTracks.cast:Play() end
+                            StartMinigame:InvokeServer(-0.7499996423721313, 1)
+                            task.wait(0.2)
+
+                            if animTracks.wait then animTracks.wait:Play() end
+                            task.wait(0.2)
+
+                            if animTracks.reel then animTracks.reel:Play() end
+                            ChargeRod:InvokeServer(workspace:GetServerTimeNow())
+                            task.wait(0.2)
+
+                            StartMinigame:InvokeServer(-0.7499996423721313, 1)
+                        end)
+
+                        task.wait(math.max(delayTime, minSafeDelay))
                     end
+                    isRunning = false
                 end)
             end
+        else
+            autoFishEnabled = false
+            stopAllAnimations()
+            isRunning = false
         end
-    end)
+    end
+})
 
-    return screenGui
-end
+-- ===== Delay TextBox + Button =====
+Tabs.Farm:Input({
+    Title = "Auto Fish V1 Delay",
+    Placeholder = "Example 0.01",
+    Callback = function(text)
+        delayInputValue = text
+    end
+})
+
+Tabs.Farm:Button({
+    Title = "Apply Delay",
+    Desc = "Apply the entered delay value",
+    Callback = function()
+        local value = tonumber(delayInputValue)
+        if value and value >= 0.1 and value <= 4 then
+            delayTime = value
+        end
+    end
+})
+
 
 -- Toggle di Tabs.Farm
 local fishingGui
-Tabs.Farm:Toggle({ 
-    Title = "Fishing Counter Gui", 
-    Value = false,
-    Callback = function(state)
-        if state then
-            -- toggle ON: buat gui
-            if not fishingGui then
-                fishingGui = createFishingGui()
-            end
-            fishingGui.Enabled = true
-        else
-            -- toggle OFF: sembunyikan gui
-            if fishingGui then
-                fishingGui.Enabled = false
-            end
-        end
-        print("Mode activated: " .. tostring(state))
-    end
+Tabs.Farm:Toggle({
+	Title = "Fishing Counter Gui",
+    Desc = "Shows How Many Times You Got Fish Or Failed To Get Fish",
+	Value = false,
+	Callback = function(state)
+		if state then
+			if not fishingGui then
+				fishingGui = createFishingGui()
+			end
+			fishingGui.Enabled = true
+		else
+			if fishingGui then
+				fishingGui.Enabled = false
+			end
+		end
+	end
 })
 
 
@@ -504,7 +753,17 @@ local Net = ReplicatedStorage:WaitForChild("Packages")
 local ChargeFishingRod = Net:WaitForChild("RF/ChargeFishingRod")
 local RequestFishingMinigameStarted = Net:WaitForChild("RF/RequestFishingMinigameStarted")
 
-local AutoFishV2 = false  -- status toggle
+local AutoFishV2 = false
+local selectedVersion = "Random" -- default versi
+
+-- Data versi Step3
+local FishingVersions = {
+    ["Amazing"] = {-1.233184814453125, 0.9002424201837305},
+    ["Great"]   = {-1.233184814453125, 0.7065944988657701},
+    ["Good"]    = {-1.233184814453125, 0.47284815807590747},
+    ["Ok"]      = {-1.233184814453125, 0.03616986710429271},
+    ["Perfect"] = {-1.233184814453125, 0.9963770604990823},
+}
 
 -- Step Functions
 local function Step1()
@@ -516,10 +775,35 @@ local function Step2()
 end
 
 local function Step3()
-    RequestFishingMinigameStarted:InvokeServer(-0.5718746185302734, 0.96170184695718)
+    local version = selectedVersion
+
+    -- Jika user pilih Random → ambil versi acak dari FishingVersions
+    if version == "Random" then
+        local keys = {}
+        for k in pairs(FishingVersions) do
+            table.insert(keys, k)
+        end
+        version = keys[math.random(1, #keys)]
+    end
+
+    local args = FishingVersions[version]
+    if args then
+        RequestFishingMinigameStarted:InvokeServer(unpack(args))
+    end
 end
 
--- Toggle UI WindUI
+-- Dropdown untuk pilih versi (tambahkan "Random")
+Tabs.Farm:Dropdown({
+    Title = "Select Charge Power",
+    Desc = "loc:1",
+    Values = {"Amazing", "Great", "Good", "Ok", "Perfect", "Random"},
+    Value = selectedVersion,
+    Callback = function(option)
+        selectedVersion = option
+    end
+})
+
+-- Toggle Auto Fish
 Tabs.Farm:Toggle({
     Title = "Auto Fish V2",
     Value = false,
@@ -527,7 +811,6 @@ Tabs.Farm:Toggle({
         AutoFishV2 = state
 
         if AutoFishV2 then
-            -- Jalankan Step1 → Step2 → Step3 sekali di awal
             Step1()
             task.wait(0.01)
             Step2()
@@ -537,7 +820,7 @@ Tabs.Farm:Toggle({
     end
 })
 
--- Listener Step4
+-- Listener perubahan posisi Container
 local lastPosition = Container.Position
 local lastChangeTime = tick()
 
@@ -555,30 +838,29 @@ Container:GetPropertyChangedSignal("Position"):Connect(function()
     end
 end)
 
--- Watchdog untuk restart jika position tidak berubah 8 detik
+-- Watchdog restart bila tidak berubah 8 detik
 task.spawn(function()
     while true do
         task.wait(1)
         if AutoFishV2 and tick() - lastChangeTime >= 8 then
-            -- ulangi Step1 → Step2 → Step3
             Step1()
             task.wait(0.01)
             Step2()
             task.wait(0.01)
             Step3()
-            lastChangeTime = tick() -- reset timer
+            lastChangeTime = tick()
         end
     end
 end)
 
 
+
 Tabs.Farm:Toggle({
     Title = "Auto Fishing Completed",
-    Value = false,
+    Value = true, -- default langsung ON
     Callback = function(state)
+        getgenv().AutoFishing = state
         if state then
-            -- Aktifkan loop auto fishing
-            getgenv().AutoFishing = true
             task.spawn(function()
                 while getgenv().AutoFishing do
                     pcall(function()
@@ -590,15 +872,29 @@ Tabs.Farm:Toggle({
                             :WaitForChild("RE/FishingCompleted")
                             :FireServer()
                     end)
-                    task.wait(0.1) -- delay biar server nggak ke-spam terlalu cepat
+                    task.wait(0.1)
                 end
             end)
-        else
-            -- Matikan loop auto fishing
-            getgenv().AutoFishing = false
         end
     end
 })
+
+-- jalankan langsung saat script load
+getgenv().AutoFishing = true
+task.spawn(function()
+    while getgenv().AutoFishing do
+        pcall(function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("Packages")
+                :WaitForChild("_Index")
+                :WaitForChild("sleitnick_net@0.2.0")
+                :WaitForChild("net")
+                :WaitForChild("RE/FishingCompleted")
+                :FireServer()
+        end)
+        task.wait(0.1)
+    end
+end)
 
 Tabs.Farm:Button({
     Title = "Cancel Fishing",
@@ -800,7 +1096,36 @@ Tabs.Farm:Toggle({
     end
 })
 
-Tabs.Auto:Section({ Title = "Deep Sea Quest" })
+Tabs.Auto:Section({ Title = "Jungle Event" })
+
+Tabs.Auto:Toggle({
+    Title = "Auto Claim All Reward",
+    Value = false,
+    Callback = function(state)
+        getgenv().AutoClaimReward = state
+
+        task.spawn(function()
+            while getgenv().AutoClaimReward do
+                for i = 1, 13 do
+                    local args = {i}
+                    pcall(function()
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Packages")
+                            :WaitForChild("_Index")
+                            :WaitForChild("sleitnick_net@0.2.0")
+                            :WaitForChild("net")
+                            :WaitForChild("RE/ClaimEventReward")
+                            :FireServer(unpack(args))
+                    end)
+                    task.wait(0.1)
+                end
+                task.wait(1)
+            end
+        end)
+    end
+})
+
+Tabs.Auto:Section({ Title = "View Quests" })
 
 local board = workspace["!!! MENU RINGS"]["Deep Sea Tracker"].Board
 local surfaceGui = board:WaitForChild("Gui")
@@ -838,120 +1163,7 @@ for _, name in ipairs(labelNames) do
         label:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
     end
 end
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-
--- Ambil Label1 dari Workspace
-local questLabel = workspace["!!! MENU RINGS"]["Deep Sea Tracker"].Board.Gui.Content:WaitForChild("Label1")
-
--- Posisi teleport
-local posBelum100 = CFrame.new(
-    -3563.65063, -279.074219, -1605.75671,
-     0.707868576,  1.15482976e-07,  0.706344128,
-    -9.39126679e-08, 1,            -6.93785722e-08,
-    -0.706344128,   -1.72237495e-08, 0.707868576
-)
-
-local posSudah100 = CFrame.new(
-    -3698.01001, -135.073914, -1010.34033,
-    -0.937130094, -7.4511493e-09,  0.348980278,
-    -5.57951241e-09, 1,             6.36803633e-09,
-    -0.348980278,  4.0207917e-09, -0.937130094
-)
-
--- State toggle
-local autoQuestEnabled = false
-local freezeBV, freezeBG
-local savedCFrame
-
--- Fungsi pasang freeze (BodyVelocity + BodyGyro)
-local function Freeze(char)
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    -- Hapus dulu kalau sudah ada
-    if freezeBV then freezeBV:Destroy() freezeBV = nil end
-    if freezeBG then freezeBG:Destroy() freezeBG = nil end
-
-    -- BodyVelocity
-    freezeBV = Instance.new("BodyVelocity")
-    freezeBV.Velocity = Vector3.new(0,0,0)
-    freezeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    freezeBV.Parent = hrp
-
-    -- BodyGyro
-    freezeBG = Instance.new("BodyGyro")
-    freezeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    freezeBG.CFrame = hrp.CFrame
-    freezeBG.Parent = hrp
-end
-
--- Fungsi lepas freeze
-local function Unfreeze()
-    if freezeBV then freezeBV:Destroy() freezeBV = nil end
-    if freezeBG then freezeBG:Destroy() freezeBG = nil end
-end
-
--- Fungsi teleport
-local function TeleportOnce(cf)
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char:SetPrimaryPartCFrame(cf)
-        savedCFrame = cf
-        Freeze(char)
-    end
-end
-
--- Fungsi cek quest
-local function CheckQuest()
-    if not autoQuestEnabled then return end
-    local text = questLabel.Text
-    local persen = text:match("(%d+)%%")
-    persen = tonumber(persen)
-
-    if persen and persen < 100 then
-        TeleportOnce(posBelum100)
-    elseif persen and persen >= 100 then
-        TeleportOnce(posSudah100)
-    end
-end
-
--- Jalankan saat teks berubah
-questLabel:GetPropertyChangedSignal("Text"):Connect(CheckQuest)
-
--- Anti geser (balik ke posisi kalau lebih dari 2 stud)
-RunService.Heartbeat:Connect(function()
-    if autoQuestEnabled and savedCFrame then
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            if (hrp.Position - savedCFrame.Position).Magnitude > 2 then
-                hrp.CFrame = savedCFrame
-            end
-        end
-    end
-end)
-
--- Toggle UI
-Tabs.Auto:Toggle({
-    Title = "Auto Deep Sea Quest",
-    Desc = "When Toggle On you can't move because of Freeze",
-    Value = false,
-    Callback = function(state)
-        autoQuestEnabled = state
-        if state then
-            CheckQuest()
-        else
-            Unfreeze()
-            savedCFrame = nil
-        end
-    end
-})
-
-Tabs.Auto:Section({ Title = "Aura Boat Quest" })
-
+ 
 -- Buat paragraph sekali saja
 local auraParagraph = Tabs.Auto:Paragraph({
     Title = "Aura Boat Quest",
@@ -974,6 +1186,193 @@ spawn(function()
         wait(1)
     end
 end)
+
+-- Ganti target board
+local board = workspace["!!! MENU RINGS"]["Element Tracker"].Board
+local surfaceGui = board:WaitForChild("Gui")
+local content = surfaceGui:WaitForChild("Content")
+
+local labelNames = {"Label1", "Label2", "Label3", "Label4"}
+
+-- Buat 1 paragraf kosong
+local paragraph = Tabs.Auto:Paragraph({
+    Title = "Element Quest",
+    Desc = ""
+})
+
+-- Fungsi update isi paragraf
+local function updateParagraph()
+    local lines = {}
+
+    for _, name in ipairs(labelNames) do
+        local label = content:FindFirstChild(name)
+        if label then
+            table.insert(lines, label.Text)
+        end
+    end
+
+    paragraph:SetDesc(table.concat(lines, "\n"))
+end
+
+-- Isi pertama kali
+updateParagraph()
+
+-- Update otomatis kalau ada perubahan
+for _, name in ipairs(labelNames) do
+    local label = content:FindFirstChild(name)
+    if label then
+        label:GetPropertyChangedSignal("Text"):Connect(updateParagraph)
+    end
+end
+
+Tabs.Auto:Section({ Title = "Auto Quests" })
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Konfigurasi Quest
+local Quests = {
+    ["Deep Sea"] = {
+        Label = workspace["!!! MENU RINGS"]["Deep Sea Tracker"].Board.Gui.Content:WaitForChild("Label1"),
+        PosBelum100 = CFrame.new(
+            -3563.65063, -279.074219, -1605.75671,
+            0.707868576,  1.15482976e-07,  0.706344128,
+            -9.39126679e-08, 1,            -6.93785722e-08,
+            -0.706344128,   -1.72237495e-08, 0.707868576
+        ),
+        PosSudah100 = CFrame.new(
+            -3698.01001, -135.073914, -1010.34033,
+            -0.937130094, -7.4511493e-09,  0.348980278,
+            -5.57951241e-09, 1,             6.36803633e-09,
+            -0.348980278,  4.0207917e-09, -0.937130094
+        )
+    },
+
+    ["Element"] = {
+        Label = workspace["!!! MENU RINGS"]["Element Tracker"].Board.Gui.Content:WaitForChild("Label2"),
+        PosBelum100 = CFrame.new(
+            1465.20886, 7.62549973, -324.670471,
+            -0.272224784, -5.99691532e-08, -0.962233663,
+            -8.44034957e-08, 1, -3.84443268e-08, 0.962233663,
+            7.07503887e-08, -0.272224784
+        ),
+        PosSudah100 = CFrame.new(
+            1524.70227, 5.12503767, -634.379639,
+            0.186757445, 3.27716378e-08, -0.98240608,
+            -6.09756299e-08, 1, -4.49504144e-08,
+            0.98240608, 6.82976022e-08, 0.186757445
+        )
+    }
+}
+
+-- Variabel utama
+local selectedQuest = nil
+local autoQuestEnabled = false
+local freezeBV, freezeBG
+local savedCFrame
+
+-- Fungsi Freeze
+local function Freeze(char)
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    if freezeBV then freezeBV:Destroy() freezeBV = nil end
+    if freezeBG then freezeBG:Destroy() freezeBG = nil end
+
+    freezeBV = Instance.new("BodyVelocity")
+    freezeBV.Velocity = Vector3.zero
+    freezeBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    freezeBV.Parent = hrp
+
+    freezeBG = Instance.new("BodyGyro")
+    freezeBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    freezeBG.CFrame = hrp.CFrame
+    freezeBG.Parent = hrp
+end
+
+-- Fungsi Unfreeze
+local function Unfreeze()
+    if freezeBV then freezeBV:Destroy() freezeBV = nil end
+    if freezeBG then freezeBG:Destroy() freezeBG = nil end
+end
+
+-- Fungsi Teleport
+local function TeleportOnce(cf)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char:SetPrimaryPartCFrame(cf)
+        savedCFrame = cf
+        Freeze(char)
+    end
+end
+
+-- Fungsi cek quest aktif
+local function CheckQuest()
+    if not autoQuestEnabled or not selectedQuest then return end
+    local quest = Quests[selectedQuest]
+    if not quest then return end
+
+    local text = quest.Label.Text
+    local persen = tonumber(text:match("(%d+)%%"))
+
+    if not persen then return end
+
+    if persen < 100 then
+        TeleportOnce(quest.PosBelum100)
+    else
+        TeleportOnce(quest.PosSudah100)
+    end
+end
+
+-- Sambungkan sinyal setiap quest
+for name, quest in pairs(Quests) do
+    quest.Label:GetPropertyChangedSignal("Text"):Connect(function()
+        if selectedQuest == name and autoQuestEnabled then
+            CheckQuest()
+        end
+    end)
+end
+
+-- Anti geser
+RunService.Heartbeat:Connect(function()
+    if autoQuestEnabled and savedCFrame then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            if (hrp.Position - savedCFrame.Position).Magnitude > 2 then
+                hrp.CFrame = savedCFrame
+            end
+        end
+    end
+end)
+
+-- Dropdown pilih quest
+Tabs.Auto:Dropdown({
+    Title = "Select Quest",
+    Values = { "Deep Sea", "Element" },
+    Value = "Deep Sea",
+    Callback = function(option)
+        selectedQuest = option
+        print("Selected Quest: " .. option)
+    end
+})
+
+-- Toggle untuk auto quest
+Tabs.Auto:Toggle({
+    Title = "Auto Quest",
+    Desc = "Teleport otomatis sesuai progress quest yang dipilih",
+    Value = false,
+    Callback = function(state)
+        autoQuestEnabled = state
+        if state then
+            CheckQuest()
+        else
+            Unfreeze()
+            savedCFrame = nil
+        end
+    end
+})
 
 -- Target CFrame
 local targetCFrame = CFrame.new(
@@ -1304,6 +1703,38 @@ Tabs.Shop:Button({
     end
 })
 
+Tabs.Shop:Section({ Title = "Traveling Merchant" })
+
+Tabs.Shop:Toggle({
+    Title = "Auto Purchase All Merchant",
+    Value = false,
+    Callback = function(state)
+        getgenv().AutoClaimEvent = state
+
+        task.spawn(function()
+            while getgenv().AutoClaimEvent do
+                for i = 1, 7 do
+                    local args = {i}
+                    local success, err = pcall(function()
+                        game:GetService("ReplicatedStorage")
+                            :WaitForChild("Packages")
+                            :WaitForChild("_Index")
+                            :WaitForChild("sleitnick_net@0.2.0")
+                            :WaitForChild("net")
+                            :WaitForChild("RF/PurchaseMarketItem")
+                            :InvokeServer(unpack(args))
+                    end)
+                    if not success then
+                        warn("Auto Claim Error (ID " .. i .. "): " .. tostring(err))
+                    end
+                    task.wait(0.5)
+                end
+                task.wait(5)
+            end
+        end)
+    end
+})
+
 Tabs.Boat:Section({ Title = "Boat" })
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1382,6 +1813,36 @@ Tabs.Boat:Button({
     end
 })
 
+Tabs.Boat:Toggle({
+    Title = "Super Speed Boats",
+    Default = false,
+    Callback = function(state)
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local BoatsModule = require(ReplicatedStorage.Shared.BoatsHandlingData)
+
+        -- Simpan Speed asli untuk restore
+        if not BoatsModule._OriginalSpeed then
+            BoatsModule._OriginalSpeed = {}
+            for boatName, boatData in pairs(BoatsModule) do
+                BoatsModule._OriginalSpeed[boatName] = boatData.Speed
+            end
+        end
+
+        if state then
+            -- ON: Set semua boat Speed = 1000
+            for _, boatData in pairs(BoatsModule) do
+                boatData.Speed = 1000
+            end
+        else
+            -- OFF: Restore Speed asli
+            for boatName, boatData in pairs(BoatsModule) do
+                if BoatsModule._OriginalSpeed[boatName] then
+                    boatData.Speed = BoatsModule._OriginalSpeed[boatName]
+                end
+            end
+        end
+    end
+})
 Tabs.Player:Section({ Title = "LocalPlayer" })
 
 Tabs.Player:Toggle({
@@ -1710,7 +2171,17 @@ local islands = {
     ["Tropical Grove"] = CFrame.new(-2046.1554, 6.26801682, 3660.56006, -0.739083588, 1.74285066e-08, 0.673613727, -5.79817758e-08, 1, -8.94902854e-08, -0.673613727, -1.05198126e-07, -0.739083588),
     ["Treasure Room"] = CFrame.new(-3599.53491, -266.57373, -1566.98657),
     ["Weather Machine"] = CFrame.new(-1525.72632, 6.49999952, 1892.23645, 0.0615941137, 6.608282509e-10, -0.998101294, -6.8356556e-08, 1, 3.55628549e-09, 0.998101294, 6.84458072e-08, 0.0615941137),
-    ["Sisyphus Statue"] = CFrame.new(-3692.22021, -135.574417, -1026.96167, -0.928567886, 9.83784361e-08, 0.371162564, 1.22746741e-07, 1, 4.20307664e-08, -0.371162564, 8.45874197e-08, -0.928567886)
+    ["Sisyphus Statue"] = CFrame.new(-3692.22021, -135.574417, -1026.96167, -0.928567886, 9.83784361e-08, 0.371162564, 1.22746741e-07, 1, 4.20307664e-08, -0.371162564, 8.45874197e-08, -0.928567886),
+    ["Ancient Jungle"] = CFrame.new(1275.54553, 7.85804176, -193.749756, 0.924119413, 5.65956171e-08, -0.382103801, -3.36512187e-08, 1, 6.67302302e-08, 0.382103801, -4.88084417e-08, 0.924119413),
+    ["Underground Cellar 1"] = CFrame.new(1954.18994, -41.7413597, -577.574768, -0.817980289, 0.573605001, 0.0434255376, 0.572797239, 0.81913203, -0.0304316022, -0.0530269668, -1.84206292e-05, -0.998593211),
+    ["Underground Cellar 2"] = CFrame.new(2120.27417, -93.1985779, -701.552185, -0.998591185, 0, 0.0530693457, 0, 1, 0, -0.0530693457, 0, -0.998591185),
+    ["Second Enchant Altar"] = CFrame.new(1478.29846, 126.044891, -613.519653, -0.117893577, 0, 0.993026376, 0, 1, 0, -0.993026376, 0, -0.117893577),
+    ["Mysterious Door"] = CFrame.new(1899.19629, 13.3589745, -577.593811, -0.0531117916, 0, -0.998588562, 0, 1, 0, 0.998588562, 0, -0.0531117916),
+    ["Temple Lever 1"] = CFrame.new(1485.66541, 5.41373634, -861.165161, -5.01871109e-05, 0.988927424, 0.148400292, -1, -5.01871109e-05, -3.74019146e-06, 3.74019146e-06, -0.148400292, 0.988927364),
+    ["Temple Lever 2"] = CFrame.new(898.490479, 5.41373587, -361.212708, 9.11951065e-06, 0.0998446345, -0.995003104, -1, 9.11951065e-06, -8.2552433e-06, 8.2552433e-06, 0.995003104, 0.0998445749),
+    ["Temple Lever 3"] = CFrame.new(1419.39148, 28.1637344, 79.5802917, 3.55243683e-05, -0.332731277, -0.943021655, -1, -3.55243683e-05, -2.51233578e-05, -2.51233578e-05, 0.943021655, -0.332731247),
+    ["Temple Lever 4"] = CFrame.new(1818.72156, 5.41373634, -285.160828, -1.15633011e-05, -0.192806393, 0.981236815, -1, 1.15633011e-05, -9.53674316e-06, -9.53674316e-06, -0.981236815, -0.192806482),
+    ["Temple"] = CFrame.new(1478.09546, 0.0774269104, -612.817993, 0.993017375, 0, 0.117968373, 0, 1, 0, -0.117968373, 0, 0.993017375),
 }
 
 -- Ambil semua nama Island
@@ -2401,4 +2872,3 @@ UserInputService.InputChanged:Connect(function(input)
 		update(input)
 	end
 end)
-
