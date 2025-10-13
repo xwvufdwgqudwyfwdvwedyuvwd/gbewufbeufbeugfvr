@@ -16,7 +16,7 @@ local Window = WindUI:CreateWindow({
     Folder = "Hanzo",
     Size = UDim2.fromOffset(540, 420),
     Transparent = true,
-    Theme = "Dark",
+    Theme = "Plant",
     
     HidePanelBackground = true,
     NewElements = false,
