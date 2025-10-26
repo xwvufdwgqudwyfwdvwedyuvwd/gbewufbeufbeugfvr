@@ -1,0 +1,39 @@
+local huntMap = {
+    ["Shark Hunt"] = "Props 1",
+    ["Model"] = "Props 2",
+    ["Megalodon Hunt"] = "Props 3",
+    ["Ghost Shark Hunt"] = "Props 4",
+    ["Fishing Hunt"] = "Props 5",
+}
+
+task.spawn(function()
+    while true do
+        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
+        if menuRings then
+            local propsFolder = menuRings:FindFirstChild("Props")
+                or menuRings:FindFirstChild("Props 1")
+                or menuRings:FindFirstChild("Props 2")
+                or menuRings:FindFirstChild("Props 3")
+                or menuRings:FindFirstChild("Props 4")
+                or menuRings:FindFirstChild("Props 5")
+
+            if propsFolder then
+                local renamed = false
+
+                for childName, newName in pairs(huntMap) do
+                    if propsFolder:FindFirstChild(childName) then
+                        propsFolder.Name = newName
+                        renamed = true
+                        break
+                    end
+                end
+
+                if not renamed then
+                    propsFolder.Name = "Props"
+                end
+            end
+        end
+
+        task.wait(1)
+    end
+end)
