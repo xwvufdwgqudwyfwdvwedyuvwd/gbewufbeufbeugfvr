@@ -201,43 +201,42 @@ local function stopAllAnimations()
     end
 end
 
--- Load Wind Ui
-local WindUI
-
-do
-    local ok, result = pcall(function()
-        return require("./src/init")
-    end)
-    
-    if ok then
-        WindUI = result
-    else 
-        WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-    end
-end
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Ambil nama player
 local player = game.Players.LocalPlayer
 local playerName = player.Name
 local playerDisplayName = player.DisplayName
 
--- Buat Window versi baru
+-- Buat Window
 local Window = WindUI:CreateWindow({
-    Title = "Nexa - Free",
-    Icon = "rbxassetid://131269662643486",
+    Title = "Nexa | Free",
+    Icon = "rbxassetid://131269662643486", -- lucide icon
     Author = "Fish IT! Script | @ Han",
     Folder = "Hanzo",
+
+    -- Ukuran & tampilan
     Size = UDim2.fromOffset(650, 510),
+    MinSize = Vector2.new(560, 350),
+    MaxSize = Vector2.new(850, 560),
+
+    Theme = "Dark", -- pakai tema dari versi pertama
     Transparent = true,
-    Theme = "Plant",
-    
+    Acrylic = false,
     HidePanelBackground = true,
-    NewElements = false,
+    HideSearchBar = false,
+    NewElements = true,
+    Resizable = true,
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0.42,
+    ScrollBarEnabled = true,
+
+    -- Profil user di pojok kanan atas
     User = {
         Enabled = true,
-        Anonymous = false,           -- false biar muncul nama asli
-        Name = playerDisplayName,    -- Nama tampilan
-        UserName = "@" .. playerName, -- Username Roblox
+        Anonymous = false,
+        Name = playerDisplayName,
+        UserName = "@" .. playerName,
         Callback = function()
             WindUI:Notify({
                 Title = "User Profile",
@@ -245,11 +244,7 @@ local Window = WindUI:CreateWindow({
                 Duration = 3
             })
         end
-    },
-    
-    Acrylic = false,
-    HideSearchBar = false,
-    SideBarWidth = 200,
+    }
 })
 
 Window:Tag({
@@ -262,7 +257,6 @@ Window:EditOpenButton({
     Enabled = false
 })
 
--- ✅ Tab dan UI
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house"  }),
     Active = Window:Tab({ Title = "Active", Icon = "info"  }),
@@ -285,18 +279,6 @@ Tabs.Home:Section({
 
 Tabs.Home:Section({
         Title = [[
-[+] Added Teleport to Sacred Temple
-[+] Added Buy Bamboo Rod
-[+] Added Teleport to Underground Cellar
-[+] Teleport to Ancient Jungle
-[+] Added New Bait Floral Bait
-[+] Added Super Speed Boat
-[+] Added Teleport To Temple Lever 1 - 4
-[+] Added Auto Fish v1
-[+] Fishing Completed Auto On
-[-] Improve Fishing Counter Gui
-[+] Select Charge Power Is Back
-[+] Added Auto Element (Auto Element Won't Auto Craft transcendent stone)
 [+] Added Auto Claim All Reward Jungle Event
 [+] Added Auto Purchase All Merchant
 		]],
@@ -730,6 +712,7 @@ Tabs.Farm:Button({
     end
 })
 
+Tabs.Farm:Space()
 
 -- Toggle di Tabs.Farm
 local fishingGui
@@ -807,7 +790,7 @@ end
 -- Dropdown untuk pilih versi (tambahkan "Random")
 Tabs.Farm:Dropdown({
     Title = "Select Charge Power",
-    Desc = "loc:1",
+    Desc = "Only Work Auto Fish V2",
     Values = {"Amazing", "Great", "Good", "Ok", "Perfect", "Random"},
     Value = selectedVersion,
     Callback = function(option)
@@ -1264,10 +1247,10 @@ local Quests = {
     ["Element"] = {
         Label = workspace["!!! MENU RINGS"]["Element Tracker"].Board.Gui.Content:WaitForChild("Label2"),
         PosBelum100 = CFrame.new(
-            1465.20886, 7.62549973, -324.670471,
-            -0.272224784, -5.99691532e-08, -0.962233663,
-            -8.44034957e-08, 1, -3.84443268e-08, 0.962233663,
-            7.07503887e-08, -0.272224784
+            1482.32007, 11.143092, -302.042816,
+            0.885536253, 1.44529979e-08, -0.464570314,
+            3.34035661e-08, 1, 9.478238e-08,
+            0.464570314, -9.941519e-08, 0.885536253
         ),
         PosSudah100 = CFrame.new(
             1524.70227, 5.12503767, -634.379639,
@@ -2784,6 +2767,15 @@ Tabs.Server:Button({
         if targetJobId ~= "" then
             TeleportService:TeleportToPlaceInstance(PlaceId, targetJobId, LocalPlayer)
         end
+    end
+})
+
+Tabs.Server:Keybind({
+    Title = "Keybind Example",
+    Desc = "Keybind to open ui",
+    Value = "G",
+    Callback = function(v)
+        Window:SetToggleKey(Enum.KeyCode[v])
     end
 })
 
