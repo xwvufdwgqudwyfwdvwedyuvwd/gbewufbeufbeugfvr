@@ -1,0 +1,21 @@
+local jungle = workspace:WaitForChild("JUNGLE INTERACTIONS")
+
+task.spawn(function()
+	while true do
+		local levers = {}
+		
+		-- ambil semua objek TempleLever
+		for _, obj in ipairs(jungle:GetChildren()) do
+			if string.find(obj.Name, "TempleLever") then
+				table.insert(levers, obj)
+			end
+		end
+		
+		-- beri nama urutan TempleLever 1, TempleLever 2, ...
+		for i, lever in ipairs(levers) do
+			lever.Name = "TempleLever " .. i
+		end
+		
+		task.wait(1) -- cek setiap 1 detik
+	end
+end)
