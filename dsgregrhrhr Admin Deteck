@@ -1,0 +1,49 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- 🔒 List of Staff UserIds
+local staffIds = {
+    75974130,
+    33372493,
+    30944240,
+}
+
+-- 🌐 Global Flags (langsung aktif)
+getgenv().StaffDetectionEnabled = true
+getgenv().StaffActions = { "Kick" } -- bisa diubah: {"Notify"} atau {"Kick"}
+
+-- ✅ Check if player is staff
+local function isStaff(player)
+    for _, id in ipairs(staffIds) do
+        if player.UserId == id then
+            return true
+        end
+    end
+    return false
+end
+
+-- ⚠️ Handle detected staff
+local function handleStaff(player)
+    if not getgenv().StaffDetectionEnabled then return end
+    if not isStaff(player) then return end
+
+    for _, action in ipairs(getgenv().StaffActions) do
+        if action == "Kick" then
+            LocalPlayer:Kick("Staff detected: " .. player.Name)
+        elseif action == "Notify" then
+            warn("[⚠️ STAFF DETECTED] " .. player.Name .. " (UserId: " .. player.UserId .. ") joined!")
+        end
+    end
+end
+
+-- 🔁 Detect staff on join
+Players.PlayerAdded:Connect(function(player)
+    handleStaff(player)
+end)
+
+-- 🔍 Scan existing players immediately
+for _, player in ipairs(Players:GetPlayers()) do
+    handleStaff(player)
+end
+
+warn("[Anti Staff] ✅ Auto Detection is ON (Kick + Notify)")
