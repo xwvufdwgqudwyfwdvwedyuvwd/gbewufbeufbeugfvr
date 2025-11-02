@@ -26,7 +26,7 @@ local updateDateStr = os.date("%d/%m/%Y %H:%M", updateTime) -- contoh: "02/11/20
 -- Tentukan description
 local description
 if diff <= 2 * 60 * 60 then  -- 2 jam = 2*60*60 detik
-    description = "New"
+    description = "New Update"
 else
     description = "Old " .. updateDateStr
 end
