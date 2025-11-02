@@ -1,20 +1,24 @@
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 
--- Mendapatkan tanggal sekarang
-local date = os.date("*t")  -- tabel berisi {day, month, year, hour, min, sec}
+-- Waktu update yang ditentukan (contoh: 02/11/2025 jam 14:00)
+local updateTime = os.time({year=2025, month=11, day=2, hour=14, min=0, sec=0})
 
--- Tanggal yang ingin dianggap "New"
-local newDay = 2
-local newMonth = 11
-local newYear = 2025
+-- Waktu sekarang
+local now = os.time()
 
--- Tentukan description berdasarkan tanggal
+-- Selisih waktu dalam detik
+local diff = now - updateTime
+
+-- Format jam dan tanggal update
+local updateDateStr = os.date("%d/%m/%Y %H:%M", updateTime) -- hasil: "02/11/2025 14:00"
+
+-- Tentukan description
 local description
-if date.day == newDay and date.month == newMonth and date.year == newYear then
+if diff <= 2 * 60 * 60 then
     description = "New"
 else
-    description = "Old"
+    description = "Old " .. updateDateStr
 end
 
 -- Memanggil notifikasi
