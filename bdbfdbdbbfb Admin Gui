@@ -1,7 +1,8 @@
--- Script: ServerScriptService
+-- ServerScriptService
 local TARGET_USERID = 5464154339
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 -- Gradient Colors untuk animasi teks
 local gradientColors = {
@@ -11,6 +12,7 @@ local gradientColors = {
     Color3.fromRGB(0, 255, 0),
 }
 
+-- Fungsi attach BillboardGui
 local function attachBillboardToCharacter(player, character)
     if not character then return end
     local head = character:FindFirstChild("Head") 
@@ -24,9 +26,9 @@ local function attachBillboardToCharacter(player, character)
     billboard.Name = "DevNexaBillboard"
     billboard.Adornee = head
     billboard.AlwaysOnTop = true
-    billboard.ExtentsOffset = Vector3.new(0, 2, 0) -- sedikit lebih tinggi
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.MaxDistance = 150
+    billboard.ExtentsOffset = Vector3.new(0, 1.8, 0)
+    billboard.Size = UDim2.new(0, 180, 0, 40)
+    billboard.MaxDistance = 120
     billboard.Parent = head
 
     -- TextLabel
@@ -42,23 +44,32 @@ local function attachBillboardToCharacter(player, character)
     textLabel.TextColor3 = gradientColors[1]
     textLabel.Parent = billboard
 
-    -- UI Gradient Glow
-    local uiGradient = Instance.new("UIGradient")
-    uiGradient.Rotation = 45
-    uiGradient.Color = ColorSequence.new(gradientColors)
-    uiGradient.Parent = textLabel
+    -- Floating Animation
+    local floatInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local floatTween = TweenService:Create(billboard, floatInfo, {ExtentsOffset = Vector3.new(0, 2.1, 0)})
+    floatTween:Play()
 
-    -- Animasi gradient sederhana
-    local index = 1
-    RunService.Heartbeat:Connect(function()
-        if not textLabel.Parent then return end
-        index = index + 0.01
-        local i1 = math.floor(index) % #gradientColors + 1
+    -- Pulse stroke
+    local pulseInfo = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local pulseTween = TweenService:Create(textLabel, pulseInfo, {TextStrokeTransparency = 0.4})
+    pulseTween:Play()
+
+    -- Gradient warna bergerak
+    local gradientIndex = 1
+    local heartbeatConn
+    heartbeatConn = RunService.Heartbeat:Connect(function()
+        if not textLabel.Parent or not player.Parent then
+            heartbeatConn:Disconnect()
+            return
+        end
+        gradientIndex = gradientIndex + 0.02
+        local i1 = math.floor(gradientIndex) % #gradientColors + 1
         local i2 = (i1 % #gradientColors) + 1
-        textLabel.TextColor3 = gradientColors[i1]:Lerp(gradientColors[i2], index % 1)
+        textLabel.TextColor3 = gradientColors[i1]:Lerp(gradientColors[i2], gradientIndex % 1)
     end)
 end
 
+-- Bersihkan Billboard
 local function cleanupBillboard(player)
     if player and player.Character then
         local head = player.Character:FindFirstChild("Head") 
@@ -71,11 +82,10 @@ local function cleanupBillboard(player)
     end
 end
 
-local function onPlayerAdded(player)
+-- Hanya saat player join
+Players.PlayerAdded:Connect(function(player)
     if player.UserId ~= TARGET_USERID then return end
-    if player.Character and player.Character.Parent then
-        attachBillboardToCharacter(player, player.Character)
-    end
+
     player.CharacterAdded:Connect(function(character)
         character:WaitForChild("Humanoid", 2)
         local head = character:WaitForChild("Head", 5) 
@@ -85,20 +95,10 @@ local function onPlayerAdded(player)
             attachBillboardToCharacter(player, character)
         end
     end)
+
     player.AncestryChanged:Connect(function(_, parent)
         if not parent then
             cleanupBillboard(player)
         end
     end)
-end
-
-for _, p in ipairs(Players:GetPlayers()) do
-    onPlayerAdded(p)
-end
-
-Players.PlayerAdded:Connect(onPlayerAdded)
-Players.PlayerRemoving:Connect(function(player)
-    if player.UserId == TARGET_USERID then
-        cleanupBillboard(player)
-    end
 end)
