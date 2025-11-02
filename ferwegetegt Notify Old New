@@ -6,7 +6,7 @@ local UPDATE = {
     year  = 2025,
     month = 11,
     day   = 2,
-    hour  = 14,
+    hour  = 23,
     min   = 0,
     sec   = 0
 }
