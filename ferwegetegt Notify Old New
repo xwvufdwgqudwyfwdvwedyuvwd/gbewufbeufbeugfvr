@@ -1,0 +1,25 @@
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+
+-- Mendapatkan tanggal sekarang
+local date = os.date("*t")  -- tabel berisi {day, month, year, hour, min, sec}
+
+-- Tanggal yang ingin dianggap "New"
+local newDay = 2
+local newMonth = 11
+local newYear = 2025
+
+-- Tentukan description berdasarkan tanggal
+local description
+if date.day == newDay and date.month == newMonth and date.year == newYear then
+    description = "New"
+else
+    description = "Old"
+end
+
+-- Memanggil notifikasi
+Library:Notify({
+    Title = "Update Log",
+    Description = description,
+    Time = 4,
+})
