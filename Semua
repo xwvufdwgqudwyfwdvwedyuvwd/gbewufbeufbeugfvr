@@ -1,19 +1,16 @@
--- Gabungan loader untuk 4 script (silent, tanpa print/warn)
+-- Gabungan loader untuk 7 script (silent, tanpa print/warn)
 local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/vgegrege%20TempleLever",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/fgrrrrhh5h5j%20000001%20Hunt",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dsgregrhrhr%20Admin%20Deteck",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ferwegetegt%20Notify%20Old%20New",
-    "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/bdbfdbdbbfb%20Admin%20Gui".
+    "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/bdbfdbdbbfb%20Admin%20Gui",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ggegrhrhhr%20Info%20Fish%20Mythic",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ggegrhrhhr%20Info%20Fish%20SECRET"
 }
 
 for _, url in ipairs(urls) do
-    local fetchOK, sourceOrErr = pcall(function()
-        return game:HttpGet(url)
-    end)
-
+    local fetchOK, sourceOrErr = pcall(game.HttpGet, game, url)
     if fetchOK and sourceOrErr and #sourceOrErr > 0 then
         pcall(function()
             local fn, compileErr = loadstring(sourceOrErr)
