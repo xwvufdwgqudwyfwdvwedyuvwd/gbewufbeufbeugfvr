@@ -1,0 +1,28 @@
+[+] Added Tab Event Halloween
+ - Auto Claim All Reward
+ - Auto TrickOrTreat
+[+] Added TP:
+ - Mount Hallow
+ - Crystal Cavern 1
+ - Crystal Cavern 2
+[+] Tab Automaticaly:
+ - Added TempleLever Quest
+[+] Tab Farm
+ - Added Auto Fish Legit
+[+] Tab Player
+ - Added Hide Username & Level
+[-] Delete Anti Satf
+[-] Delete Traveling Method
+[/] Rename Active Tab to Info Tab
+[/] Move Position Save & Teleport to Teleport Tab
+[-] Delete Report Bug, Job Id, Rejoin, Server Hop
+[/] Rename Server Tab to Webhook Tab
+[+] Added Auto Fishing, Reel Delay, Cast Delay
+[/] New Ui
+[-] Delete Tab Webhook
+[/] Webhook Move To Tab Player
+[+] Added Tab Home 
+ = Account Info
+[/] Improve Ui
+[+] Tab Player:
+ - Added Destroy Window
