@@ -1,0 +1,206 @@
+
+--// Webhook Fishing Logger (Manual Config - No GUI)
+--// Made with ❤️ by Nexa
+
+--========================================================--
+-- CONFIGURATION (UBAH BAGIAN INI SAJA)
+--========================================================--
+
+local WebhookActive = true -- ✅ true = aktif, false = nonaktif
+local WebhookURL = "https://discord.com/api/webhooks/1434819559508021308/F1JGxJ3hQTc9z8PkZJiQHXJytPajq2CYncsQXD7QMMQKqOXiJy4uskbywpRFHGKO-vwm" -- 🔗 Ganti URL Webhook kamu
+local SelectedTiers = {"Mythic"} -- 🧩 Bisa: {"All"} atau {"Epic","Legendary","Mythic","SECRET"}
+
+--========================================================--
+-- SCRIPT UTAMA (JANGAN UBAH)
+--========================================================--
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+local Notification = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Small Notification")
+local Request = (syn and syn.request) or (http_request) or (fluxus and fluxus.request) or (krnl and request)
+
+local TierMap = {
+    [1] = "Common",
+    [2] = "Uncommon",
+    [3] = "Rare",
+    [4] = "Epic",
+    [5] = "Legendary",
+    [6] = "Mythic",
+    [7] = "SECRET"
+}
+
+local FishCounter = {
+    Common = 0,
+    Uncommon = 0,
+    Rare = 0,
+    Epic = 0,
+    Legendary = 0,
+    Mythic = 0,
+    SECRET = 0
+}
+
+local function FormatNumber(num)
+    num = tonumber(num) or 0
+    if num >= 1e9 then
+        return string.format("%.2fb", num / 1e9)
+    elseif num >= 1e6 then
+        return string.format("%.2fm", num / 1e6)
+    elseif num >= 1e3 then
+        return string.format("%.2fk", num / 1e3)
+    else
+        return tostring(num)
+    end
+end
+
+local function FormatChance(chance)
+    chance = tonumber(chance) or 0
+    return string.format("%.2f%%", chance * 100)
+end
+
+local function GetRobloxImage(assetId)
+    if not assetId then return nil end
+    local url = "https://thumbnails.roblox.com/v1/assets?assetIds=" .. assetId .. "&size=420x420&format=Png&isCircular=false"
+    local success, response = pcall(game.HttpGet, game, url)
+    if success then
+        local data = HttpService:JSONDecode(response)
+        if data and data.data and data.data[1] and data.data[1].imageUrl then
+            return data.data[1].imageUrl
+        end
+    end
+    return nil
+end
+
+local function SendEmbed(data)
+    if WebhookURL ~= "" and Request and WebhookActive then
+        local payload = {["embeds"] = data.embeds}
+        Request({
+            Url = WebhookURL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(payload)
+        })
+    end
+end
+
+local function FindFishModule(fishName)
+    local Items = ReplicatedStorage:WaitForChild("Items")
+    for _, moduleScript in ipairs(Items:GetChildren()) do
+        if moduleScript:IsA("ModuleScript") then
+            local ok, data = pcall(require, moduleScript)
+            if ok and data and data.Data and data.Data.Name then
+                local realName = data.Data.Name
+                if string.find(string.lower(fishName), string.lower(realName)) then
+                    return data
+                end
+            end
+        end
+    end
+    return nil
+end
+
+--========================================================--
+-- EVENT LISTENER
+--========================================================--
+
+local LastFishData = nil
+local Container = Notification.Display.Container
+local ItemName = Container:WaitForChild("ItemName")
+local NewLabel = Notification.Display.NewFrame.Frame:WaitForChild("NewLabel")
+local VectorFrame = Notification.Display.VectorFrame.Vector
+
+ItemName:GetPropertyChangedSignal("Text"):Connect(function()
+    if not WebhookActive or WebhookURL == "" or not Request then return end
+
+    local rawText = ItemName.Text
+    if rawText == "" then return end
+
+    local fishName, fishWeight = rawText:match("^(.-)%s*%((.-)%)$")
+    fishName = (fishName and fishName:gsub("^%s+", ""):gsub("%s+$", "")) or rawText
+    fishWeight = fishWeight or "Unknown"
+
+    local fishData = FindFishModule(fishName)
+    local tierNum = fishData and fishData.Data.Tier or 0
+    local tierName = TierMap[tierNum] or "Unknown"
+    local sellPrice = fishData and fishData.SellPrice or "Unknown"
+    local chance = fishData and fishData.Probability and fishData.Probability.Chance or 0
+
+    local newLabelText = NewLabel.Text or ""
+    local RarityLabel = Container:WaitForChild("Rarity")
+    local rarityText = RarityLabel.Text or "Unknown"
+
+    local BagSizeLabel = Players.LocalPlayer.PlayerGui.Inventory.Main.Top.Options.Fish.Label:WaitForChild("BagSize")
+    local bagSizeText = BagSizeLabel.Text or "Unknown"
+
+    local assetId = string.match(VectorFrame.Image, "%d+")
+    local imageUrl = GetRobloxImage(assetId)
+
+    local currentData = {
+        Fish = fishName,
+        Weight = fishWeight,
+        Bag = bagSizeText,
+        Rarity = rarityText
+    }
+
+    -- Hindari spam webhook duplikat
+    if LastFishData
+        and LastFishData.Fish == currentData.Fish
+        and LastFishData.Weight == currentData.Weight
+        and LastFishData.Bag == currentData.Bag
+        and LastFishData.Rarity == currentData.Rarity then
+        return
+    end
+    LastFishData = currentData
+
+    -- Filter tier manual
+    if #SelectedTiers > 0 then
+        if not table.find(SelectedTiers, "All") and not table.find(SelectedTiers, tierName) then
+            return
+        end
+    end
+
+    if FishCounter[tierName] ~= nil then
+        FishCounter[tierName] = FishCounter[tierName] + 1
+    end
+
+    local counterFields = {}
+    for _, name in ipairs({"Common","Uncommon","Rare","Epic","Legendary","Mythic","SECRET"}) do
+        table.insert(counterFields, {
+            ["name"] = "X :  " .. name .. " 🎣",
+            ["value"] = "```" .. tostring(FishCounter[name]) .. "```",
+            ["inline"] = true
+        })
+    end
+
+    local Data = {
+        ["embeds"] = {{
+            ["author"] = {["name"] = "Nexa Fishing Info"},
+            ["title"] = "New Fish Caught!❗",
+            ["color"] = math.random(1000000, 16777215),
+            ["fields"] = {
+                {["name"] = "Fish 🐟", ["value"] = "```" .. fishName .. "```", ["inline"] = true},
+                {["name"] = "KG ⚖️", ["value"] = "```" .. fishWeight .. "```", ["inline"] = true},
+                {["name"] = "Tier 🥇", ["value"] = "```" .. tierName .. "```", ["inline"] = true},
+                {["name"] = "Rarity 🚀", ["value"] = "```" .. rarityText .. "```", ["inline"] = true},
+                {["name"] = "Bag Size 💼", ["value"] = "```" .. bagSizeText .. "```", ["inline"] = true},
+                {["name"] = "Sell Price 🪙", ["value"] = "```" .. FormatNumber(sellPrice) .. "```", ["inline"] = true},
+                {["name"] = "Chance 📈", ["value"] = "```" .. FormatChance(chance) .. "```", ["inline"] = true},
+            },
+            ["footer"] = {["text"] = "Nexa | Fishing Logger • Fish It! 🐟"},
+            ["timestamp"] = DateTime.now():ToIsoDate(),
+            ["image"] = {["url"] = imageUrl or "https://i.imgur.com/zwCkN8P.png"}
+        }}
+    }
+
+    for _, f in ipairs(counterFields) do
+        table.insert(Data.embeds[1].fields, f)
+    end
+
+    if newLabelText ~= "" then
+        table.insert(Data.embeds[1].fields, {["name"] = "Info", ["value"] = "```" .. newLabelText .. "```", ["inline"] = false})
+    end
+
+    SendEmbed(Data)
+end)
