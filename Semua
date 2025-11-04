@@ -1,12 +1,12 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Admin%20Event%20Fish"))()
-
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Library.lua"))()
 local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/vgegrege%20TempleLever",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/fgrrrrhh5h5j%20000001%20Hunt",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dsgregrhrhr%20Admin%20Deteck",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/bdbfdbdbbfb%20Admin%20Gui",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ggegrhrhhr%20Info%20Fish%20Mythic",
-    "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Notify"
+    "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Notify",
+    "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Admin%20Event%20Fish"
 }
 
 for _, url in ipairs(urls) do
