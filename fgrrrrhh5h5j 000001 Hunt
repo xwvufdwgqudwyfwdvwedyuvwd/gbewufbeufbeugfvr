@@ -1,3 +1,10 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Label countdown
+local label = workspace["!!! MENU RINGS"]["Event Tracker"].Main.Gui.Content.Items.Countdown.Label
+
+-- Map nama event ke folder Props
 local huntMap = {
     ["Shark Hunt"] = "Props 1",
     ["Model"] = "Props 2",
@@ -6,34 +13,73 @@ local huntMap = {
     ["Fishing Hunt"] = "Props 5",
 }
 
+-- Fungsi buat part invisible sementara di atas karakter
+local function buatPartSementara()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local root = char:WaitForChild("HumanoidRootPart")
+
+	local part = Instance.new("Part")
+	part.Name = "CountdownPart"
+	part.Size = Vector3.new(2, 1, 2)
+	part.Anchored = true
+	part.CanCollide = false
+	part.Transparency = 1 -- invisible
+	part.CastShadow = false
+	part.Position = root.Position + Vector3.new(0, 3, 0)
+	part.Parent = workspace
+
+	task.delay(5, function()
+		if part and part.Parent then
+			part:Destroy()
+		end
+	end)
+end
+
+-- Variabel deteksi countdown
+local lastTriggered = false
+
+-- Thread 1: cek countdown setiap 1 detik
 task.spawn(function()
-    while true do
-        local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
-        if menuRings then
-            local propsFolder = menuRings:FindFirstChild("Props")
-                or menuRings:FindFirstChild("Props 1")
-                or menuRings:FindFirstChild("Props 2")
-                or menuRings:FindFirstChild("Props 3")
-                or menuRings:FindFirstChild("Props 4")
-                or menuRings:FindFirstChild("Props 5")
+	while task.wait(1) do
+		local text = label.Text
+		if (text == "00H 00M 5S" or text == "0H 0M 5S" or text == "0H 00M 5S") then
+			if not lastTriggered then
+				lastTriggered = true
+				buatPartSementara()
+			end
+		else
+			lastTriggered = false
+		end
+	end
+end)
 
-            if propsFolder then
-                local renamed = false
+-- Thread 2: rename Props sesuai event aktif
+task.spawn(function()
+	while task.wait(1) do
+		local menuRings = workspace:FindFirstChild("!!! MENU RINGS")
+		if menuRings then
+			local propsFolder = menuRings:FindFirstChild("Props")
+				or menuRings:FindFirstChild("Props 1")
+				or menuRings:FindFirstChild("Props 2")
+				or menuRings:FindFirstChild("Props 3")
+				or menuRings:FindFirstChild("Props 4")
+				or menuRings:FindFirstChild("Props 5")
 
-                for childName, newName in pairs(huntMap) do
-                    if propsFolder:FindFirstChild(childName) then
-                        propsFolder.Name = newName
-                        renamed = true
-                        break
-                    end
-                end
+			if propsFolder then
+				local renamed = false
 
-                if not renamed then
-                    propsFolder.Name = "Props"
-                end
-            end
-        end
+				for childName, newName in pairs(huntMap) do
+					if propsFolder:FindFirstChild(childName) then
+						propsFolder.Name = newName
+						renamed = true
+						break
+					end
+				end
 
-        task.wait(1)
-    end
+				if not renamed then
+					propsFolder.Name = "Props"
+				end
+			end
+		end
+	end
 end)
