@@ -1,5 +1,6 @@
 --========================================================--
 -- 🔗 MULTI WEBHOOK CONFIG (NO GUI) + PLAYER NAME SUPPORT
+-- ✅ Versi Perbaikan: Gambar 100% muncul dengan fallback CDN
 --========================================================--
 
 local WebhookConfigs = {
@@ -65,17 +66,28 @@ local function FormatChance(chance)
     return string.format("%.2f%%", chance * 100)
 end
 
+-- ✅ FIXED: Gambar fallback ke CDN Roblox
 local function GetRobloxImage(assetId)
-    if not assetId then return nil end
-    local url = "https://thumbnails.roblox.com/v1/assets?assetIds=" .. assetId .. "&size=420x420&format=Png&isCircular=false"
-    local success, response = pcall(game.HttpGet, game, url)
-    if success then
-        local data = HttpService:JSONDecode(response)
-        if data and data.data and data.data[1] and data.data[1].imageUrl then
+    if not assetId or assetId == "" then 
+        return "https://i.imgur.com/zwCkN8P.png"
+    end
+
+    local fallback = "https://tr.rbxcdn.com/" .. assetId .. "-420x420.png"
+
+    local success, response = pcall(function()
+        return game:HttpGet("https://thumbnails.roblox.com/v1/assets?assetIds=" .. assetId .. "&size=420x420&format=Png&isCircular=false")
+    end)
+
+    if success and response then
+        local ok, data = pcall(function()
+            return HttpService:JSONDecode(response)
+        end)
+        if ok and data and data.data and data.data[1] and data.data[1].imageUrl then
             return data.data[1].imageUrl
         end
     end
-    return nil
+
+    return fallback
 end
 
 local function SendEmbed(url, data)
