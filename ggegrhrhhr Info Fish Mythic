@@ -18,6 +18,11 @@ local WebhookConfigs = {
         Url = "https://discord.com/api/webhooks/1438178838000439500/6Rl7eqEGN0Zb6tEfUj2viuM5ePuKckFr0dOcovSLCDhErHxi4yxgvoYZjGsbDAhpX7Dx",
         Active = true,
         SelectedTiers = {"Legendary"}
+    },
+    {
+        Url = "https://discord.com/api/webhooks/1438180781674463233/xO0sCYJ6-0hXiwrn14YNXLyWsLjl2R9CelwWSFc5kbNiPeY3HRYLI8CYjBiloHBpOOZW",
+        Active = true,
+        SelectedTiers = {"All"}
     }
 }
 
