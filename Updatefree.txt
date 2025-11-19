@@ -1,32 +1,7 @@
-- Added:
-- [+] Added Teleport to Crystalline Passage
-- [+] Added Teleport to Ancient Ruin
-- [+] Added Blatant Fishing (Beta)
-- [+] Added Tab Config:
- - Ste Thamez
- - Config Set
-- [+] Added Label View Enchant
-- [+] Added Auto Enchant
-- [+] Added Equip Rod & Bait
-- [+] Added Auto Trade
-
-- Changed & Improve:
-- [/] Rename Temple to Sacred Temple
-- [/] Rename Temple Lever 1 to Hourglass Diamond Artifact
-- [/] Rename Temple Lever 2 to Arrow Artifact
-- [/] Rename Temple Lever 3 to Crescent Artifact
-- [/] Rename Temple Lever 4 to Diamond Artifact
-- [/] Rename Tab Info To Event
-- [/] Rename Underground Cellar 1 to Underground Cellar Door
-- [/] Rename Underground Cellar 2 to Underground Cellar
-- [/] Rename Tab Farm To Fishing
-- [/] Rename Tab Home To Quest
-- [/] Improve Ui
-
-- Removed:
-- [-] Delete Tab Event:
-- [-] Delete Auto TrickOrTreat
-- [-] Delete Auto Claim All Rewards
-- [-] Delete Crystal Cavern 1 & 2
-- [-] Delete Mount Hallow
-- [-] Delete Tab Home
+[/] Small Update New Ui Rework
+[/] Rework Save Position
+[+] Added Hide Notifications
+[+] Added Anti Drown
+[+] Added Input Fish Amount Trade
+[+] Added Instant Fishing
+[+] Added No Animation
