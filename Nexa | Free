@@ -1,194 +1,197 @@
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
-
--- Ganti dengan UserId target
-local TargetUserId = 5464154339 -- masukkan UserId yang ingin diberi notifikasi
-
--- Services
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Buat ScreenGui untuk notif custom
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "NexaNotifyGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
--- Fungsi buat bikin frame notif custom
-local function createNotification(playerName)
-    -- Container transparan
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 520, 0, 40)
-    frame.Position = UDim2.new(0.5, -260, 0, -70) -- awal di luar layar
-    frame.BackgroundTransparency = 1
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-
-    -- Label Nama (merah cetak, pixel style)
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(0, 160, 1, 0)
-    nameLabel.Position = UDim2.new(0, 0, 0, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.Text = playerName
-    nameLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
-    nameLabel.TextScaled = false
-    nameLabel.TextSize = 18
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = frame
-
-    -- Icon centang biru
-    local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 22, 0, 22)
-    icon.Position = UDim2.new(0, 140, 0.5, -11)
-    icon.BackgroundTransparency = 1
-    icon.Image = "rbxassetid://107488593993096"
-    icon.Parent = frame
-
-    -- Label teks lanjutan (putih, pixel style)
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, -180, 1, 0)
-    textLabel.Position = UDim2.new(0, 170, 0, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = ": Developer Script Nexa Hub has joined the game!"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextScaled = false
-    textLabel.TextSize = 16
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
-    textLabel.Parent = frame
-
-    -- Tween animasi masuk
-    frame:TweenPosition(UDim2.new(0.5, -260, 0, 30), Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.7, true)
-
-    -- Hapus setelah beberapa detik
-    task.delay(6, function()
-        frame:TweenPosition(UDim2.new(0.5, -260, 0, -70), Enum.EasingDirection.In, Enum.EasingStyle.Quint, 0.7, true)
-        task.delay(0.8, function()
-            frame:Destroy()
-        end)
-    end)
-end
-
--- Event ketika player join
-Players.PlayerAdded:Connect(function(player)
-    if player.UserId == TargetUserId then
-        -- Notifikasi WindUI (jika ada WindUI)
-        if typeof(WindUI) == "table" and WindUI.Notify then
-            WindUI:Notify({
-                Title = "Nexa Notify",
-                Content = player.Name .. " Developer Script Nexa Hub has joined the game!",
-                Duration = 5,
-            })
-        end
-
-        -- Notifikasi frame custom pixel-perfect
-        createNotification(player.Name)
-    end
-end)
-
-
---[[
- _   _ _______ __   __    _    
-| \ | |  ____|  \ /  |  / \   
-|  \| | |__     \ V /  / _ \  
-| . ` |  __|     > <  / ___ \ 
-| |\  | |____   / . \/ /   \ \
-|_| \_|______| /_/ \_/_/     \_\
-]]
-
--- Tunggu player siap
+-- Tunggu game siap
 repeat task.wait() until game.Players.LocalPlayer and game.Players.LocalPlayer.Character
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
+if not game:IsLoaded() then game.Loaded:Wait() end
 
-print("Supported loader system running...")
-
+local player = game.Players.LocalPlayer
 local placeId = game.PlaceId
 
--- Table games dengan multiple PlaceId
+------------------------------------------------------
+-- GUI LOADER PREMIUM (GLASS + GLOW + SMOOTH)
+------------------------------------------------------
+
+local TweenService = game:GetService("TweenService")
+local function tween(obj, t, data)
+    TweenService:Create(obj, TweenInfo.new(t, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), data):Play()
+end
+
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "LoaderUI"
+
+-- BLUR BACKGROUND
+local blur = Instance.new("BlurEffect", game.Lighting)
+blur.Size = 0
+tween(blur, 0.7, {Size = 12})
+
+local Bg = Instance.new("Frame", ScreenGui)
+Bg.Size = UDim2.new(1, 0, 1, 0)
+Bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Bg.BackgroundTransparency = 1
+
+-- FRAME (GLASSMORPHISM)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 380, 0, 150)
+Frame.Position = UDim2.new(0.5, -190, 0.7, -80)
+Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Frame.BackgroundTransparency = 0.35
+Frame.BorderSizePixel = 0
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 14)
+
+-- OUTLINE
+local Stroke = Instance.new("UIStroke", Frame)
+Stroke.Color = Color3.fromRGB(70, 150, 255)
+Stroke.Thickness = 1.5
+Stroke.Transparency = 0.35
+
+-- GLOW EFFECT
+local Glow = Instance.new("ImageLabel", Frame)
+Glow.Size = UDim2.new(1, 40, 1, 40)
+Glow.Position = UDim2.new(0.5, -20, 0.5, -20)
+Glow.Image = "rbxassetid://4997411855"
+Glow.ImageColor3 = Color3.fromRGB(0, 150, 255)
+Glow.ImageTransparency = 0.8
+Glow.BackgroundTransparency = 1
+
+-- TITLE
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0, 8)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(220, 230, 255)
+Title.TextTransparency = 1
+Title.Text = "Loading Script..."
+
+-- GAME INFO
+local GameInfo = Instance.new("TextLabel", Frame)
+GameInfo.Size = UDim2.new(1, -20, 0, 24)
+GameInfo.Position = UDim2.new(0, 10, 0, 48)
+GameInfo.BackgroundTransparency = 1
+GameInfo.Font = Enum.Font.GothamMedium
+GameInfo.TextSize = 16
+GameInfo.TextColor3 = Color3.fromRGB(180, 180, 180)
+GameInfo.TextTransparency = 1
+GameInfo.Text = ""
+
+-- PROGRESS BAR BACKGROUND
+local PBack = Instance.new("Frame", Frame)
+PBack.Size = UDim2.new(1, -40, 0, 8)
+PBack.Position = UDim2.new(0, 20, 1, -30)
+PBack.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+PBack.BackgroundTransparency = 0.45
+Instance.new("UICorner", PBack).CornerRadius = UDim.new(0, 6)
+
+-- PROGRESS BAR FILL
+local ProgressBar = Instance.new("Frame", PBack)
+ProgressBar.Size = UDim2.new(0, 0, 1, 0)
+ProgressBar.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+ProgressBar.BackgroundTransparency = 0
+Instance.new("UICorner", ProgressBar).CornerRadius = UDim.new(0, 6)
+
+------------------------------------------------------
+-- DATA GAME
+------------------------------------------------------
+
 local games = {
-    ["Fish IT"] = {
-        placeIds = {121864768012064}, -- bisa tambah PlaceId lain
-        url = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free'
+    ["FishIt"] = {
+        placeIds = {121864768012064},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/sjfeufeufegfefy"
+    },
+    ["Prospecting"] = {
+        placeIds = {129827112113663},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/ewfheufefgeufg"
+    },
+    ["PlantVsBrainrot"] = {
+        placeIds = {127742093697776},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/wfnwefjwewidjeuf"
+    },
+    ["99 Nights"] = {
+        placeIds = {126509999114328},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/fwfewfefef99%20Nig"
+    },
+    ["Fisch"] = {
+        placeIds = {16732694052, 131716211654599},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/wjdgydfwydwyFISCH"
     }
 }
 
--- Cari skrip sesuai PlaceId
 local scriptUrl
-for _, gameInfo in pairs(games) do
-    if table.find(gameInfo.placeIds, placeId) then
-        scriptUrl = gameInfo.url
+local gameName = "Unknown Game"
+
+for name, info in pairs(games) do
+    if table.find(info.placeIds, placeId) then
+        scriptUrl = info.url
+        gameName = name
         break
     end
 end
 
--- Jalankan skrip game jika ditemukan
+------------------------------------------------------
+-- SET GAME INFO + GUI FADE IN
+------------------------------------------------------
+
+GameInfo.Text = "Detected Game: " .. gameName
+tween(GameInfo, 0.6, {TextTransparency = 0})
+
+tween(Bg, 0.7, {BackgroundTransparency = 0.4})
+tween(Frame, 0.7, {BackgroundTransparency = 0.15})
+tween(Stroke, 0.7, {Transparency = 0})
+tween(Glow, 1.1, {ImageTransparency = 0.45})
+tween(Title, 0.7, {TextTransparency = 0})
+tween(PBack, 0.7, {BackgroundTransparency = 0.25})
+
+task.wait(0.6)
+
+------------------------------------------------------
+-- PROGRESS BAR ANIMATION
+------------------------------------------------------
+
+for i = 1, 100 do
+    tween(ProgressBar, 0.12, {Size = UDim2.new(i/100, 0, 1, 0)})
+    Glow.ImageTransparency = 0.45 - (i / 250)
+    Title.Text = "Loading... " .. i .. "%"
+    task.wait(0.02)
+end
+
+Title.Text = "Loading Complete"
+task.wait(0.4)
+
+------------------------------------------------------
+-- GUI FADE OUT (SUPER SMOOTH)
+------------------------------------------------------
+
+tween(Bg, 0.5, {BackgroundTransparency = 1})
+tween(Frame, 0.5, {BackgroundTransparency = 1})
+tween(Stroke, 0.5, {Transparency = 1})
+tween(Glow, 0.5, {ImageTransparency = 1})
+tween(Title, 0.5, {TextTransparency = 1})
+tween(GameInfo, 0.5, {TextTransparency = 1})
+tween(PBack, 0.5, {BackgroundTransparency = 1})
+tween(ProgressBar, 0.5, {BackgroundTransparency = 1})
+tween(blur, 0.5, {Size = 0})
+
+task.wait(0.6)
+blur:Destroy()
+ScreenGui:Destroy()
+
+------------------------------------------------------
+-- EXECUTE SCRIPT
+------------------------------------------------------
+
 if scriptUrl then
-    local success, err = pcall(function()
+    print("Executing script for:", gameName)
+
+    pcall(function()
         loadstring(game:HttpGet(scriptUrl))()
     end)
-    if success then
-        -- Jika berhasil load game script, jalankan script tambahan
-        local extraUrl = "https://raw.githubusercontent.com/Gato290/Script/refs/heads/main/ha"
-        local ok, extraErr = pcall(function()
-            loadstring(game:HttpGet(extraUrl))()
+
+    task.delay(1, function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/Webhook%20v3"))()
         end)
-        if not ok then
-            warn("Failed to load extra script:", extraErr)
-        end
-    else
-        warn("Failed to load script:", err)
-    end
+    end)
 else
     warn("Unsupported game. PlaceId:", placeId)
 end
-
--- =======================
--- AntiAFK Safe Auto-ON
--- =======================
-local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
-local player = Players.LocalPlayer
-
-local AntiAFKEnabled = true
-local AntiAFKConnection
-local loopThread
-
-local function doVirtualAction()
-    -- simulasi klik ringan, aman untuk mencegah kick AFK
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new(math.random(0,800), math.random(0,600)))
-    wait(0.05)
-    VirtualUser:ClickButton2(Vector2.new(math.random(0,800), math.random(0,600)))
-end
-
-local function startLoop()
-    loopThread = coroutine.create(function()
-        while AntiAFKEnabled do
-            pcall(doVirtualAction)
-            local waitTime = math.random(60, 300) -- interval acak 1-5 menit
-            local elapsed = 0
-            while elapsed < waitTime and AntiAFKEnabled do
-                wait(1)
-                elapsed = elapsed + 1
-            end
-        end
-    end)
-    coroutine.resume(loopThread)
-end
-
--- pasang listener Idled untuk respon cepat event AFK
-AntiAFKConnection = player.Idled:Connect(function()
-    if AntiAFKEnabled then
-        pcall(doVirtualAction)
-    end
-end)
-
--- jalankan loop berkala
-startLoop()
-
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/webhook%202"))()
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hdgsydgdgdy1233/Loaderlua/refs/heads/main/Kick"))()
