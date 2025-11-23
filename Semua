@@ -1,3 +1,4 @@
+-- Daftar URL script tambahan
 local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/vgegrege%20TempleLever",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/fgrrrrhh5h5j%20000001%20Hunt",
@@ -7,16 +8,22 @@ local urls = {
     "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Fishing%20Counter%20Gui"
 }
 
-for _, url in ipairs(urls) do
+-- Fungsi untuk load script tambahan secara asynchronous
+local function loadScriptAsync(url)
     task.spawn(function()
-        local fetchOK, sourceOrErr = pcall(game.HttpGet, game, url)
-        if fetchOK and sourceOrErr and #sourceOrErr > 0 then
+        local success, source = pcall(game.HttpGet, game, url)
+        if success and source and #source > 0 then
             pcall(function()
-                local fn, compileErr = loadstring(sourceOrErr)
+                local fn = loadstring(source)
                 if fn then
                     fn()
                 end
             end)
         end
     end)
+end
+
+-- Jalankan semua URL secara asynchronous
+for _, url in ipairs(urls) do
+    loadScriptAsync(url)
 end
