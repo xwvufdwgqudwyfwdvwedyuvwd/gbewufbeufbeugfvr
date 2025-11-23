@@ -111,18 +111,6 @@ local games = {
     ["Fish IT"] = {
         placeIds = {121864768012064}, -- bisa tambah PlaceId lain
         url = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Fish%20IT!%20%7C%20Free'
-    },
-    ["Prospecting"] = {
-        placeIds = {129827112113663},
-        url = 'https://raw.githubusercontent.com/squdgwdujwodhwu/cdjvdkjfekhfeufdjwfbehu/refs/heads/main/Prospecting!%20%7C%20Free'
-    },
-    ["Fisch"] = {
-        placeIds = {16732694052, 131716211654599},
-        url = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dwdhwuwFIS'
-    },
-    ["PlantVsBrainrot"] = {
-        placeIds = {127742093697776},
-        url = 'https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/efehvffvedjPLANT'
     }
 }
 
