@@ -97,23 +97,7 @@ Instance.new("UICorner", ProgressBar).CornerRadius = UDim.new(0, 6)
 local games = {
     ["FishIt"] = {
         placeIds = {121864768012064},
-        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/sjfeufeufegfefy"
-    },
-    ["Prospecting"] = {
-        placeIds = {129827112113663},
-        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/ewfheufefgeufg"
-    },
-    ["PlantVsBrainrot"] = {
-        placeIds = {127742093697776},
-        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/wfnwefjwewidjeuf"
-    },
-    ["99 Nights"] = {
-        placeIds = {126509999114328},
-        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/fwfewfefef99%20Nig"
-    },
-    ["Fisch"] = {
-        placeIds = {16732694052, 131716211654599},
-        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/wjdgydfwydwyFISCH"
+        url = "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Fish%20IT!%20%7C%20Free"
     }
 }
 
