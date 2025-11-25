@@ -1,0 +1,59 @@
+-- ============================
+--   MANUAL SCRIPT CONTROLLER
+-- ============================
+
+local ScriptActive = true   -- ubah ke false untuk mematikan script
+local MessageText = "Script sedang dinonaktifkan." -- kamu bisa ubah
+
+local function IsActive()
+    return ScriptActive
+end
+
+local function SetActive(state)
+    ScriptActive = state
+    UpdateGui(state)
+    print("Script status:", state and "ON" or "OFF")
+end
+
+-- ============================
+--         SCREEN GUI
+-- ============================
+
+local player = game.Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ScriptStatusGui"
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 60)
+Frame.Position = UDim2.new(0.5, -150, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BackgroundTransparency = 0.2
+Frame.Visible = false
+Frame.Parent = ScreenGui
+
+local TextLabel = Instance.new("TextLabel")
+TextLabel.Size = UDim2.new(1, 0, 1, 0)
+TextLabel.BackgroundTransparency = 1
+TextLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+TextLabel.TextScaled = true
+TextLabel.Text = MessageText
+TextLabel.Font = Enum.Font.GothamBold
+TextLabel.Parent = Frame
+
+-- FUNGSI UPDATE GUI
+function UpdateGui(state)
+    if state then
+        Frame.Visible = false
+    else
+        TextLabel.Text = MessageText
+        Frame.Visible = true
+    end
+end
+
+-- pertama kali di-load
+UpdateGui(ScriptActive)
