@@ -5,8 +5,7 @@ local urls = {
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/dsgregrhrhr%20Admin%20Deteck",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/bdbfdbdbbfb%20Admin%20Gui",
     "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/ggegrhrhhr%20Info%20Fish%20Mythic",
-    "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Fishing%20Counter%20Gui",
-    "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Script"
+    "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Fishing%20Counter%20Gui"
 }
 
 -- Fungsi untuk load script tambahan secara asynchronous
