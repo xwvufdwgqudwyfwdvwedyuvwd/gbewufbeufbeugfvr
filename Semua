@@ -29,4 +29,3 @@ for _, url in ipairs(urls) do
 end
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Script"))()
-
