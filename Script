@@ -2,7 +2,7 @@
 --   MANUAL SCRIPT CONTROLLER
 -- ============================
 
-local ScriptActive = true   -- ubah ke false untuk mematikan script
+local ScriptActive = false   -- ubah ke false untuk mematikan script
 local MessageText = "Script sedang dinonaktifkan." -- kamu bisa ubah
 
 local function IsActive()
