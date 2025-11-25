@@ -1,59 +1,151 @@
 -- ============================
---   MANUAL SCRIPT CONTROLLER
+--   CONTROLLER TANPA _G + KICK
 -- ============================
+-- Konfigurasi (ubah sesuai kebutuhan)
+local StartActive = false                       -- awalnya ON? (true/false)
+local ErrorMessage = "ERROR: Script dinonaktifkan.\nAnda akan dikeluarkan." -- pesan yang tampil saat false
+local KickDelaySeconds = 3                     -- delay sebelum kick (detik)
+local ShouldKick = true                        -- apakah player akan dikick? (true/false)
 
-local ScriptActive = false   -- ubah ke false untuk mematikan script
-local MessageText = "Script sedang dinonaktifkan." -- kamu bisa ubah
-
-local function IsActive()
-    return ScriptActive
-end
-
-local function SetActive(state)
-    ScriptActive = state
-    UpdateGui(state)
-    print("Script status:", state and "ON" or "OFF")
-end
-
--- ============================
---         SCREEN GUI
--- ============================
-
+-- Internal state (private)
+local ScriptActive = StartActive
+local Locked = false     -- setelah dimatikan, tidak bisa diaktifkan lagi
 local player = game.Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
+-- GUI (dibuat satu kali)
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ScriptStatusGui"
+ScreenGui.Name = "ScriptStatusGui_Error"
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 60)
-Frame.Position = UDim2.new(0.5, -150, 0.1, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Frame.BackgroundTransparency = 0.2
-Frame.Visible = false
-Frame.Parent = ScreenGui
+local Background = Instance.new("Frame")
+Background.Size = UDim2.new(1, 0, 1, 0)
+Background.Position = UDim2.new(0, 0, 0, 0)
+Background.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Background.BackgroundTransparency = 0.3
+Background.Visible = false
+Background.ZIndex = 50
+Background.Parent = ScreenGui
 
-local TextLabel = Instance.new("TextLabel")
-TextLabel.Size = UDim2.new(1, 0, 1, 0)
-TextLabel.BackgroundTransparency = 1
-TextLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-TextLabel.TextScaled = true
-TextLabel.Text = MessageText
-TextLabel.Font = Enum.Font.GothamBold
-TextLabel.Parent = Frame
+local Card = Instance.new("Frame")
+Card.Size = UDim2.new(0, 520, 0, 140)
+Card.Position = UDim2.new(0.5, -260, 0.25, 0)
+Card.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+Card.BorderSizePixel = 0
+Card.AnchorPoint = Vector2.new(0.5, 0)
+Card.Parent = Background
 
--- FUNGSI UPDATE GUI
-function UpdateGui(state)
-    if state then
-        Frame.Visible = false
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 0, 40)
+Title.Position = UDim2.new(0, 10, 0, 10)
+Title.BackgroundTransparency = 1
+Title.Text = "❗ SCRIPT ERROR"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 28
+Title.TextColor3 = Color3.fromRGB(255, 180, 180)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Card
+
+local MessageLabel = Instance.new("TextLabel")
+MessageLabel.Size = UDim2.new(1, -20, 0, 70)
+MessageLabel.Position = UDim2.new(0, 10, 0, 50)
+MessageLabel.BackgroundTransparency = 1
+MessageLabel.TextWrapped = true
+MessageLabel.Text = ErrorMessage
+MessageLabel.Font = Enum.Font.Gotham
+MessageLabel.TextSize = 20
+MessageLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
+MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
+MessageLabel.Parent = Card
+
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1, -20, 0, 20)
+Footer.Position = UDim2.new(0, 10, 1, -30)
+Footer.BackgroundTransparency = 1
+Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(KickDelaySeconds)
+Footer.Font = Enum.Font.Gotham
+Footer.TextSize = 16
+Footer.TextColor3 = Color3.fromRGB(200, 120, 120)
+Footer.TextXAlignment = Enum.TextXAlignment.Left
+Footer.Parent = Card
+
+-- Fungsi util
+local function IsActive()
+    return ScriptActive
+end
+
+-- Perintah untuk men-set aktif/tidaknya script
+local function SetActive(state)
+    if state == true then
+        -- tidak boleh re-enable setelah locked
+        if Locked then
+            warn("SetActive(true) diabaikan karena controller sudah dikunci.")
+            return
+        end
+        ScriptActive = true
+        -- sembunyikan gui bila sempat muncul
+        Background.Visible = false
+        print("Script status: ON")
     else
-        TextLabel.Text = MessageText
-        Frame.Visible = true
+        -- mematikan untuk selamanya (kunci)
+        ScriptActive = false
+        Locked = true
+        print("Script status: OFF (locked) -- menampilkan error & akan kick jika enabled")
+        -- tampilkan pesan error
+        MessageLabel.Text = ErrorMessage
+        Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(KickDelaySeconds)
+        Background.Visible = true
+
+        -- print error ke output (console)
+        error("Script dinonaktifkan oleh controller. Player akan dikeluarkan.") -- ini akan melempar error
+        -- Note: error() di sini sengaja dipanggil untuk menimbulkan error pada output developer/console.
+
+        -- Kick player setelah delay (jika diinginkan)
+        if ShouldKick then
+            task.spawn(function()
+                local t = KickDelaySeconds
+                while t > 0 do
+                    -- update footer tiap detik
+                    pcall(function()
+                        Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(t)
+                    end)
+                    task.wait(1)
+                    t = t - 1
+                end
+
+                -- Pastikan masih offline state
+                if not ScriptActive and Locked then
+                    pcall(function()
+                        player:Kick(ErrorMessage)
+                    end)
+                end
+            end)
+        end
     end
 end
 
--- pertama kali di-load
-UpdateGui(ScriptActive)
+-- inisialisasi GUI sesuai status awal
+if ScriptActive then
+    Background.Visible = false
+else
+    -- langsung mematikan jika StartActive = false
+    SetActive(false)
+end
+
+-- EXPORT fungsi ke local table supaya bisa dipakai di bagian lain (tanpa _G)
+local Controller = {
+    IsActive = IsActive,
+    SetActive = SetActive,
+    -- tambahan read-only info
+    Locked = function() return Locked end
+}
+
+-- Contoh pemakaian:
+-- if not Controller.IsActive() then continue end
+-- Controller.SetActive(false)  -- mematikan, menampilkan error, dan kick
+
+-- Kembalikan Controller agar bisa digunakan bila file di-require()
+return Controller
