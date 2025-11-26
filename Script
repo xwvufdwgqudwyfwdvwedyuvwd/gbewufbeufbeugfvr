@@ -1,19 +1,23 @@
--- ============================
---   CONTROLLER TANPA _G + KICK
--- ============================
--- Konfigurasi (ubah sesuai kebutuhan)
-local StartActive = false                       -- awalnya ON? (true/false)
-local ErrorMessage = "ERROR: Script dinonaktifkan.\nAnda akan dikeluarkan." -- pesan yang tampil saat false
-local KickDelaySeconds = 3                     -- delay sebelum kick (detik)
-local ShouldKick = true                        -- apakah player akan dikick? (true/false)
+-- =======================================================
+--          CONTROLLER TANPA _G (FINAL CLEAN VERSION)
+-- =======================================================
 
--- Internal state (private)
+-- ============= KONFIGURASI (EDIT SESUAI KEBUTUHAN) =============
+local StartActive = false
+local ErrorMessage = "ERROR: Script telah dinonaktifkan.\nAnda akan dikeluarkan."
+local KickDelaySeconds = 5
+local ShouldKick = true
+
+
+-- ============= INTERNAL STATE (PRIVATE) =============
 local ScriptActive = StartActive
-local Locked = false     -- setelah dimatikan, tidak bisa diaktifkan lagi
-local player = game.Players.LocalPlayer
+local Locked = false
+
+local player = game:GetService("Players").LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
 
--- GUI (dibuat satu kali)
+
+-- ============= GUI SETUP =============
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ScriptStatusGui_Error"
 ScreenGui.IgnoreGuiInset = true
@@ -22,19 +26,19 @@ ScreenGui.Parent = PlayerGui
 
 local Background = Instance.new("Frame")
 Background.Size = UDim2.new(1, 0, 1, 0)
-Background.Position = UDim2.new(0, 0, 0, 0)
-Background.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Background.BackgroundTransparency = 0.3
+Background.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Background.BackgroundTransparency = 0.4
 Background.Visible = false
-Background.ZIndex = 50
+Background.ZIndex = 9999
 Background.Parent = ScreenGui
 
 local Card = Instance.new("Frame")
-Card.Size = UDim2.new(0, 520, 0, 140)
-Card.Position = UDim2.new(0.5, -260, 0.25, 0)
-Card.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+Card.Size = UDim2.new(0, 520, 0, 150)
+Card.Position = UDim2.fromScale(0.5, 0.3)
+Card.AnchorPoint = Vector2.new(0.5, 0.5)
+Card.BackgroundColor3 = Color3.fromRGB(45, 15, 15)
 Card.BorderSizePixel = 0
-Card.AnchorPoint = Vector2.new(0.5, 0)
+Card.ZIndex = 10000
 Card.Parent = Background
 
 local Title = Instance.new("TextLabel")
@@ -46,106 +50,101 @@ Title.Font = Enum.Font.GothamBold
 Title.TextSize = 28
 Title.TextColor3 = Color3.fromRGB(255, 180, 180)
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 10000
 Title.Parent = Card
 
 local MessageLabel = Instance.new("TextLabel")
 MessageLabel.Size = UDim2.new(1, -20, 0, 70)
-MessageLabel.Position = UDim2.new(0, 10, 0, 50)
+MessageLabel.Position = UDim2.new(0, 10, 0, 55)
 MessageLabel.BackgroundTransparency = 1
 MessageLabel.TextWrapped = true
 MessageLabel.Text = ErrorMessage
 MessageLabel.Font = Enum.Font.Gotham
 MessageLabel.TextSize = 20
-MessageLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+MessageLabel.TextColor3 = Color3.fromRGB(255, 130, 130)
 MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
 MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
+MessageLabel.ZIndex = 10000
 MessageLabel.Parent = Card
 
 local Footer = Instance.new("TextLabel")
 Footer.Size = UDim2.new(1, -20, 0, 20)
-Footer.Position = UDim2.new(0, 10, 1, -30)
+Footer.Position = UDim2.new(0, 10, 1, -25)
 Footer.BackgroundTransparency = 1
 Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(KickDelaySeconds)
 Footer.Font = Enum.Font.Gotham
 Footer.TextSize = 16
-Footer.TextColor3 = Color3.fromRGB(200, 120, 120)
+Footer.TextColor3 = Color3.fromRGB(220, 130, 130)
 Footer.TextXAlignment = Enum.TextXAlignment.Left
+Footer.ZIndex = 10000
 Footer.Parent = Card
 
--- Fungsi util
+
+-- ============= FUNGSI UTAMA =============
 local function IsActive()
     return ScriptActive
 end
 
--- Perintah untuk men-set aktif/tidaknya script
-local function SetActive(state)
-    if state == true then
-        -- tidak boleh re-enable setelah locked
-        if Locked then
-            warn("SetActive(true) diabaikan karena controller sudah dikunci.")
-            return
+local function KickCountdown()
+    if not ShouldKick then return end
+
+    task.spawn(function()
+        local remaining = KickDelaySeconds
+        while remaining > 0 do
+            pcall(function()
+                Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(remaining)
+            end)
+            task.wait(1)
+            remaining -= 1
         end
-        ScriptActive = true
-        -- sembunyikan gui bila sempat muncul
-        Background.Visible = false
-        print("Script status: ON")
-    else
-        -- mematikan untuk selamanya (kunci)
-        ScriptActive = false
-        Locked = true
-        print("Script status: OFF (locked) -- menampilkan error & akan kick jika enabled")
-        -- tampilkan pesan error
-        MessageLabel.Text = ErrorMessage
-        Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(KickDelaySeconds)
-        Background.Visible = true
 
-        -- print error ke output (console)
-        error("Script dinonaktifkan oleh controller. Player akan dikeluarkan.") -- ini akan melempar error
-        -- Note: error() di sini sengaja dipanggil untuk menimbulkan error pada output developer/console.
-
-        -- Kick player setelah delay (jika diinginkan)
-        if ShouldKick then
-            task.spawn(function()
-                local t = KickDelaySeconds
-                while t > 0 do
-                    -- update footer tiap detik
-                    pcall(function()
-                        Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(t)
-                    end)
-                    task.wait(1)
-                    t = t - 1
-                end
-
-                -- Pastikan masih offline state
-                if not ScriptActive and Locked then
-                    pcall(function()
-                        player:Kick(ErrorMessage)
-                    end)
-                end
+        if not ScriptActive and Locked then
+            pcall(function()
+                player:Kick(ErrorMessage)
             end)
         end
-    end
+    end)
 end
 
--- inisialisasi GUI sesuai status awal
-if ScriptActive then
-    Background.Visible = false
-else
-    -- langsung mematikan jika StartActive = false
+local function SetActive(state)
+    if state == true then
+        if Locked then
+            warn("Attempt to reactivate script ignored. Script is permanently locked.")
+            return
+        end
+
+        ScriptActive = true
+        Background.Visible = false
+        print("Script status: ON")
+        return
+    end
+
+    -- STATE = FALSE (disable)
+    ScriptActive = false
+    Locked = true
+
+    print("Script status: OFF (locked). Menampilkan error.")
+
+    MessageLabel.Text = ErrorMessage
+    Footer.Text = ("Anda akan dikeluarkan dalam %d detik..."):format(KickDelaySeconds)
+    Background.Visible = true
+
+    warn("Controller: Script disabled. Kick countdown started.")
+    KickCountdown()
+end
+
+
+-- ============= INISIALISASI STATUS AWAL =============
+if not StartActive then
     SetActive(false)
 end
 
--- EXPORT fungsi ke local table supaya bisa dipakai di bagian lain (tanpa _G)
+
+-- ============= API CONTROLLER =============
 local Controller = {
     IsActive = IsActive,
     SetActive = SetActive,
-    -- tambahan read-only info
     Locked = function() return Locked end
 }
 
--- Contoh pemakaian:
--- if not Controller.IsActive() then continue end
--- Controller.SetActive(false)  -- mematikan, menampilkan error, dan kick
-
--- Kembalikan Controller agar bisa digunakan bila file di-require()
 return Controller
