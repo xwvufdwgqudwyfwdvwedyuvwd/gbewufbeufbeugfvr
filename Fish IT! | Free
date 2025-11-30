@@ -279,42 +279,19 @@ local GameData = {
     paragraph = nil,
     freeze = nil,
 
-    -- ================== [Disco] ==================
+    -- ================== [Disco Paragraph] ==================
     DiscoParagraph = nil,
-
-    -- Roots & CFrame reference
     Root = workspace.ClassicEvent.DiscoEvent.DiscoBall:WaitForChild("Root"),
 
-    DefaultCFrame = CFrame.new(
-        -8625, -426.221008, 161.125,
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1
-    ),
+    DefaultCFrame = CFrame.new(-8625, -426.221008, 161.125, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 
-    TeleportCFrame = CFrame.new(
-        -8642.99414, -547.500183, 159.353485,
-         0.139343381, -2.42283136e-08, -0.99024415,
-         4.18495816e-08, 1, -1.85780973e-08,
-         0.99024415, -3.88525692e-08, 0.139343381
-    ),
-
-    -- Player Info
-    plr = game:GetService("Players").LocalPlayer,
-    char = nil,
-    hrp = nil,
-
-    -- Toggle status
-    AutoDisco = false,
-
-    -- Save posisi sebelum teleport
-    SavedPos = nil,
-
-    -- Flag status event
+    IsDiscoNow = false,
     DiscoActive = false,
 
-    -- Status disco sekarang
-    IsDiscoNow = false,
+    -- ================== [Disco Teleport] ==================
+
+    DiscoRoot = workspace.ClassicEvent.DiscoEvent.DiscoBall:WaitForChild("Root"),
+    Players = game:GetService("Players"),
 
     -- ================== [Blatant] ==================
         SVC = {
@@ -454,7 +431,7 @@ local screenSize = camera.ViewportSize
 
 local Window = MacLib:Window({
     Title = "NexaHub",
-    Subtitle = "Fish It - Freemium | V0.0.2",
+    Subtitle = "Fish It - Premium | V0.0.2",
     Size = UDim2.fromOffset(720, 410),
     DragStyle = 2,
     DisabledWindowControls = {},
@@ -718,105 +695,107 @@ end)
 
 sections.Fishing:Divider()
 
-----------------------------------------------------
--- UPDATE CHARACTER
-----------------------------------------------------
-function GameData:UpdateCharacter()
-    self.char = self.plr.Character or self.plr.CharacterAdded:Wait()
-    self.hrp = self.char:WaitForChild("HumanoidRootPart")
-end
-
-function GameData:GetHRP()
-    if not self.char then return nil end
-    self.hrp = self.char:FindFirstChild("HumanoidRootPart")
-    return self.hrp
-end
-
-GameData:UpdateCharacter()
-
-GameData.plr.CharacterAdded:Connect(function()
-    task.wait(1)
-    GameData:UpdateCharacter()
-end)
-
-
-----------------------------------------------------
--- PARAGRAPH UI
-----------------------------------------------------
+--------------------------
+-- UI (Paragraph Only)
+--------------------------
 GameData.DiscoParagraph = sections.Fishing:Paragraph({
     Header = "Status Event Disco",
     Body = "Loading..."
 })
 
-
-----------------------------------------------------
--- TOGGLE
-----------------------------------------------------
-sections.Fishing:Toggle({
-    Name = "Auto Disco Event",
-    Default = false,
-    Callback = function(value)
-        GameData.AutoDisco = value
-        
-        Window:Notify({
-            Title = "Disco Event",
-            Description = (value and "Enabled " or "Disabled ") .. "Disco"
-        })
-    end,
-}, "DiscoToggle")
-
-
-----------------------------------------------------
--- MAIN LOOP
-----------------------------------------------------
+--------------------------
+-- MAIN LOOP (NO TELEPORT)
+--------------------------
 task.spawn(function()
     while true do
         task.wait(1)
 
         pcall(function()
-
-            ------------------------------------------------
-            -- DETEKSI DISCO DARI JARAK CFRAME
-            ------------------------------------------------
             local dist = (GameData.Root.Position - GameData.DefaultCFrame.Position).Magnitude
-            GameData.IsDiscoNow = (dist > 1)
+            GameData.IsDiscoNow = dist > 1
 
-
-            ------------------------------------------------
-            -- DISCO MULAI
-            ------------------------------------------------
+            -- Disco Mulai
             if GameData.IsDiscoNow and not GameData.DiscoActive then
-
                 GameData.DiscoActive = true
                 GameData.DiscoParagraph:UpdateBody("🎉 Disco BEGINS!")
-
-                if GameData.AutoDisco then
-                    local hrp = GameData:GetHRP()
-                    if hrp then
-                        GameData.SavedPos = hrp.CFrame
-                        hrp.CFrame = GameData.TeleportCFrame
-                    end
-                end
             end
 
-
-            ------------------------------------------------
-            -- DISCO SELESAI
-            ------------------------------------------------
+            -- Disco Berhenti
             if not GameData.IsDiscoNow and GameData.DiscoActive then
-
                 GameData.DiscoActive = false
-                GameData.DiscoParagraph:UpdateBody("❌ NO DISCO!! Returning...")
+                GameData.DiscoParagraph:UpdateBody("❌ NO DISCO")
+            end
+        end)
+    end
+end)
 
-                if GameData.AutoDisco and GameData.SavedPos then
-                    local hrp = GameData:GetHRP()
-                    if hrp then
-                        hrp.CFrame = GameData.SavedPos
-                    end
-                end
+
+GameData.LocalPlayer = GameData.Players.LocalPlayer
+GameData.Character = GameData.LocalPlayer.Character or GameData.LocalPlayer.CharacterAdded:Wait()
+GameData.HumanoidRootPart = GameData.Character:WaitForChild("HumanoidRootPart")
+
+GameData.eventCF = CFrame.new(
+    -8625, -532.471008, 161.125,
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 1
+)
+
+GameData.targetTP = CFrame.new(
+    -8642.99414, -547.500183, 159.353485,
+    0.139343381, -2.42283136e-08, -0.99024415,
+    4.18495816e-08, 1, -1.85780973e-08,
+    0.99024415, -3.88525692e-08, 0.139343381
+)
+
+GameData.AutoDiscoEvent = false
+GameData.savedPosition = nil
+GameData.teleported = false
+
+-- TOGGLE UI
+sections.Fishing:Toggle({
+    Name = "Auto Disco Event",
+    Default = false,
+    Callback = function(value)
+        GameData.AutoDiscoEvent = value
+
+        Window:Notify({
+            Title = "Auto Disco Event",
+            Description = value and "Enabled" or "Disabled"
+        })
+
+        if not value then
+            if GameData.teleported and GameData.savedPosition then
+                GameData.HumanoidRootPart.CFrame = GameData.savedPosition
+            end
+            GameData.teleported = false
+            GameData.savedPosition = nil
+        end
+    end,
+}, "AutoDiscoToggle")
+
+-- MAIN LOOP
+task.spawn(function()
+    while task.wait(0.1) do
+        if GameData.AutoDiscoEvent then
+
+            -- Event aktif → teleport sekali
+            if GameData.DiscoRoot.CFrame == GameData.eventCF and not GameData.teleported then
+                GameData.savedPosition = GameData.HumanoidRootPart.CFrame
+                GameData.HumanoidRootPart.CFrame = GameData.targetTP
+                GameData.teleported = true
             end
 
-        end)
+            -- Event selesai → kembalikan posisi
+            if GameData.teleported and GameData.DiscoRoot.CFrame ~= GameData.eventCF then
+                if GameData.savedPosition then
+                    GameData.HumanoidRootPart.CFrame = GameData.savedPosition
+                end
+                GameData.teleported = false
+                GameData.savedPosition = nil
+            end
+
+        end
     end
 end)
 
