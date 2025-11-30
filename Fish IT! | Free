@@ -600,7 +600,7 @@ Tab Quest:
 Tab Boat:
 [+] Added Access All Boats
 Tab Telepoort:
-[/] Rework Save Position (Premium)
+[/] Rework Save Position
  - Dropdown Slots
  - Save Custom Name
  - Delete Slot
@@ -719,11 +719,17 @@ end)
 sections.Fishing:Divider()
 
 ----------------------------------------------------
--- MASUKKAN FUNCTION UPDATE CHARACTER
+-- UPDATE CHARACTER
 ----------------------------------------------------
 function GameData:UpdateCharacter()
     self.char = self.plr.Character or self.plr.CharacterAdded:Wait()
     self.hrp = self.char:WaitForChild("HumanoidRootPart")
+end
+
+function GameData:GetHRP()
+    if not self.char then return nil end
+    self.hrp = self.char:FindFirstChild("HumanoidRootPart")
+    return self.hrp
 end
 
 GameData:UpdateCharacter()
@@ -747,59 +753,70 @@ GameData.DiscoParagraph = sections.Fishing:Paragraph({
 -- TOGGLE
 ----------------------------------------------------
 sections.Fishing:Toggle({
-	Name = "Auto Disco Event",
-	Default = false,
-	Callback = function(value)
-		GameData.AutoDisco = value
-		
-		Window:Notify({
-			Title = "Disco Event",
-			Description = (value and "Enabled " or "Disabled ") .. "Disco"
-		})
-	end,
+    Name = "Auto Disco Event",
+    Default = false,
+    Callback = function(value)
+        GameData.AutoDisco = value
+        
+        Window:Notify({
+            Title = "Disco Event",
+            Description = (value and "Enabled " or "Disabled ") .. "Disco"
+        })
+    end,
 }, "DiscoToggle")
 
 
 ----------------------------------------------------
--- LOOP CEK DISCO
+-- MAIN LOOP
 ----------------------------------------------------
 task.spawn(function()
     while true do
         task.wait(1)
 
-        -- TANPA LOCAL: masukkan ke GameData
-        GameData.IsDiscoNow = (GameData.Root.CFrame ~= GameData.DefaultCFrame)
+        pcall(function()
 
-        ------------------------------------------------
-        -- DISCO MULAI
-        ------------------------------------------------
-        if GameData.IsDiscoNow and not GameData.DiscoActive then
-            
-            GameData.DiscoActive = true
-            GameData.DiscoParagraph:UpdateBody("🎉 Disco BEGINS!")
+            ------------------------------------------------
+            -- DETEKSI DISCO DARI JARAK CFRAME
+            ------------------------------------------------
+            local dist = (GameData.Root.Position - GameData.DefaultCFrame.Position).Magnitude
+            GameData.IsDiscoNow = (dist > 1)
 
-            if GameData.AutoDisco then
 
-                if GameData.hrp then
-                    GameData.SavedPos = GameData.hrp.CFrame
+            ------------------------------------------------
+            -- DISCO MULAI
+            ------------------------------------------------
+            if GameData.IsDiscoNow and not GameData.DiscoActive then
+
+                GameData.DiscoActive = true
+                GameData.DiscoParagraph:UpdateBody("🎉 Disco BEGINS!")
+
+                if GameData.AutoDisco then
+                    local hrp = GameData:GetHRP()
+                    if hrp then
+                        GameData.SavedPos = hrp.CFrame
+                        hrp.CFrame = GameData.TeleportCFrame
+                    end
                 end
-
-                GameData.hrp.CFrame = GameData.TeleportCFrame
             end
-        end
 
-        ------------------------------------------------
-        -- DISCO SELESAI
-        ------------------------------------------------
-        if not GameData.IsDiscoNow and GameData.DiscoActive then
-            
-            GameData.DiscoActive = false
-            GameData.DiscoParagraph:UpdateBody("❌ NO DISCO!! Returning...")
 
-            if GameData.AutoDisco and GameData.SavedPos then
-                GameData.hrp.CFrame = GameData.SavedPos
+            ------------------------------------------------
+            -- DISCO SELESAI
+            ------------------------------------------------
+            if not GameData.IsDiscoNow and GameData.DiscoActive then
+
+                GameData.DiscoActive = false
+                GameData.DiscoParagraph:UpdateBody("❌ NO DISCO!! Returning...")
+
+                if GameData.AutoDisco and GameData.SavedPos then
+                    local hrp = GameData:GetHRP()
+                    if hrp then
+                        hrp.CFrame = GameData.SavedPos
+                    end
+                end
             end
-        end
+
+        end)
     end
 end)
 
