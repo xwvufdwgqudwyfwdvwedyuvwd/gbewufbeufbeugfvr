@@ -193,11 +193,27 @@ local GameData = {
     },
 
     -- ==================[Save Posisi] ==================
-    SavedPositions = {
-        ["Position 1"] = nil,
-        ["Position 2"] = nil,
-        ["Position 3"] = nil
-    },
+    rootFolder = "SavedPositions",
+    folder = nil,
+
+    SavedPositions = {},
+    options = {},
+
+    selectedSlot = nil,
+    customSlotName = "",
+    teleportEnabled = false,
+
+    LocalPlayer = game.Players.LocalPlayer,
+    char = nil,
+    hrp = nil,
+
+    SaveDropdown = nil,
+    SaveButton = nil,
+    DeleteButton = nil,
+    RefreshButton = nil,
+
+    bv = nil,
+    bg = nil,
 
     -- ================== [Auto Unclock Ancient Ruin] ==================
     AutoUnlock = false,
@@ -394,6 +410,21 @@ local GameData = {
     beginDrag = nil,
     updateDrag = nil,
     endDrag = nil,
+
+    -- ================== [Walkspeed, Jump Power, Gravity] ==================
+
+    Player = nil,
+    char = nil,
+    hum = nil,
+
+    WalkspeedEnabled = false,
+    WalkspeedValue = 16,
+
+    JumpEnabled = false,
+    JumpValue = 50,
+
+    GravityEnabled = false,
+    GravityValue = 196.2,
 }
 
 --====================================================--
@@ -547,6 +578,9 @@ sections.Home1:Paragraph({
 [+] Added Tab Home & Event
 Tab Fishing:
 [/] Rework Fishing Counter
+[+] Added Blatant (Premium)
+ - Delay Cast
+ - Delay Complite Complete
 [+] Added Status Lochness Monster Countdown
 [+] Added Auto Lochness Monster
 [+] Added Status Disco Event
@@ -565,7 +599,18 @@ Tab Quest:
 [+] Added Auto Unclok Ancient Ruin
 Tab Boat:
 [+] Added Access All Boats
+Tab Telepoort:
+[/] Rework Save Position (Premium)
+ - Dropdown Slots
+ - Save Custom Name
+ - Delete Slot
+ - Refresh List Slots
+ - Teleport Save Position
+[+] Added Teleport Player (Premium)
 Tab Player:
+[+] Added Walkspeed (Premium)
+[+] Added Jump Power (Premium)
+[+] Added Gravity (Premium)
 [-] Delete Black Screen
 [+] Added View Bobbers
 ]]
@@ -1387,8 +1432,9 @@ sections.Fishing:Input({
 }, "InstantFishingCompletedDelay")
 
 sections.Fishing:Header({
-	Name = "Blatant Feature (Only Premium)"
+	Name = "Blatant Feature (Premium Only)"
 })
+
 
 sections.Fishing1:Header({
 	Name = "Webhook Notifier"
@@ -3665,100 +3711,7 @@ sections.Tp:Button({
 }, "TeleportButton")
 
 sections.Tp:Header({
-	Name = "Player"
-})
-
-GameData.lp = GameData.Players.LocalPlayer
-
---==============================================--
--- FUNCTION GET PLAYER LIST
---==============================================--
-function GameData.GetPlayerList()
-    GameData.list = {}
-    for _, plr in ipairs(GameData.Players:GetPlayers()) do
-        if plr ~= GameData.lp then
-            table.insert(GameData.list, plr.Name)
-        end
-    end
-    return GameData.list
-end
-
---==============================================--
--- DROPDOWN
---==============================================--
-
-GameData.TargetDropdown = sections.Tp:Dropdown({
-    Name = "Select Player", 
-    Search = true,
-    Multi = false,
-    Required = false,
-    Options = GameData.GetPlayerList(),
-    Default = {},
-    Callback = function(Value)
-        GameData.selectedTarget = Value
-    end,
-}, "TargetDropdown")
-
-
---==============================================--
--- AUTO REFRESH
---==============================================--
-
-task.spawn(function()
-    while true do
-        task.wait(1)
-
-        GameData.currentOptions = GameData.TargetDropdown:GetOptions()
-        GameData.newList = GameData.GetPlayerList()
-
-        GameData.newDict = {}
-        for _, name in ipairs(GameData.newList) do
-            GameData.newDict[name] = true
-        end
-
-        -- HAPUS PLAYER KELUAR
-        for name in pairs(GameData.currentOptions) do
-            if not GameData.newDict[name] then
-                GameData.TargetDropdown:RemoveOptions({name})
-
-                if GameData.selectedTarget == name then
-                    GameData.selectedTarget = nil
-                    GameData.TargetDropdown:UpdateSelection({})
-                end
-            end
-        end
-
-        -- TAMBAH PLAYER BARU
-        for _, name in ipairs(GameData.newList) do
-            if not GameData.TargetDropdown:IsOption(name) then
-                GameData.TargetDropdown:InsertOptions({name})
-            end
-        end
-    end
-end)
-
-
---==============================================--
--- TELEPORT BUTTON
---==============================================--
-
-sections.Tp:Button({
-    Name = "Teleport Now",
-    Callback = function()
-
-        if not GameData.selectedTarget or GameData.selectedTarget == "" then return end
-
-        GameData.target = GameData.Players:FindFirstChild(GameData.selectedTarget)
-        if not GameData.target then return end
-
-        GameData.char = GameData.lp.Character or GameData.lp.CharacterAdded:Wait()
-        GameData.hrp = GameData.char:WaitForChild("HumanoidRootPart")
-
-        GameData.tchar = GameData.target.Character
-        if not GameData.tchar or not GameData.tchar:FindFirstChild("HumanoidRootPart") then return end
-
-        GameData.hrp.CFrame = GameData.tchar.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
-    end,
+	Name = "Player (Premium Only)"
 })
 
 sections.Tp1:Header({
