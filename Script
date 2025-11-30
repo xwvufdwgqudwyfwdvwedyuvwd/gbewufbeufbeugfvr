@@ -3,7 +3,7 @@
 -- =======================================================
 
 -- ============= KONFIGURASI (EDIT SESUAI KEBUTUHAN) =============
-local StartActive = false
+local StartActive = true
 local ErrorMessage = "ERROR: Script telah dinonaktifkan.\nAnda akan dikeluarkan."
 local KickDelaySeconds = 5
 local ShouldKick = true
