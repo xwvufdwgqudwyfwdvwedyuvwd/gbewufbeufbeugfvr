@@ -431,7 +431,7 @@ local screenSize = camera.ViewportSize
 
 local Window = MacLib:Window({
     Title = "NexaHub",
-    Subtitle = "Fish It - Premium | V0.0.2",
+    Subtitle = "Fish It - Freemium | V0.0.2",
     Size = UDim2.fromOffset(720, 410),
     DragStyle = 2,
     DisabledWindowControls = {},
