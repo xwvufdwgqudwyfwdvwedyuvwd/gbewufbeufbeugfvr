@@ -13,8 +13,7 @@ local WebhookConfigs = {
         Url = "https://discord.com/api/webhooks/1434819559508021308/F1JGxJ3hQTc9z8PkZJiQHXJytPajq2CYncsQXD7QMMQKqOXiJy4uskbywpRFHGKO-vwm",
         Active = true,
         SelectedTiers = {"Mythic"}
-    },
-    {
+    }
 }
 
 --========================================================--
