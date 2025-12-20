@@ -1,126 +1,133 @@
 --========================================================--
--- FULL FISHING WEBHOOK SYSTEM (PER TIER)
+-- 🔗 MULTI WEBHOOK CONFIG
 --========================================================--
 
-local GameData = {
-
-    --==============================--
-    -- WEBHOOK PER TIER (ON / OFF)
-    --==============================--
-    TierWebhook = {
-        Common =    { Enabled = false, URL = "" },
-        Uncommon =  { Enabled = true, URL = "https://discord.com/api/webhooks/1447933273492815894/asWGs7fdz6Gtl0xwsYGlcqrYsRetpzp9oksZLAF8icM2hM_P6JMPyC8IQIC4wSFwn7R4" },
-        Rare =      { Enabled = true,  URL = "" },
-        Epic =      { Enabled = true,  URL = "" },
-        Legendary = { Enabled = true,  URL = "" },
-        Mythic =    { Enabled = true,  URL = "" },
-        SECRET =    { Enabled = true,  URL = "" },
+local WebhookConfigs = {
+    {
+        Url = "https://discord.com/api/webhooks/1434819185975758989/eW8i0rR9X7r4dn-s6vO0aCR4zZXlu8Ca4ClTK7FRsRYkKsDh4bbdsjVQiC-_f531OAqQ",
+        Active = true,
+        SelectedTiers = {"SECRET"}
     },
-
-    --==============================--
-    -- SERVICES
-    --==============================--
-    Service = {
-        Players = game:GetService("Players"),
-        ReplicatedStorage = game:GetService("ReplicatedStorage"),
-        HttpService = game:GetService("HttpService"),
-    },
-
-    Request = (syn and syn.request)
-        or http_request
-        or (fluxus and fluxus.request)
-        or (krnl and request),
-
-    --==============================--
-    -- DATA
-    --==============================--
-    TierMap = {
-        [1] = "Common",
-        [2] = "Uncommon",
-        [3] = "Rare",
-        [4] = "Epic",
-        [5] = "Legendary",
-        [6] = "Mythic",
-        [7] = "SECRET"
-    },
-
-    FishCounter = {
-        Common = 0,
-        Uncommon = 0,
-        Rare = 0,
-        Epic = 0,
-        Legendary = 0,
-        Mythic = 0,
-        SECRET = 0
-    },
-
-    TierColor = {
-        Common = 3092790,
-        Uncommon = 5294200,
-        Rare = 2061822,
-        Epic = 11730944,
-        Legendary = 15844367,
-        Mythic = 14423100,
-        SECRET = 16711853
-    },
-
-    LastFishData = nil
+    {
+        Url = "https://discord.com/api/webhooks/1434819559508021308/F1JGxJ3hQTc9z8PkZJiQHXJytPajq2CYncsQXD7QMMQKqOXiJy4uskbywpRFHGKO-vwm",
+        Active = true,
+        SelectedTiers = {"Mythic"}
+    }
 }
 
-GameData.LocalPlayer       = GameData.Service.Players.LocalPlayer
-GameData.ReplicatedStorage = GameData.Service.ReplicatedStorage
-GameData.HttpService       = GameData.Service.HttpService
-GameData.RequestExecutor   = GameData.Request
-
 --========================================================--
--- FORMAT
+-- 🔧 SERVICES
 --========================================================--
 
-function GameData.FormatNumber(num)
-    num = tonumber(num) or 0
-    if num >= 1e9 then
-        return string.format("%.2fb", num / 1e9)
-    elseif num >= 1e6 then
-        return string.format("%.2fm", num / 1e6)
-    elseif num >= 1e3 then
-        return string.format("%.2fk", num / 1e3)
-    else
-        return tostring(num)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local Notification = LocalPlayer.PlayerGui:WaitForChild("Small Notification")
+
+local Request =
+    (syn and syn.request) or
+    (http_request) or
+    (fluxus and fluxus.request) or
+    (krnl and request)
+
+--========================================================--
+-- 🏆 TIER MAP + COLOR
+--========================================================--
+
+local TierMap = {
+    [1] = "Common",
+    [2] = "Uncommon",
+    [3] = "Rare",
+    [4] = "Epic",
+    [5] = "Legendary",
+    [6] = "Mythic",
+    [7] = "SECRET"
+}
+
+local TierColor = {
+    Common = 0x9e9e9e,
+    Uncommon = 0x4caf50,
+    Rare = 0x2196f3,
+    Epic = 0x9c27b0,
+    Legendary = 0xff9800,
+    Mythic = 0xe91e63,
+    SECRET = 0xf44336
+}
+
+--========================================================--
+-- 📊 COUNTER
+--========================================================--
+
+local FishCounter = {
+    Common = 0,
+    Uncommon = 0,
+    Rare = 0,
+    Epic = 0,
+    Legendary = 0,
+    Mythic = 0,
+    SECRET = 0
+}
+
+--========================================================--
+-- 🧮 FORMATTER
+--========================================================--
+
+local function FormatNumber(n)
+    n = tonumber(n) or 0
+    if n >= 1e6 then
+        return string.format("%.2fm", n / 1e6)
+    elseif n >= 1e3 then
+        return string.format("%.2fk", n / 1e3)
     end
+    return tostring(n)
 end
 
-function GameData.FormatChance(chance)
-    chance = tonumber(chance) or 0
-    return string.format("%.2f%%", chance * 100)
+local function FormatChance(c)
+    return string.format("%.4f%%", (tonumber(c) or 0) * 100)
 end
 
 --========================================================--
--- ROBLOX THUMBNAIL
+-- 🖼️ ROBLOX IMAGE (FIXED)
 --========================================================--
 
-function GameData.GetRobloxImage(assetId)
-    if not assetId then return nil end
-    local url = "https://thumbnails.roblox.com/v1/assets?assetIds=" .. assetId .. "&size=420x420&format=Png&isCircular=false"
-    local ok, res = pcall(game.HttpGet, game, url)
-    if ok then
-        local data = GameData.HttpService:JSONDecode(res)
-        if data and data.data and data.data[1] then
+local function GetRobloxImage(assetId)
+    if not assetId or assetId == "" then
+        return "https://i.imgur.com/zwCkN8P.png"
+    end
+
+    local success, response = pcall(function()
+        return game:HttpGet(
+            "https://thumbnails.roblox.com/v1/assets?assetIds="
+            .. assetId ..
+            "&size=420x420&format=Png&isCircular=false"
+        )
+    end)
+
+    if success and response then
+        local ok, data = pcall(function()
+            return HttpService:JSONDecode(response)
+        end)
+
+        if ok and data and data.data and data.data[1] and data.data[1].imageUrl then
             return data.data[1].imageUrl
         end
     end
+
+    return "https://i.imgur.com/zwCkN8P.png"
 end
 
 --========================================================--
--- FIND FISH MODULE
+-- 📦 FISH MODULE FINDER
 --========================================================--
 
-function GameData.FindFishModule(fishName)
-    local Items = GameData.ReplicatedStorage:WaitForChild("Items")
-    for _, m in ipairs(Items:GetChildren()) do
+local function FindFishModule(name)
+    for _, m in ipairs(ReplicatedStorage.Items:GetChildren()) do
         if m:IsA("ModuleScript") then
             local ok, data = pcall(require, m)
             if ok and data and data.Data and data.Data.Name then
-                if string.find(string.lower(fishName), string.lower(data.Data.Name)) then
+                if string.find(string.lower(name), string.lower(data.Data.Name)) then
                     return data
                 end
             end
@@ -129,117 +136,115 @@ function GameData.FindFishModule(fishName)
 end
 
 --========================================================--
--- SEND EMBED (PER TIER)
+-- 📤 SEND WEBHOOK
 --========================================================--
 
-function GameData.SendTierEmbed(tierName, embed)
-    local cfg = GameData.TierWebhook[tierName]
-    if not cfg then return end
-    if not cfg.Enabled then return end
-    if cfg.URL == "" then return end
-    if not GameData.RequestExecutor then return end
-
-    GameData.RequestExecutor({
-        Url = cfg.URL,
+local function SendWebhook(url, payload)
+    if not Request then return end
+    Request({
+        Url = url,
         Method = "POST",
         Headers = {["Content-Type"] = "application/json"},
-        Body = GameData.HttpService:JSONEncode({embeds = embed})
+        Body = HttpService:JSONEncode(payload)
     })
 end
 
 --========================================================--
--- MAIN CALL
+-- 🎯 MAIN EVENT
 --========================================================--
 
-function GameData.OnFishCaught(fishName, fishWeight, bagText, rarityText, assetId)
+local LastData
+local Container = Notification.Display.Container
+local ItemName = Container.ItemName
+local VectorFrame = Notification.Display.VectorFrame.Vector
+local NewLabel = Notification.Display.NewFrame.Frame.NewLabel
 
-    local fishData = GameData.FindFishModule(fishName)
-    local tierNum  = fishData and fishData.Data.Tier or 0
-    local tierName = GameData.TierMap[tierNum] or "Unknown"
+ItemName:GetPropertyChangedSignal("Text"):Connect(function()
+    if ItemName.Text == "" then return end
 
-    if not GameData.TierWebhook[tierName] then return end
+    local fishName, weight = ItemName.Text:match("^(.-)%s*%((.-)%)$")
+    fishName = fishName or ItemName.Text
+    weight = weight or "?"
 
-    local sellPrice = fishData and fishData.SellPrice or "Unknown"
-    local chance    = fishData and fishData.Probability and fishData.Probability.Chance or 0
+    local fishData = FindFishModule(fishName)
+    if not fishData then return end
 
-    local currentData = {
-        Fish = fishName,
-        Weight = fishWeight,
-        Bag = bagText,
-        Rarity = rarityText
+    local tierName = TierMap[fishData.Data.Tier] or "Unknown"
+    local rarity = Container.Rarity.Text
+    local bag = LocalPlayer.PlayerGui.Inventory.Main.Top.Options.Fish.Label.BagSize.Text
+    local sell = fishData.SellPrice
+    local chance = fishData.Probability.Chance
+
+    local assetId = VectorFrame.Image:match("%d+")
+    local imageUrl = GetRobloxImage(assetId)
+
+    local key = fishName .. weight .. bag
+    if key == LastData then return end
+    LastData = key
+
+    if FishCounter[tierName] then
+        FishCounter[tierName] += 1
+    end
+
+    local payload = {
+        username = "Nexa Fishing",
+        avatar_url = "https://i.imgur.com/4PfH6rb.jpeg",
+
+        embeds = {{
+            title = "🎣 Fish Caught!",
+
+            description =
+                "### 🐟 **`" .. fishName .. "`**\n" ..
+                "```\n" ..
+                "Weight : " .. weight .. "\n" ..
+                "Tier   : " .. tierName .. "\n" ..
+                "Rarity : " .. rarity .. "\n" ..
+                "Bag    : " .. bag .. "\n" ..
+                "```\n\n" ..
+                "### 💰 Stats\n" ..
+                "- **Sell Price:** `" .. FormatNumber(sell) .. "`\n" ..
+                "- **Chance:** `" .. FormatChance(chance) .. "`",
+
+            color = TierColor[tierName] or 0xffffff,
+
+            fields = {
+                {
+                    name = "📊 Total " .. tierName .. " Caught",
+                    value = "**" .. FishCounter[tierName] .. "**",
+                    inline = true
+                },
+                {
+                    name = "🧭 Rarity",
+                    value = tierName,
+                    inline = true
+                },
+                {
+                    name = "🌟 Congratulations 🌟",
+                    value = "**" .. LocalPlayer.Name .. "** Kamu Mendapatkan Ikan **" .. tierName .. "** 🚀",
+                    inline = false
+                }
+            },
+
+            author = {
+                name = "Nexa | Fishing System",
+                icon_url = "https://i.imgur.com/4PfH6rb.jpeg"
+            },
+
+            footer = {
+                text = "Caught by " .. LocalPlayer.Name .. " | " .. os.date("%H:%M:%S"),
+                icon_url = "https://i.imgur.com/4PfH6rb.jpeg"
+            },
+
+            thumbnail = {url = imageUrl},
+            image = {url = imageUrl},
+
+            timestamp = DateTime.now():ToIsoDate()
+        }}
     }
 
-    if GameData.LastFishData
-    and GameData.LastFishData.Fish == currentData.Fish
-    and GameData.LastFishData.Weight == currentData.Weight
-    and GameData.LastFishData.Bag == currentData.Bag
-    and GameData.LastFishData.Rarity == currentData.Rarity then
-        return
+    for _, cfg in ipairs(WebhookConfigs) do
+        if cfg.Active and (table.find(cfg.SelectedTiers, tierName) or table.find(cfg.SelectedTiers, "All")) then
+            SendWebhook(cfg.Url, payload)
+        end
     end
-
-    GameData.LastFishData = currentData
-
-    if GameData.FishCounter[tierName] then
-        GameData.FishCounter[tierName] += 1
-    end
-
-    local imageUrl = GameData.GetRobloxImage(assetId)
-
-    --==============================--
-    -- EMBED (TIDAK DIUBAH)
-    --==============================--
-
-    local embed = {{
-        ["title"] = "🎣 **Fish Caught!**",
-
-        ["description"] = string.format(
-            "### 🐟 **%s**\n" ..
-            "```\nWeight : %s\nTier   : %s\nRarity : %s\nBag    : %s\n```\n\n" ..
-            "### 💰 Stats\n" ..
-            "- **Sell Price:** `%s`\n" ..
-            "- **Chance:** `%s`\n",
-            fishName,
-            fishWeight,
-            tierName,
-            rarityText,
-            bagText,
-            GameData.FormatNumber(sellPrice),
-            GameData.FormatChance(chance)
-        ),
-
-        ["color"] = GameData.TierColor[tierName] or 5814783,
-
-        ["thumbnail"] = {
-            ["url"] = imageUrl or "https://i.imgur.com/zwCkN8P.png"
-        },
-
-        ["image"] = {
-            ["url"] = "https://tr.rbxcdn.com/180DAY-f446c1264701227ae463835b155f44af/768/432/Image/Webp/noFilter"
-        },
-
-        ["author"] = {
-            ["name"] = "Nexa | Fishing System",
-            ["icon_url"] = "https://i.imgur.com/4PfH6rb.jpeg"
-        },
-
-        ["footer"] = {
-            ["text"] = "Caught by **" .. GameData.LocalPlayer.Name .. "** | " .. os.date("%H:%M:%S"),
-            ["icon_url"] = "https://i.imgur.com/4PfH6rb.jpeg"
-        },
-
-        ["fields"] = {
-            {
-                ["name"] = "📊 Total " .. tierName .. " Caught",
-                ["value"] = "**" .. tostring(GameData.FishCounter[tierName]) .. "**",
-                ["inline"] = true
-            },
-            {
-                ["name"] = "🧭 Rarity",
-                ["value"] = rarityText,
-                ["inline"] = true
-            }
-        }
-    }}
-
-    GameData.SendTierEmbed(tierName, embed)
-end
+end)
