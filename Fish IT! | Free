@@ -784,6 +784,37 @@ local GameData = {
     AutoReconnect = false,
 
     Connections = {},
+
+    -- ================== [Report BUg] ==================
+
+    Servicesv5 = {
+        Playersv5 = game:GetService("Players"),
+        TweenServicev5 = game:GetService("TweenService"),
+        HttpServicev5 = game:GetService("HttpService"),
+    },
+
+    Playerv5 = game:GetService("Players").LocalPlayer,
+    Camerav5 = workspace.CurrentCamera,
+
+    Requestv5 = (syn and syn.request) or http_request or (fluxus and fluxus.request) or (krnl and request),
+
+    DiscordWebhookv5 = "https://discord.com/api/webhooks/XXXX/XXXX",
+    BugReportTextv5 = "",
+    StrikeLimitv5 = 3,
+    CooldownTimev5 = 15,
+    Strikesv5 = 0,
+    LastSubmitv5 = 0,
+    Blockedv5 = false,
+
+    ShakeIntensityv5 = 0.12,
+    ShakeCountv5 = 10,
+    ShakeDelayv5 = 0.025,
+
+    BannedWordsv5 = {
+        "anjing","bangsat","kontol","memek","ngentot",
+        "tolol","goblok","asu",
+        "fuck","shit","bitch","asshole","dick","pussy"
+    },
 }
 
 
@@ -996,6 +1027,7 @@ local sections = {
 
     Config = tabs.Config:Section({ Side = "Full" }),
     Config1 = tabs.Config:Section({ Side = "Full" }),
+    Config2 = tabs.Config:Section({ Side = "Full" }),
 }
 
 
@@ -5941,6 +5973,107 @@ sections.Config1:Button({
                 GameData.LocalPlayer
             )
         end
+    end,
+})
+
+sections.Config2:Header({
+	Name = "Bug Report"
+})
+
+function GameData:ShakeCamerav5()
+    local original = self.Camerav5.CFrame
+    for i = 1, self.ShakeCountv5 do
+        local offset = Vector3.new(
+            math.random(-2,2) * self.ShakeIntensityv5,
+            math.random(-2,2) * self.ShakeIntensityv5,
+            0
+        )
+        self.Camerav5.CFrame = original * CFrame.new(offset)
+        task.wait(self.ShakeDelayv5)
+    end
+    self.Camerav5.CFrame = original
+end
+
+function GameData:NormalizeTextv5(text)
+    text = string.lower(text)
+    text = text:gsub("0","o"):gsub("1","i"):gsub("3","e")
+    text = text:gsub("4","a"):gsub("5","s"):gsub("7","t")
+    text = text:gsub("[^a-z]", "")
+    return text
+end
+
+function GameData:ContainsBadWordv5(text)
+    local clean = self:NormalizeTextv5(text)
+    for _, word in ipairs(self.BannedWordsv5) do
+        if string.find(clean, word) then
+            return true
+        end
+    end
+    return false
+end
+
+sections.Config2:Input({
+    Name = "Report Bug",
+    Placeholder = "Explain the bug clearly...",
+    AcceptedCharacters = "All",
+    Callback = function(input)
+        GameData.BugReportTextv5 = input
+    end,
+}, "ReportBugInput")
+
+sections.Config2:Button({
+    Name = "Submit Bug Report",
+    Callback = function()
+        if GameData.Blockedv5 then
+            GameData:ShakeCamerav5()
+            return
+        end
+
+        if os.time() - GameData.LastSubmitv5 < GameData.CooldownTimev5 then
+            GameData:ShakeCamerav5()
+            return
+        end
+
+        if not GameData.BugReportTextv5 or GameData.BugReportTextv5 == "" or GameData:ContainsBadWordv5(GameData.BugReportTextv5) then
+            GameData.Strikesv5 = GameData.Strikesv5 + 1
+            GameData:ShakeCamerav5()
+        end
+
+        if GameData.Strikesv5 >= GameData.StrikeLimitv5 then
+            GameData.Blockedv5 = true
+            return
+        end
+
+        GameData.LastSubmitv5 = os.time()
+        local executor = identifyexecutor and identifyexecutor() or "Unknown"
+        local timeNow = os.date("%Y-%m-%d %H:%M:%S")
+
+        local payload = {
+            username = "Nexa Bug Reporter",
+            embeds = { {
+                title = "🐞 New Bug Report",
+                color = 3447003,
+                fields = {
+                    {name = "👤 Player", value = GameData.Playerv5.Name .. " (`" .. GameData.Playerv5.UserId .. "`)", inline = false},
+                    {name = "📝 Bug Description", value = "```" .. GameData.BugReportTextv5 .. "```", inline = false},
+                    {name = "🎮 Game Info", value = "PlaceId: " .. game.PlaceId .. "\nJobId: " .. game.JobId, inline = false},
+                    {name = "🛠 Executor", value = executor, inline = true},
+                    {name = "⏰ Time", value = timeNow, inline = true},
+                },
+                footer = {text = "Nexa • Bug Report System"}
+            }}
+        }
+
+        if GameData.Requestv5 then
+            GameData.Requestv5({
+                Url = GameData.DiscordWebhookv5,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = GameData.Servicesv5.HttpServicev5:JSONEncode(payload)
+            })
+        end
+
+        GameData.BugReportTextv5 = ""
     end,
 })
 
