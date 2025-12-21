@@ -16,6 +16,12 @@ local WebhookConfigs = {
 }
 
 --========================================================--
+-- ⏱️ WEBHOOK DELAY (detik)
+--========================================================--
+
+local WebhookDelay = 3
+
+--========================================================--
 -- 🔧 SERVICES
 --========================================================--
 
@@ -89,7 +95,7 @@ local function FormatChance(c)
 end
 
 --========================================================--
--- 🖼️ ROBLOX IMAGE (FIXED)
+-- 🖼️ ROBLOX IMAGE
 --========================================================--
 
 local function GetRobloxImage(assetId)
@@ -157,7 +163,6 @@ local LastData
 local Container = Notification.Display.Container
 local ItemName = Container.ItemName
 local VectorFrame = Notification.Display.VectorFrame.Vector
-local NewLabel = Notification.Display.NewFrame.Frame.NewLabel
 
 ItemName:GetPropertyChangedSignal("Text"):Connect(function()
     if ItemName.Text == "" then return end
@@ -189,10 +194,8 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
     local payload = {
         username = "Nexa Fishing",
         avatar_url = "https://i.imgur.com/4PfH6rb.jpeg",
-
         embeds = {{
             title = "🎣 Fish Caught!",
-
             description =
                 "### 🐟 **`" .. fishName .. "`**\n" ..
                 "```\n" ..
@@ -214,37 +217,26 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                     inline = true
                 },
                 {
-                    name = "🧭 Rarity",
-                    value = tierName,
-                    inline = true
-                },
-                {
                     name = "🌟 Congratulations 🌟",
                     value = "**" .. LocalPlayer.Name .. "** Kamu Mendapatkan Ikan **" .. tierName .. "** 🚀",
                     inline = false
                 }
             },
 
-            author = {
-                name = "Nexa | Fishing System",
-                icon_url = "https://i.imgur.com/4PfH6rb.jpeg"
-            },
-
             footer = {
-                text = "Caught by " .. LocalPlayer.Name .. " | " .. os.date("%H:%M:%S"),
-                icon_url = "https://i.imgur.com/4PfH6rb.jpeg"
+                text = "Caught by " .. LocalPlayer.Name .. " | " .. os.date("%H:%M:%S")
             },
 
-            thumbnail = {url = imageUrl},
-            image = {url = imageUrl},
-
+            thumbnail = { url = imageUrl },
             timestamp = DateTime.now():ToIsoDate()
         }}
     }
 
     for _, cfg in ipairs(WebhookConfigs) do
         if cfg.Active and (table.find(cfg.SelectedTiers, tierName) or table.find(cfg.SelectedTiers, "All")) then
-            SendWebhook(cfg.Url, payload)
+            task.delay(WebhookDelay, function()
+                SendWebhook(cfg.Url, payload)
+            end)
         end
     end
 end)
