@@ -19,7 +19,7 @@ local WebhookConfigs = {
 -- ⏱️ WEBHOOK DELAY (detik)
 --========================================================--
 
-local WebhookDelay = 3
+local WebhookDelay = 8
 
 --========================================================--
 -- 🔧 SERVICES
