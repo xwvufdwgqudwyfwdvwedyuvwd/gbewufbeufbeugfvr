@@ -576,6 +576,35 @@ local GameData = {
     },
 
     LastEventTime = 0,
+
+    -- ================== [Blatant V3] ==================
+
+    ReplicatedStoragev19 = game:GetService("ReplicatedStorage"),
+    Playersv19 = game:GetService("Players"),
+
+    NetFolderv19 = nil,
+
+    RF_ChargeFishingRodv19 = nil,
+    RF_RequestMinigamev19 = nil,
+    RF_CancelFishingInputsv19 = nil,
+    RF_UpdateAutoFishingStatev19 = nil,
+    RE_FishingCompletedv19 = nil,
+    RE_MinigameChangedv19 = nil,
+
+    Activev19 = false,
+
+    Settingsv19 = {
+        ChargeDelay = 0.007,
+        CompleteDelay = 0.685,
+        CancelDelay = 0.3
+    },
+
+    safeFirev19 = function(func)
+        task.spawn(function()
+            pcall(func)
+        end)
+    end,
+
     -- ================== [SKip Rraity] ==================
 
     Players = game:GetService("Players"),
@@ -1194,7 +1223,7 @@ local Window = WindUI:CreateWindow({
 
 
 Window:Tag({
-    Title = "v0.0.7",
+    Title = "v0.0.8",
     Icon = "rocket",
     Color = Color3.fromHex("#1c1c1c"),
     Border = true,
@@ -1239,25 +1268,8 @@ Sec.Home1 = Tabs.Home:Section({
 Sec.Home1:Paragraph({
     Title = "Update List",
     Desc = [[
-[/] Change Ui
-[+] Show Network Stats (Real Ping)
-[+] Auto Quest Diamond Rod
-[+] Drone Camera
-[+] Hide Gui Drone Camera
-[+] New Tab Trading
-[+] Added Auto Favorite Fish
-[+] Added Auto Christmas Presents
-[+] Added Auto Present Christmas Door
-[+] Added Animation Fishing Fish Cought
-[+] Added Custom Neme & Level
-[+] Added Auto Sell By Count
-[/] Fixed Auto Enchant
-[/] Moved Auto Favorite to Main tab
-[/] Renamed Fishing tab to Main
-[/] Improve Boost Fps
-[/] Improve Auto Trade
-[-] Delete Auto Enchant (Want to fix it)
-[-] Delete Tab Automatic
+Tab Main:
+ [+] Added Blatant V2 (5 Notif)
 ]],
     Locked = false
 })
@@ -2475,7 +2487,7 @@ GameData.startBlatantV2 = function()
 end
 
 Sec.Main4:Toggle({
-    Title = "Blatant",
+    Title = "Blatant v1",
     Flag = "BlatantV1",
     Value = _G.BlatantV2,
 
@@ -2488,7 +2500,7 @@ Sec.Main4:Toggle({
 })
 
 Sec.Main4:Input({
-    Title = "Delay Cast",
+    Title = "Delay Cast v1",
     Flag = "DelayCast",
     Desc = "Set delay before casting (seconds)",
     Value = "1.78",
@@ -2505,7 +2517,7 @@ Sec.Main4:Input({
 })
 
 Sec.Main4:Input({
-    Title = "Delay Complete",
+    Title = "Delay Complete v1",
     Flag = "DelayComplete",
     Desc = "Set delay after fishing completes (seconds)",
     Value = "0.7",
@@ -2517,6 +2529,139 @@ Sec.Main4:Input({
         local num = tonumber(input)
         if num then
             _G.DelayCompleteV2 = num
+        end
+    end
+})
+
+Sec.Main4:Space()
+
+GameData.NetFolderv19 = GameData.ReplicatedStoragev19
+    :WaitForChild("Packages")
+    :WaitForChild("_Index")
+    :WaitForChild("sleitnick_net@0.2.0")
+    :WaitForChild("net")
+
+GameData.RF_ChargeFishingRodv19 = GameData.NetFolderv19:WaitForChild("RF/ChargeFishingRod")
+GameData.RF_RequestMinigamev19 = GameData.NetFolderv19:WaitForChild("RF/RequestFishingMinigameStarted")
+GameData.RF_CancelFishingInputsv19 = GameData.NetFolderv19:WaitForChild("RF/CancelFishingInputs")
+GameData.RF_UpdateAutoFishingStatev19 = GameData.NetFolderv19:WaitForChild("RF/UpdateAutoFishingState")
+GameData.RE_FishingCompletedv19 = GameData.NetFolderv19:WaitForChild("RE/FishingCompleted")
+GameData.RE_MinigameChangedv19 = GameData.NetFolderv19:WaitForChild("RE/FishingMinigameChanged")
+
+function GameData.ultraSpamLoopv19()
+    while GameData.Activev19 do
+        local startTime = tick()
+
+        GameData.safeFirev19(function()
+            GameData.RF_ChargeFishingRodv19:InvokeServer({ [1] = startTime })
+        end)
+
+        task.wait(GameData.Settingsv19.ChargeDelay)
+
+        local releaseTime = tick()
+        GameData.safeFirev19(function()
+            GameData.RF_RequestMinigamev19:InvokeServer(1, 0, releaseTime)
+        end)
+
+        task.wait(GameData.Settingsv19.CompleteDelay)
+
+        GameData.safeFirev19(function()
+            GameData.RE_FishingCompletedv19:FireServer()
+        end)
+
+        task.wait(GameData.Settingsv19.CancelDelay)
+
+        GameData.safeFirev19(function()
+            GameData.RF_CancelFishingInputsv19:InvokeServer()
+        end)
+    end
+end
+
+GameData.RE_MinigameChangedv19.OnClientEvent:Connect(function()
+    if not GameData.Activev19 then return end
+
+    task.spawn(function()
+        task.wait(GameData.Settingsv19.CompleteDelay)
+
+        GameData.safeFirev19(function()
+            GameData.RE_FishingCompletedv19:FireServer()
+        end)
+
+        task.wait(GameData.Settingsv19.CancelDelay)
+
+        GameData.safeFirev19(function()
+            GameData.RF_CancelFishingInputsv19:InvokeServer()
+        end)
+    end)
+end)
+
+function GameData.UpdateSettingsv19(completeDelay, cancelDelay)
+    if completeDelay ~= nil then
+        GameData.Settingsv19.CompleteDelay = math.max(0, completeDelay)
+    end
+    if cancelDelay ~= nil then
+        GameData.Settingsv19.CancelDelay = math.max(0, cancelDelay)
+    end
+end
+
+function GameData.Startv19()
+    if GameData.Activev19 then return end
+    GameData.Activev19 = true
+    task.spawn(GameData.ultraSpamLoopv19)
+end
+
+function GameData.Stopv19()
+    if not GameData.Activev19 then return end
+    GameData.Activev19 = false
+
+    GameData.safeFirev19(function()
+        GameData.RF_UpdateAutoFishingStatev19:InvokeServer(true)
+    end)
+
+    task.wait(0.2)
+
+    GameData.safeFirev19(function()
+        GameData.RF_CancelFishingInputsv19:InvokeServer()
+    end)
+end
+
+Sec.Main4:Input({
+    Title = "Complete Delay v2",
+    Flag = "CompleteDelayv3",
+    Value = tostring(GameData.Settingsv19.CompleteDelay),
+    InputIcon = "clock",
+    Placeholder = "0.685",
+    Callback = function(input)
+        local value = tonumber(input)
+        if value then
+            GameData.UpdateSettingsv19(value, nil)
+        end
+    end
+})
+
+Sec.Main4:Input({
+    Title = "Cancel Delay v2",
+    Flag = "CancelDelayv3",
+    Value = tostring(GameData.Settingsv19.CancelDelay),
+    InputIcon = "clock",
+    Placeholder = "0.3",
+    Callback = function(input)
+        local value = tonumber(input)
+        if value then
+            GameData.UpdateSettingsv19(nil, value)
+        end
+    end
+})
+
+Sec.Main4:Toggle({
+    Title = "Blatant V2",
+    Flag = "BlatantV3",
+    Value = false,
+    Callback = function(state)
+        if state then
+            GameData.Startv19()
+        else
+            GameData.Stopv19()
         end
     end
 })
