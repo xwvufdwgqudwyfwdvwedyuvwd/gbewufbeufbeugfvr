@@ -28,6 +28,7 @@ local WebhookDelay = 8
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 local Notification = LocalPlayer.PlayerGui:WaitForChild("Small Notification")
@@ -144,6 +145,67 @@ local function GetRobloxImage(assetId)
 end
 
 --========================================================--
+-- 👤 PLAYER AVATAR FUNCTIONS
+--========================================================--
+
+local function GetPlayerAvatarHeadshot(userId)
+    local success, result = pcall(function()
+        -- Gunakan thumbnail API untuk mendapatkan headshot
+        local url = "https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=" .. userId .. "&size=150x150&format=Png&isCircular=false"
+        local response = game:HttpGet(url)
+        local data = HttpService:JSONDecode(response)
+        
+        if data and data.data and data.data[1] then
+            return data.data[1].imageUrl
+        end
+    end)
+    
+    if success then
+        return result
+    end
+    
+    -- Fallback: gunakan avatar full body
+    local fallbackSuccess, fallbackResult = pcall(function()
+        local url = "https://thumbnails.roblox.com/v1/users/avatar?userIds=" .. userId .. "&size=150x150&format=Png&isCircular=false"
+        local response = game:HttpGet(url)
+        local data = HttpService:JSONDecode(response)
+        
+        if data and data.data and data.data[1] then
+            return data.data[1].imageUrl
+        end
+    end)
+    
+    if fallbackSuccess then
+        return fallbackResult
+    end
+    
+    -- Jika semua gagal, return gambar default
+    return "https://i.imgur.com/4PfH6rb.jpeg"
+end
+
+local function GetPlayerProfilePicture()
+    local userId = LocalPlayer.UserId
+    
+    -- Coba dapatkan headshot terlebih dahulu
+    local headshotUrl = GetPlayerAvatarHeadshot(userId)
+    
+    -- Cek apakah URL valid
+    if headshotUrl and headshotUrl ~= "" then
+        local checkSuccess = pcall(function()
+            local test = game:HttpGet(headshotUrl, false)
+            return test ~= nil
+        end)
+        
+        if checkSuccess then
+            return headshotUrl
+        end
+    end
+    
+    -- Jika gagal, return default
+    return "https://i.imgur.com/4PfH6rb.jpeg"
+end
+
+--========================================================--
 -- 📦 FISH MODULE FINDER
 --========================================================--
 
@@ -210,8 +272,11 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
         end
     end
     
-    -- Dapatkan URL gambar dengan fallback
-    local imageUrl = GetRobloxImage(assetId)
+    -- Dapatkan URL gambar ikan dengan fallback
+    local fishImageUrl = GetRobloxImage(assetId)
+    
+    -- Dapatkan foto profil player
+    local playerAvatarUrl = GetPlayerProfilePicture()
 
     local key = fishName .. weight .. bag
     if key == LastData then return end
@@ -247,17 +312,22 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
                     inline = true
                 },
                 {
-                    name = "🌟 Congratulations 🌟",
-                    value = "**" .. LocalPlayer.Name .. "** Kamu Mendapatkan Ikan **" .. tierName .. "** 🚀",
-                    inline = false
+                    name = "👤 Player Info",
+                    value = "**Name:** " .. LocalPlayer.Name .. "\n**Display:** " .. LocalPlayer.DisplayName,
+                    inline = true
                 }
+            },
+
+            author = {
+                name = LocalPlayer.Name .. " (" .. LocalPlayer.DisplayName .. ")",
+                icon_url = playerAvatarUrl
             },
 
             footer = {
                 text = "Caught by " .. LocalPlayer.Name .. " | " .. os.date("%H:%M:%S")
             },
 
-            thumbnail = { url = imageUrl },
+            thumbnail = { url = fishImageUrl },
             timestamp = DateTime.now():ToIsoDate()
         }}
     }
