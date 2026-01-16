@@ -95,33 +95,52 @@ local function FormatChance(c)
 end
 
 --========================================================--
--- 🖼️ ROBLOX IMAGE
+-- 🖼️ ROBLOX IMAGE (WITH FALLBACK)
 --========================================================--
 
 local function GetRobloxImage(assetId)
-    if not assetId or assetId == "" then
-        return "https://i.imgur.com/zwCkN8P.png"
+    -- Jika tidak ada assetId, langsung return fallback
+    if not assetId or assetId == "" or assetId == "0" then
+        return "https://i.imgur.com/rdrJ2I5.gif"
     end
-
+    
+    -- Cek apakah assetId valid (harus berupa angka)
+    if not tonumber(assetId) then
+        return "https://i.imgur.com/rdrJ2I5.gif"
+    end
+    
+    -- URL untuk mendapatkan thumbnail dari Roblox
+    local thumbnailUrl = "https://thumbnails.roblox.com/v1/assets?assetIds=" .. assetId .. "&size=420x420&format=Png&isCircular=false"
+    
+    -- Coba ambil gambar dari Roblox API
     local success, response = pcall(function()
-        return game:HttpGet(
-            "https://thumbnails.roblox.com/v1/assets?assetIds="
-            .. assetId ..
-            "&size=420x420&format=Png&isCircular=false"
-        )
+        local result = game:HttpGet(thumbnailUrl)
+        return result
     end)
-
+    
     if success and response then
+        -- Coba parse JSON response
         local ok, data = pcall(function()
             return HttpService:JSONDecode(response)
         end)
-
+        
         if ok and data and data.data and data.data[1] and data.data[1].imageUrl then
-            return data.data[1].imageUrl
+            local imageUrl = data.data[1].imageUrl
+            
+            -- Double-check: coba akses URL untuk memastikan gambar valid
+            local imageCheckSuccess = pcall(function()
+                local check = game:HttpGet(imageUrl, false)
+                return check ~= nil
+            end)
+            
+            if imageCheckSuccess then
+                return imageUrl
+            end
         end
     end
-
-    return "https://i.imgur.com/zwCkN8P.png"
+    
+    -- Jika semua gagal, return fallback GIF
+    return "https://i.imgur.com/rdrJ2I5.gif"
 end
 
 --========================================================--
@@ -180,7 +199,18 @@ ItemName:GetPropertyChangedSignal("Text"):Connect(function()
     local sell = fishData.SellPrice
     local chance = fishData.Probability.Chance
 
-    local assetId = VectorFrame.Image:match("%d+")
+    -- Ambil assetId dari VectorFrame
+    local assetId = ""
+    if VectorFrame then
+        local imageString = tostring(VectorFrame.Image)
+        -- Ekstrak angka dari URL
+        local numbers = imageString:match("%d+")
+        if numbers then
+            assetId = numbers
+        end
+    end
+    
+    -- Dapatkan URL gambar dengan fallback
     local imageUrl = GetRobloxImage(assetId)
 
     local key = fishName .. weight .. bag
