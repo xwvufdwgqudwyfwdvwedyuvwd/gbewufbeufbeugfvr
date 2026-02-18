@@ -100,6 +100,10 @@ local games = {
     ["FishIt"] = {
         placeIds = {121864768012064},
         url = "https://raw.githubusercontent.com/xwvufdwgqudwyfwdvwedyuvwd/gbewufbeufbeugfvr/refs/heads/main/Fish%20IT!%20%7C%20Free"
+    },
+    ["Abyss"] = {
+        placeIds = {127794225497302},
+        url = "https://raw.githubusercontent.com/fewnbhefbevfhevfdfveh/ckhsuciceifgeufhefveyfg/refs/heads/main/Abyss.lua"
     }
 }
 
